@@ -1,0 +1,67 @@
+export interface AuthUser {
+  id: string;
+  email: string;
+  username: string;
+  location?: string;
+  avatar_url?: string;
+}
+
+export interface ItemFormData {
+  title: string;
+  description: string;
+  category: string;
+  condition: string;
+  tags: string[];
+  image?: File;
+}
+
+export interface SwipeAction {
+  direction: 'left' | 'right';
+  itemId: string;
+}
+
+export interface MatchNotification {
+  id: string;
+  item1: {
+    id: string;
+    title: string;
+    image_url?: string;
+  };
+  item2: {
+    id: string;
+    title: string;
+    image_url?: string;
+  };
+  user: {
+    username: string;
+    avatar_url?: string;
+  };
+  created_at: string;
+}
+
+export const ITEM_CATEGORIES = [
+  'Books',
+  'Toys & Games',
+  'Electronics',
+  'Clothing',
+  'Home & Garden',
+  'Sports & Outdoors',
+  'Food & Meals',
+  'Art & Crafts',
+  'Music & Instruments',
+  'Tools & Equipment',
+  'Beauty & Health',
+  'Collectibles',
+  'Other'
+] as const;
+
+export const ITEM_CONDITIONS = [
+  'Like New',
+  'Very Good',
+  'Good',
+  'Fair',
+  'Poor'
+] as const;
+
+export type ItemCategory = typeof ITEM_CATEGORIES[number];
+export type ItemCondition = typeof ITEM_CONDITIONS[number];
