@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X } from 'lucide-react';
 import { ItemWithUser } from '../hooks/useItems';
@@ -10,27 +10,39 @@ interface ItemCardProps {
   showActions?: boolean;
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item, onSwipe, showActions = false }) => {
+// Memoize component to prevent unnecessary re-renders
+export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActions = false }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  // Memoize date formatting
+  const formattedDate = React.useMemo(() => {
+    return new Date(item.created_at).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
     });
-  };
+  }, [item.created_at]);
 
-  const handleMenuClick = (e: React.MouseEvent) => {
+  const handleMenuClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowMenu(!showMenu);
-  };
+  }, [showMenu]);
 
-  const handleReportClick = (e: React.MouseEvent) => {
+  const handleReportClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     setShowReportDialog(true);
     setShowMenu(false);
-  };
+  }, []);
+
+  const handleDragEnd = useCallback((_, info) => {
+    if (!onSwipe) return;
+    
+    if (info.offset.x > 100) {
+      onSwipe('right');
+    } else if (info.offset.x < -100) {
+      onSwipe('left');
+    }
+  }, [onSwipe]);
 
   return (
     <>
@@ -38,15 +50,10 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onSwipe, showActions =
         className="bg-white rounded-2xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing relative"
         drag={onSwipe ? "x" : false}
         dragConstraints={{ left: 0, right: 0 }}
-        onDragEnd={onSwipe ? (_, info) => {
-          if (info.offset.x > 100) {
-            onSwipe('right');
-          } else if (info.offset.x < -100) {
-            onSwipe('left');
-          }
-        } : undefined}
+        onDragEnd={onSwipe ? handleDragEnd : undefined}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
+        layout
       >
         <div className="relative">
           <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
@@ -55,6 +62,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onSwipe, showActions =
                 src={item.image_url}
                 alt={item.title}
                 className="w-full h-full object-cover"
+                loading="lazy" // Add lazy loading
+                onError={(e) => {
+                  // Fallback for broken images
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             ) : (
               <div className="text-gray-400">
@@ -121,7 +133,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onSwipe, showActions =
             </div>
             <div className="flex items-center text-gray-500 text-sm">
               <Clock className="w-4 h-4 mr-1" />
-              {formatDate(item.created_at)}
+              {formattedDate}
             </div>
           </div>
           
@@ -178,4 +190,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onSwipe, showActions =
       />
     </>
   );
-};
+});
+
+ItemCard.displayName = 'ItemCard';

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { Item, User } from '../types/database';
 import { useAuth } from './useAuth';
@@ -7,11 +7,21 @@ export interface ItemWithUser extends Item {
   users: User;
 }
 
+// Add caching layer
+const itemsCache = new Map<string, { data: ItemWithUser[]; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const useItems = () => {
   const { user } = useAuth();
   const [items, setItems] = useState<ItemWithUser[]>([]);
   const [userItems, setUserItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Memoize filtered items to prevent unnecessary re-renders
+  const availableItems = useMemo(() => 
+    items.filter(item => item.user_id !== user?.id && item.is_active),
+    [items, user?.id]
+  );
 
   useEffect(() => {
     if (user) {
@@ -22,18 +32,49 @@ export const useItems = () => {
 
   const fetchItems = async () => {
     try {
+      // Check cache first
+      const cacheKey = 'active_items';
+      const cached = itemsCache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        setItems(cached.data);
+        setLoading(false);
+        return;
+      }
+
+      // Optimized query with specific field selection
       const { data, error } = await supabase
         .from('items')
         .select(`
-          *,
-          users (*)
+          id,
+          title,
+          description,
+          category,
+          condition,
+          image_url,
+          tags,
+          created_at,
+          user_id,
+          users!inner (
+            id,
+            username,
+            location,
+            avatar_url,
+            rating
+          )
         `)
         .eq('is_active', true)
         .neq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit initial load
 
       if (error) throw error;
-      setItems(data as ItemWithUser[]);
+      
+      const itemsData = data as ItemWithUser[];
+      setItems(itemsData);
+      
+      // Cache the results
+      itemsCache.set(cacheKey, { data: itemsData, timestamp: Date.now() });
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {
@@ -47,7 +88,7 @@ export const useItems = () => {
     try {
       const { data, error } = await supabase
         .from('items')
-        .select('*')
+        .select('id, title, category, condition, image_url, created_at, is_active')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -74,6 +115,8 @@ export const useItems = () => {
 
     if (!error) {
       setUserItems(prev => [data, ...prev]);
+      // Invalidate cache
+      itemsCache.clear();
     }
 
     return { data, error };
@@ -92,6 +135,8 @@ export const useItems = () => {
 
     if (!error) {
       setUserItems(prev => prev.map(item => item.id === id ? data : item));
+      // Invalidate cache
+      itemsCache.clear();
     }
 
     return { data, error };
@@ -105,13 +150,15 @@ export const useItems = () => {
 
     if (!error) {
       setUserItems(prev => prev.filter(item => item.id !== id));
+      // Invalidate cache
+      itemsCache.clear();
     }
 
     return { error };
   };
 
   return {
-    items,
+    items: availableItems,
     userItems,
     loading,
     addItem,
