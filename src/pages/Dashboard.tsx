@@ -1,38 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, RotateCcw, Filter, Zap } from 'lucide-react';
-import { ItemCard } from '../components/ItemCard';
+import { Heart, X, RotateCcw, Filter, Zap, AlertCircle } from 'lucide-react';
+import { SwipeCard } from '../components/SwipeCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SmartMatchDialog } from '../components/SmartMatchDialog';
 import { useItems } from '../hooks/useItems';
-import { useMatches } from '../hooks/useMatches';
+import { useSwipes } from '../hooks/useSwipes';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export const Dashboard: React.FC = () => {
   const { items, loading } = useItems();
-  const { createMatch } = useMatches();
+  const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showSmartMatch, setShowSmartMatch] = useState(false);
 
+  // Load previously swiped items
+  useEffect(() => {
+    const loadSwipedItems = async () => {
+      const swiped = await getSwipedItems();
+      setSwipedItems(new Set(swiped));
+    };
+    
+    if (user) {
+      loadSwipedItems();
+    }
+  }, [user, getSwipedItems]);
+
   const availableItems = items.filter(item => !swipedItems.has(item.id));
   const currentItem = availableItems[currentIndex];
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
+  const handleSwipe = async (direction: 'left' | 'right' | 'super') => {
     if (!currentItem || !user) return;
 
+    // Record the swipe
+    const { error } = await recordSwipe(currentItem.id, direction);
+    
+    if (error) {
+      if (error.message.includes('Daily swipe limit reached')) {
+        return; // Toast already shown in useSwipes
+      }
+      toast.error('Failed to record swipe');
+      return;
+    }
+
+    // Add to local swiped items
     setSwipedItems(prev => new Set(prev).add(currentItem.id));
 
-    if (direction === 'right') {
-      // Create a match request
-      try {
-        await createMatch(currentItem.id, currentItem.id, user.id, currentItem.user_id);
-        toast.success('Match request sent!');
-      } catch (error) {
-        toast.error('Failed to send match request');
-      }
+    // Show feedback for the swipe
+    if (direction === 'super') {
+      toast.success('Super Like sent! ⚡');
+    } else if (direction === 'right') {
+      toast.success('Liked! 💖');
     }
 
     // Move to next item
@@ -44,6 +65,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleUndo = () => {
+    // For demo purposes, allow undo of last swipe
     if (swipedItems.size > 0) {
       const lastSwipedItem = Array.from(swipedItems).pop();
       if (lastSwipedItem) {
@@ -55,9 +77,12 @@ export const Dashboard: React.FC = () => {
         if (currentIndex > 0) {
           setCurrentIndex(prev => prev - 1);
         }
+        toast.success('Undo successful!');
       }
     }
   };
+
+  const swipesRemaining = swipeLimit - dailySwipeCount;
 
   if (loading) {
     return (
@@ -69,7 +94,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-gray-900">Discover Items</h2>
         <div className="flex space-x-2">
           <button 
@@ -85,19 +110,35 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Swipe Counter */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">
+              Daily Swipes: {dailySwipeCount}/{swipeLimit}
+            </span>
+          </div>
+          <span className="text-sm text-blue-700">
+            {swipesRemaining} remaining
+          </span>
+        </div>
+        <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
+          <div 
+            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${(dailySwipeCount / swipeLimit) * 100}%` }}
+          />
+        </div>
+      </div>
+
       <div className="relative h-[600px] mb-6">
         <AnimatePresence mode="wait">
           {currentItem ? (
-            <motion.div
+            <SwipeCard
               key={currentItem.id}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute inset-0"
-            >
-              <ItemCard item={currentItem} onSwipe={handleSwipe} showActions={true} />
-            </motion.div>
+              item={currentItem}
+              onSwipe={handleSwipe}
+            />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
@@ -118,7 +159,7 @@ export const Dashboard: React.FC = () => {
           whileTap={{ scale: 0.9 }}
           onClick={() => handleSwipe('left')}
           className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-gray-200 hover:border-red-300 transition-colors"
-          disabled={!currentItem}
+          disabled={!currentItem || swipesRemaining <= 0}
         >
           <X className="w-8 h-8 text-red-500" />
         </motion.button>
@@ -136,9 +177,19 @@ export const Dashboard: React.FC = () => {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={() => handleSwipe('super')}
+          className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full shadow-lg flex items-center justify-center border-2 border-white hover:shadow-xl transition-all"
+          disabled={!currentItem || swipesRemaining <= 0}
+        >
+          <Zap className="w-6 h-6 text-white" />
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => handleSwipe('right')}
           className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-gray-200 hover:border-green-300 transition-colors"
-          disabled={!currentItem}
+          disabled={!currentItem || swipesRemaining <= 0}
         >
           <Heart className="w-8 h-8 text-green-500" />
         </motion.button>
@@ -154,6 +205,11 @@ export const Dashboard: React.FC = () => {
             'No items available'
           )}
         </p>
+        {swipesRemaining <= 0 && (
+          <p className="text-red-600 text-sm mt-2">
+            Daily swipe limit reached! Come back tomorrow for more.
+          </p>
+        )}
       </div>
 
       <SmartMatchDialog 
