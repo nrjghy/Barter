@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, RotateCcw, Filter, Zap, AlertCircle } from 'lucide-react';
+import { Heart, X, RotateCcw, Filter, Zap, AlertCircle, Grid3X3, Layers } from 'lucide-react';
 import { SwipeCard } from '../components/SwipeCard';
+import { EnhancedItemCard } from '../components/EnhancedItemCard';
+import { CategoryFilter } from '../components/CategoryFilter';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SmartMatchDialog } from '../components/SmartMatchDialog';
 import { useItems } from '../hooks/useItems';
@@ -16,6 +18,10 @@ export const Dashboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showSmartMatch, setShowSmartMatch] = useState(false);
+  const [showFilter, setShowFilter] = useState(false);
+  const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
   // Load previously swiped items
   useEffect(() => {
@@ -29,7 +35,22 @@ export const Dashboard: React.FC = () => {
     }
   }, [user, getSwipedItems]);
 
-  const availableItems = items.filter(item => !swipedItems.has(item.id));
+  // Filter items based on selected categories and conditions
+  const filteredItems = React.useMemo(() => {
+    let filtered = items.filter(item => !swipedItems.has(item.id));
+    
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(item => selectedCategories.includes(item.category));
+    }
+    
+    if (selectedConditions.length > 0) {
+      filtered = filtered.filter(item => selectedConditions.includes(item.condition));
+    }
+    
+    return filtered;
+  }, [items, swipedItems, selectedCategories, selectedConditions]);
+
+  const availableItems = filteredItems;
   const currentItem = availableItems[currentIndex];
 
   const handleSwipe = async (direction: 'left' | 'right' | 'super') => {
@@ -94,18 +115,52 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Discover Items</h2>
-        <div className="flex space-x-2">
+        <div className="flex items-center space-x-2">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('swipe')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'swipe' 
+                  ? 'bg-white shadow-sm text-purple-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-md transition-colors ${
+                viewMode === 'grid' 
+                  ? 'bg-white shadow-sm text-purple-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Grid3X3 className="w-4 h-4" />
+            </button>
+          </div>
+          
           <button 
             onClick={() => setShowSmartMatch(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+            className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
           >
             <Zap className="w-4 h-4" />
-            <span>Smart Match</span>
+            <span className="hidden sm:inline">Smart</span>
           </button>
-          <button className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+          
+          <button 
+            onClick={() => setShowFilter(true)}
+            className={`p-2 rounded-lg transition-colors relative ${
+              selectedCategories.length > 0 || selectedConditions.length > 0
+                ? 'bg-purple-100 text-purple-600'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+            }`}
+          >
             <Filter className="w-5 h-5 text-gray-600" />
+            {(selectedCategories.length > 0 || selectedConditions.length > 0) && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full" />
+            )}
           </button>
         </div>
       </div>
@@ -131,29 +186,53 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="relative h-[600px] mb-6">
-        <AnimatePresence mode="wait">
-          {currentItem ? (
-            <SwipeCard
-              key={currentItem.id}
-              item={currentItem}
-              onSwipe={handleSwipe}
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-12 h-12 text-gray-400" />
+      {viewMode === 'swipe' ? (
+        <div className="relative h-[600px] mb-6">
+          <AnimatePresence mode="wait">
+            {currentItem ? (
+              <SwipeCard
+                key={currentItem.id}
+                item={currentItem}
+                onSwipe={handleSwipe}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Heart className="w-12 h-12 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No more items!</h3>
+                  <p className="text-gray-600">Check back later for new listings</p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No more items!</h3>
-                <p className="text-gray-600">Check back later for new listings</p>
               </div>
+            )}
+          </AnimatePresence>
+        </div>
+      ) : (
+        <div className="space-y-4 mb-6">
+          {availableItems.length > 0 ? (
+            availableItems.map((item) => (
+              <EnhancedItemCard
+                key={item.id}
+                item={item}
+                variant="compact"
+                showActions={true}
+              />
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="w-12 h-12 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">No items found!</h3>
+              <p className="text-gray-600">Try adjusting your filters or check back later</p>
             </div>
           )}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
 
-      <div className="flex items-center justify-center space-x-8">
+      {viewMode === 'swipe' && (
+        <div className="flex items-center justify-center space-x-8 mb-6">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
@@ -193,7 +272,8 @@ export const Dashboard: React.FC = () => {
         >
           <Heart className="w-8 h-8 text-green-500" />
         </motion.button>
-      </div>
+        </div>
+      )}
 
       <div className="mt-8 text-center">
         <p className="text-gray-600">
@@ -216,6 +296,18 @@ export const Dashboard: React.FC = () => {
         isOpen={showSmartMatch} 
         onClose={() => setShowSmartMatch(false)} 
       />
+      
+      <AnimatePresence>
+        {showFilter && (
+          <CategoryFilter
+            selectedCategories={selectedCategories}
+            selectedConditions={selectedConditions}
+            onCategoriesChange={setSelectedCategories}
+            onConditionsChange={setSelectedConditions}
+            onClose={() => setShowFilter(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
