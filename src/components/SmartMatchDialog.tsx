@@ -33,34 +33,12 @@ export const SmartMatchDialog: React.FC<SmartMatchDialogProps> = ({ isOpen, onCl
   const [locationLoading, setLocationLoading] = useState(false);
 
   const getCurrentLocation = () => {
-    setLocationLoading(true);
-    
-    if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser');
-      setLocationLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-        setLocationLoading(false);
-        toast.success('Location detected successfully');
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        toast.error('Failed to get your location');
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // 5 minutes
-      }
-    );
+    // For now, use a default location to disable location-based filtering
+    setUserLocation({
+      latitude: 40.7128, // Default to NYC coordinates
+      longitude: -74.0060,
+    });
+    toast.success('Using default location for search');
   };
 
   const handleSearch = async () => {
@@ -69,9 +47,9 @@ export const SmartMatchDialog: React.FC<SmartMatchDialogProps> = ({ isOpen, onCl
       return;
     }
 
+    // Auto-set location if not set
     if (!userLocation) {
-      toast.error('Please enable location access');
-      return;
+      getCurrentLocation();
     }
 
     if (preferences.categories.length === 0) {
@@ -81,7 +59,7 @@ export const SmartMatchDialog: React.FC<SmartMatchDialogProps> = ({ isOpen, onCl
 
     const request = {
       userPreferences: preferences,
-      userLocation,
+      userLocation: userLocation || { latitude: 40.7128, longitude: -74.0060 },
       ...searchParams,
       userId: user.id,
     };

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, X, RotateCcw, Filter, Zap, AlertCircle, Grid3X3, Layers } from 'lucide-react';
+import { Heart, X, RotateCcw, Filter, Zap, AlertCircle, Grid3X3, Layers, RefreshCw } from 'lucide-react';
 import { SwipeCard } from '../components/SwipeCard';
 import { EnhancedItemCard } from '../components/EnhancedItemCard';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SmartMatchDialog } from '../components/SmartMatchDialog';
-import { useItems } from '../hooks/useItems';
+import { useItems, ItemWithUser } from '../hooks/useItems';
 import { useSwipes } from '../hooks/useSwipes';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export const Dashboard: React.FC = () => {
-  const { items, loading, error } = useItems();
+  const { items, loading, error, hasMore, loadMoreItems, refetch } = useItems();
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
   const { user } = useAuth();
   const [debugInfo, setDebugInfo] = useState(false);
@@ -23,6 +23,7 @@ export const Dashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Load previously swiped items
   useEffect(() => {
@@ -53,6 +54,28 @@ export const Dashboard: React.FC = () => {
 
   const availableItems = filteredItems;
   const currentItem = availableItems[currentIndex];
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    
+    setLoadingMore(true);
+    try {
+      await loadMoreItems();
+    } catch (error) {
+      toast.error('Failed to load more items');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast.success('Items refreshed!');
+    } catch (error) {
+      toast.error('Failed to refresh items');
+    }
+  };
 
   const handleSwipe = async (direction: 'left' | 'right' | 'super') => {
     if (!currentItem || !user) return;
@@ -106,7 +129,7 @@ export const Dashboard: React.FC = () => {
 
   const swipesRemaining = swipeLimit - dailySwipeCount;
 
-  if (loading) {
+  if (loading && items.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -127,12 +150,20 @@ export const Dashboard: React.FC = () => {
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Items</h3>
           <p className="text-red-600 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            Retry
-          </button>
+          <div className="space-x-2">
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -148,6 +179,13 @@ export const Dashboard: React.FC = () => {
             className="p-2 text-xs bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Debug
+          </button>
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Refresh items"
+          >
+            <RefreshCw className="w-4 h-4 text-gray-600" />
           </button>
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
@@ -208,6 +246,8 @@ export const Dashboard: React.FC = () => {
             <p><strong>Selected categories:</strong> {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}</p>
             <p><strong>Selected conditions:</strong> {selectedConditions.length > 0 ? selectedConditions.join(', ') : 'None'}</p>
             <p><strong>Loading state:</strong> {loading ? 'Yes' : 'No'}</p>
+            <p><strong>Has more items:</strong> {hasMore ? 'Yes' : 'No'}</p>
+            <p><strong>Current page:</strong> {Math.floor(items.length / 20)}</p>
           </div>
         </div>
       )}
@@ -249,7 +289,16 @@ export const Dashboard: React.FC = () => {
                     <Heart className="w-12 h-12 text-gray-400" />
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">No more items!</h3>
-                  <p className="text-gray-600">Check back later for new listings</p>
+                  <p className="text-gray-600 mb-4">Check back later for new listings</p>
+                  {hasMore && (
+                    <button
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                    >
+                      {loadingMore ? <LoadingSpinner /> : 'Load More Items'}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -258,21 +307,41 @@ export const Dashboard: React.FC = () => {
       ) : (
         <div className="space-y-4 mb-6">
           {availableItems.length > 0 ? (
-            availableItems.map((item) => (
-              <EnhancedItemCard
-                key={item.id}
-                item={item}
-                variant="compact"
-                showActions={true}
-              />
-            ))
+            <>
+              {availableItems.map((item) => (
+                <EnhancedItemCard
+                  key={item.id}
+                  item={item}
+                  variant="compact"
+                  showActions={true}
+                />
+              ))}
+              
+              {hasMore && (
+                <div className="text-center py-4">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore ? <LoadingSpinner /> : 'Load More Items'}
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="w-12 h-12 text-gray-400" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">No items found!</h3>
-              <p className="text-gray-600">Try adjusting your filters or check back later</p>
+              <p className="text-gray-600 mb-4">Try adjusting your filters or check back later</p>
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Refresh Items
+              </button>
             </div>
           )}
         </div>
@@ -327,6 +396,7 @@ export const Dashboard: React.FC = () => {
           {availableItems.length > 0 ? (
             <>
               <span className="font-medium">{availableItems.length}</span> items available
+              {hasMore && <span className="text-sm text-gray-500 block">More items available</span>}
             </>
           ) : (
             'No items available'
