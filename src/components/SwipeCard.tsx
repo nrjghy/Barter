@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import { Heart, X, Zap, MapPin, Clock, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ItemWithUser } from '../hooks/useItems';
 
 interface SwipeCardProps {
@@ -10,6 +11,7 @@ interface SwipeCardProps {
 }
 
 export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) => {
+  const navigate = useNavigate();
   const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -49,6 +51,14 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
     day: 'numeric',
   });
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't navigate if currently dragging or clicking action buttons
+    if ((e.target as HTMLElement).closest('button') || Math.abs(x.get()) > 10) {
+      return;
+    }
+    navigate(`/item/${item.id}`);
+  };
+
   return (
     <motion.div
       ref={cardRef}
@@ -64,6 +74,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
       onDragEnd={handleDragEnd}
       animate={exitX !== 0 ? { x: exitX } : {}}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      onClick={handleCardClick}
     >
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden h-full relative">
         {/* Swipe Indicators */}

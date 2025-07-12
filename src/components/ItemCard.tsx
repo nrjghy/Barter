@@ -1,6 +1,7 @@
 import React, { useState, memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ItemWithUser } from '../hooks/useItems';
 import { ReportDialog } from './ReportDialog';
 
@@ -12,6 +13,7 @@ interface ItemCardProps {
 
 // Memoize component to prevent unnecessary re-renders
 export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActions = false }) => {
+  const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
 
@@ -34,6 +36,14 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
     setShowMenu(false);
   }, []);
 
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
+    // Don't navigate if clicking on action buttons
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    navigate(`/item/${item.id}`);
+  }, [navigate, item.id]);
+
   const handleDragEnd = useCallback((_, info) => {
     if (!onSwipe) return;
     
@@ -51,6 +61,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
         drag={onSwipe ? "x" : false}
         dragConstraints={{ left: 0, right: 0 }}
         onDragEnd={onSwipe ? handleDragEnd : undefined}
+        onClick={handleCardClick}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         layout
