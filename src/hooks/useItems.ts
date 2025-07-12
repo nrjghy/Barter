@@ -16,6 +16,7 @@ export const useItems = () => {
   const [items, setItems] = useState<ItemWithUser[]>([]);
   const [userItems, setUserItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Memoize filtered items to prevent unnecessary re-renders
   const availableItems = useMemo(() => 
@@ -25,12 +26,19 @@ export const useItems = () => {
 
   useEffect(() => {
     if (user) {
+      console.log('User authenticated, fetching items for:', user.id);
       fetchItems();
       fetchUserItems();
+    } else {
+      console.log('No user found, skipping item fetch');
+      setLoading(false);
     }
   }, [user]);
 
   const fetchItems = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
       console.log('Fetching items for user:', user?.id);
       
@@ -84,6 +92,7 @@ export const useItems = () => {
       console.log('Items set in state:', itemsData.length);
     } catch (error) {
       console.error('Error fetching items:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch items');
     } finally {
       setLoading(false);
     }
@@ -168,6 +177,7 @@ export const useItems = () => {
     items: availableItems,
     userItems,
     loading,
+    error,
     addItem,
     updateItem,
     deleteItem,

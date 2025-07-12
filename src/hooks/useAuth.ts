@@ -10,7 +10,9 @@ export const useAuth = () => {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      console.log('Getting initial session...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('Initial session:', session?.user?.email || 'No session');
       if (session?.user) {
         await fetchUserProfile(session.user);
       }
@@ -23,6 +25,7 @@ export const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change:', event, session?.user?.email || 'No user');
       if (session?.user) {
         await fetchUserProfile(session.user);
       } else {
@@ -36,6 +39,7 @@ export const useAuth = () => {
 
   const fetchUserProfile = async (authUser: User) => {
     try {
+      console.log('Fetching user profile for:', authUser.email);
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -44,9 +48,14 @@ export const useAuth = () => {
 
       if (error) {
         console.error('Error fetching user profile:', error);
+        // If user doesn't exist in users table, create them
+        if (error.code === 'PGRST116') {
+          console.log('User not found in users table, this might be expected for demo');
+        }
         return;
       }
 
+      console.log('User profile fetched:', data);
       setUser({
         id: authUser.id,
         email: authUser.email!,
