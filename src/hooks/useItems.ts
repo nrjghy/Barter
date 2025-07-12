@@ -32,6 +32,8 @@ export const useItems = () => {
 
   const fetchItems = async () => {
     try {
+      console.log('Fetching items for user:', user?.id);
+      
       // Check cache first
       const cacheKey = 'active_items';
       const cached = itemsCache.get(cacheKey);
@@ -70,11 +72,16 @@ export const useItems = () => {
 
       if (error) throw error;
       
+      console.log('Raw items fetched:', data?.length || 0);
+      console.log('Sample item:', data?.[0]);
+      
       const itemsData = data as ItemWithUser[];
       setItems(itemsData);
       
       // Cache the results
       itemsCache.set(cacheKey, { data: itemsData, timestamp: Date.now() });
+      
+      console.log('Items set in state:', itemsData.length);
     } catch (error) {
       console.error('Error fetching items:', error);
     } finally {

@@ -15,6 +15,7 @@ export const Dashboard: React.FC = () => {
   const { items, loading } = useItems();
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
   const { user } = useAuth();
+  const [debugInfo, setDebugInfo] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showSmartMatch, setShowSmartMatch] = useState(false);
@@ -118,6 +119,12 @@ export const Dashboard: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Discover Items</h2>
         <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setDebugInfo(!debugInfo)}
+            className="p-2 text-xs bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Debug
+          </button>
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode('swipe')}
@@ -164,6 +171,22 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Debug Information */}
+      {debugInfo && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+          <h3 className="font-semibold text-yellow-800 mb-2">Debug Information:</h3>
+          <div className="space-y-1 text-yellow-700">
+            <p><strong>Total items loaded:</strong> {items.length}</p>
+            <p><strong>Filtered items:</strong> {availableItems.length}</p>
+            <p><strong>Current user ID:</strong> {user?.id}</p>
+            <p><strong>Swiped items count:</strong> {swipedItems.size}</p>
+            <p><strong>Selected categories:</strong> {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}</p>
+            <p><strong>Selected conditions:</strong> {selectedConditions.length > 0 ? selectedConditions.join(', ') : 'None'}</p>
+            <p><strong>Loading state:</strong> {loading ? 'Yes' : 'No'}</p>
+          </div>
+        </div>
+      )}
 
       {/* Swipe Counter */}
       <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
