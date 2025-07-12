@@ -9,7 +9,7 @@ export interface ItemWithUser extends Item {
 
 // Add caching layer
 const itemsCache = new Map<string, { data: ItemWithUser[]; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes (shorter for testing)
 
 export const useItems = () => {
   const { user } = useAuth();
@@ -17,6 +17,9 @@ export const useItems = () => {
   const [userItems, setUserItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const ITEMS_PER_PAGE = 20;
 
   // Memoize filtered items to prevent unnecessary re-renders
   const availableItems = useMemo(() => 
@@ -35,24 +38,24 @@ export const useItems = () => {
     }
   }, [user]);
 
-  const fetchItems = async () => {
-    setLoading(true);
+  const fetchItems = async (page: number = 0, append: boolean = false) => {
+    if (!append) setLoading(true);
     setError(null);
     
     try {
       console.log('Fetching items for user:', user?.id);
       
       // Check cache first
-      const cacheKey = 'active_items';
+      const cacheKey = `active_items_page_${page}`;
       const cached = itemsCache.get(cacheKey);
       
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        setItems(cached.data);
+      if (page === 0 && cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        setItems(append ? [...items, ...cached.data] : cached.data);
         setLoading(false);
         return;
       }
 
-      // Optimized query with specific field selection
+      // Simplified query without location filtering and with pagination
       const { data, error } = await supabase
         .from('items')
         .select(`
@@ -64,19 +67,23 @@ export const useItems = () => {
           image_url,
           tags,
           created_at,
+          updated_at,
           user_id,
+          is_active,
+          price,
           users!inner (
             id,
             username,
             location,
             avatar_url,
-            rating
+            rating,
+            is_demo
           )
         `)
         .eq('is_active', true)
-        .neq('user_id', user?.id)
+        .neq('user_id', user?.id || 'none')
         .order('created_at', { ascending: false })
-        .limit(50); // Limit initial load
+        .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
 
       if (error) throw error;
       
@@ -84,10 +91,20 @@ export const useItems = () => {
       console.log('Sample item:', data?.[0]);
       
       const itemsData = data as ItemWithUser[];
-      setItems(itemsData);
+      
+      // Check if we have more items
+      setHasMore(itemsData.length === ITEMS_PER_PAGE);
+      
+      if (append) {
+        setItems(prev => [...prev, ...itemsData]);
+      } else {
+        setItems(itemsData);
+      }
       
       // Cache the results
-      itemsCache.set(cacheKey, { data: itemsData, timestamp: Date.now() });
+      if (page === 0) {
+        itemsCache.set(cacheKey, { data: itemsData, timestamp: Date.now() });
+      }
       
       console.log('Items set in state:', itemsData.length);
     } catch (error) {
@@ -98,13 +115,20 @@ export const useItems = () => {
     }
   };
 
+  const loadMoreItems = async () => {
+    if (!hasMore || loading) return;
+    
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    await fetchItems(nextPage, true);
+  };
   const fetchUserItems = async () => {
     if (!user) return;
 
     try {
       const { data, error } = await supabase
         .from('items')
-        .select('id, title, category, condition, image_url, created_at, is_active')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -133,6 +157,10 @@ export const useItems = () => {
       setUserItems(prev => [data, ...prev]);
       // Invalidate cache
       itemsCache.clear();
+      // Refresh items to show new item from other users
+      if (data.user_id !== user.id) {
+        fetchItems();
+      }
     }
 
     return { data, error };
@@ -178,9 +206,14 @@ export const useItems = () => {
     userItems,
     loading,
     error,
+    hasMore,
+    loadMoreItems,
     addItem,
     updateItem,
     deleteItem,
-    refetch: fetchItems,
+    refetch: () => {
+      setCurrentPage(0);
+      fetchItems(0, false);
+    },
   };
 };
