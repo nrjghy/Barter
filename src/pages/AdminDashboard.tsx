@@ -11,7 +11,7 @@ import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield } from 'l
 export const AdminDashboard: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-
+          const { data: { session } } = await supabase.auth.getSession();
   const [listings, setListings] = useState<ItemWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,9 @@ export const AdminDashboard: React.FC = () => {
   const [filterDemo, setFilterDemo] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchAdminListings = async () => {
+          if (filterDemo !== null) queryParams.append('filter_demo', filterDemo.toString());
+          // Use local showDemoListings state for filtering
+          if (!showDemoListings) queryParams.append('filter_demo', 'false');
     if (!user || user.role !== 'admin') {
       setError('Access Denied: You must be an administrator to view this page.');
       setLoading(false);
@@ -51,12 +53,13 @@ export const AdminDashboard: React.FC = () => {
       if (filterDemo !== null) queryParams.append('filter_demo', filterDemo.toString());
       if (searchTerm) queryParams.append('search', searchTerm);
 
+      const [showDemoListings, setShowDemoListings] = useState(false);
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-listings?${queryParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
-          },
+      }, [user, authLoading, page, limit, sortBy, sortOrder, filterActive, filterDemo, searchTerm, showDemoListings]);
         }
       );
 
@@ -175,6 +178,30 @@ export const AdminDashboard: React.FC = () => {
             />
           </div>
 
+          {/* Demo Listings Toggle */}
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <AlertCircle className="w-5 h-5 text-blue-600" />
+                <span className="text-lg font-semibold text-gray-900">Demo Listings Filter</span>
+              </div>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <span className="text-sm text-gray-700">Show Demo Listings</span>
+                <input
+                  type="checkbox"
+                  checked={showDemoListings}
+                  onChange={(e) => setShowDemoListings(e.target.checked)}
+                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                />
+              </label>
+            </div>
+            <div className="mt-2 text-sm text-gray-600">
+              {showDemoListings 
+                ? 'Currently showing all listings including demo users' 
+                : 'Currently hiding listings from demo users'
+              }
+            </div>
+          </div>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -368,15 +395,9 @@ export const AdminDashboard: React.FC = () => {
             className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Previous</span>
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-700">
-              Page {page + 1} of {totalPages}
-            </span>
-            <span className="text-gray-500 text-sm">
-              ({total} total items)
+              <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm flex items-center justify-center">
+                Demo filter above
+              </div>
             </span>
           </div>
           

@@ -19,6 +19,7 @@ export const useItems = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [includeDemoUsers, setIncludeDemoUsers] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
   // Memoize filtered items to prevent unnecessary re-renders
@@ -36,9 +37,9 @@ export const useItems = () => {
       console.log('No user found, skipping item fetch');
       setLoading(false);
     }
-  }, [user]);
+  }, [user, includeDemoUsers]);
 
-  const fetchItems = async (page: number = 0, append: boolean = false) => {
+  const fetchItems = async (page: number = 0, append: boolean = false, includeDemo: boolean = includeDemoUsers) => {
     if (!append) setLoading(true);
     setError(null);
     
@@ -46,7 +47,7 @@ export const useItems = () => {
       console.log('Fetching items for user:', user?.id);
       
       // Check cache first
-      const cacheKey = `active_items_page_${page}`;
+      const cacheKey = `active_items_page_${page}_demo_${includeDemo}`;
       const cached = itemsCache.get(cacheKey);
       
       if (page === 0 && cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -55,8 +56,8 @@ export const useItems = () => {
         return;
       }
 
-      // Simplified query without location filtering and with pagination
-      const { data, error } = await supabase
+      // Build query with demo user filtering
+      let query = supabase
         .from('items')
         .select(`
           id,
@@ -82,9 +83,18 @@ export const useItems = () => {
           )
         `)
         .eq('is_active', true)
-        .neq('user_id', user?.id || 'none')
+        .neq('user_id', user?.id || 'none');
+
+      // Apply demo filter - only show demo users if explicitly requested AND user is admin
+      if (!includeDemo || (user?.role !== 'admin')) {
+        query = query.eq('users.is_demo', false);
+      }
+
+      query = query
         .order('created_at', { ascending: false })
         .range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -121,7 +131,7 @@ export const useItems = () => {
     
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
-    await fetchItems(nextPage, true);
+    await fetchItems(nextPage, true, includeDemoUsers);
   };
   const fetchUserItems = async () => {
     if (!user) return;
@@ -160,7 +170,7 @@ export const useItems = () => {
       itemsCache.clear();
       // Refresh items to show new item from other users
       if (data.user_id !== user.id) {
-        fetchItems();
+        fetchItems(0, false, includeDemoUsers);
       }
     }
 
@@ -202,19 +212,27 @@ export const useItems = () => {
     return { error };
   };
 
+  const toggleDemoUsers = (include: boolean) => {
+    setIncludeDemoUsers(include);
+    setCurrentPage(0);
+    // Clear cache when toggling demo filter
+    itemsCache.clear();
+  };
   return {
     items: availableItems,
     userItems,
     loading,
     error,
     hasMore,
+    includeDemoUsers,
+    toggleDemoUsers,
     loadMoreItems,
     addItem,
     updateItem,
     deleteItem,
     refetch: () => {
       setCurrentPage(0);
-      fetchItems(0, false);
+      fetchItems(0, false, includeDemoUsers);
     },
   };
 };

@@ -12,7 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export const Dashboard: React.FC = () => {
-  const { items, loading, error, hasMore, loadMoreItems, refetch } = useItems();
+  const { items, loading, error, hasMore, loadMoreItems, refetch, includeDemoUsers, toggleDemoUsers } = useItems();
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
   const { user } = useAuth();
   const [debugInfo, setDebugInfo] = useState(false);
@@ -234,6 +234,32 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* Demo Users Filter - Only show for admin users */}
+      {user?.role === 'admin' && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">Admin Controls</span>
+            </div>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={includeDemoUsers}
+                onChange={(e) => toggleDemoUsers(e.target.checked)}
+                className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-blue-700">Show Demo Listings</span>
+            </label>
+          </div>
+          <div className="mt-2 text-xs text-blue-600">
+            {includeDemoUsers 
+              ? 'Showing all listings including demo users' 
+              : 'Hiding listings from demo users'
+            }
+          </div>
+        </div>
+      )}
       {/* Debug Information */}
       {debugInfo && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
@@ -242,6 +268,8 @@ export const Dashboard: React.FC = () => {
             <p><strong>Total items loaded:</strong> {items.length}</p>
             <p><strong>Filtered items:</strong> {availableItems.length}</p>
             <p><strong>Current user ID:</strong> {user?.id}</p>
+            <p><strong>User role:</strong> {user?.role || 'user'}</p>
+            <p><strong>Include demo users:</strong> {includeDemoUsers ? 'Yes' : 'No'}</p>
             <p><strong>Swiped items count:</strong> {swipedItems.size}</p>
             <p><strong>Selected categories:</strong> {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'None'}</p>
             <p><strong>Selected conditions:</strong> {selectedConditions.length > 0 ? selectedConditions.join(', ') : 'None'}</p>
