@@ -6,6 +6,7 @@ import { EnhancedItemCard } from '../components/EnhancedItemCard';
 import { CategoryFilter } from '../components/CategoryFilter';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { SmartMatchDialog } from '../components/SmartMatchDialog';
+import { TradeOfferSelectionModal } from '../components/TradeOfferSelectionModal';
 import { useItems, ItemWithUser } from '../hooks/useItems';
 import { useSwipes } from '../hooks/useSwipes';
 import { useAuth } from '../hooks/useAuth';
@@ -24,6 +25,11 @@ export const Dashboard: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [showTradeOfferModal, setShowTradeOfferModal] = useState(false);
+  const [pendingSwipe, setPendingSwipe] = useState<{
+    item: ItemWithUser;
+    direction: 'right' | 'super';
+  } | null>(null);
 
   // Load previously swiped items
   useEffect(() => {
@@ -80,25 +86,66 @@ export const Dashboard: React.FC = () => {
   const handleSwipe = async (direction: 'left' | 'right' | 'super') => {
     if (!currentItem || !user) return;
 
-    // Record the swipe
-    const { error } = await recordSwipe(currentItem.id, direction);
+    // For left swipes, proceed directly without trade offer
+    if (direction === 'left') {
+      const { error } = await recordSwipe(currentItem.id, direction);
+      
+      if (error) {
+        if (error.message.includes('Daily swipe limit reached')) {
+          return; // Toast already shown in useSwipes
+        }
+        toast.error('Failed to record swipe');
+        return;
+      }
+      
+      // Add to local swiped items and move to next
+      setSwipedItems(prev => new Set(prev).add(currentItem.id));
+      
+      if (currentIndex < availableItems.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+      } else {
+        setCurrentIndex(0);
+      }
+      return;
+    }
+
+    // For right swipes and super likes, show trade offer modal
+    setPendingSwipe({ item: currentItem, direction });
+    setShowTradeOfferModal(true);
+  };
+
+  const handleTradeOfferConfirmed = async (offeredItemIds: string[]) => {
+    if (!pendingSwipe || !user) return;
+
+    const { item, direction } = pendingSwipe;
+    
+    // Record the swipe with trade offer
+    const { error } = await recordSwipe(item.id, direction, offeredItemIds.length > 0 ? offeredItemIds : null);
     
     if (error) {
       if (error.message.includes('Daily swipe limit reached')) {
+        setShowTradeOfferModal(false);
+        setPendingSwipe(null);
         return; // Toast already shown in useSwipes
       }
       toast.error('Failed to record swipe');
+      setShowTradeOfferModal(false);
+      setPendingSwipe(null);
       return;
     }
 
     // Add to local swiped items
-    setSwipedItems(prev => new Set(prev).add(currentItem.id));
+    setSwipedItems(prev => new Set(prev).add(item.id));
 
     // Show feedback for the swipe
     if (direction === 'super') {
       toast.success('Super Like sent! ⚡');
     } else if (direction === 'right') {
-      toast.success('Liked! 💖');
+      if (offeredItemIds.length > 0) {
+        toast.success(`Liked with ${offeredItemIds.length} item${offeredItemIds.length > 1 ? 's' : ''} offered! 💖`);
+      } else {
+        toast.success('Liked! 💖');
+      }
     }
 
     // Move to next item
@@ -107,6 +154,10 @@ export const Dashboard: React.FC = () => {
     } else {
       setCurrentIndex(0);
     }
+    
+    // Close modal and reset pending swipe
+    setShowTradeOfferModal(false);
+    setPendingSwipe(null);
   };
 
   const handleUndo = () => {
@@ -440,6 +491,17 @@ export const Dashboard: React.FC = () => {
       <SmartMatchDialog 
         isOpen={showSmartMatch} 
         onClose={() => setShowSmartMatch(false)} 
+      />
+      
+      <TradeOfferSelectionModal
+        isOpen={showTradeOfferModal}
+        onClose={() => {
+          setShowTradeOfferModal(false);
+          setPendingSwipe(null);
+        }}
+        currentItem={pendingSwipe?.item!}
+        swipeDirection={pendingSwipe?.direction!}
+        onConfirm={handleTradeOfferConfirmed}
       />
       
       <AnimatePresence>

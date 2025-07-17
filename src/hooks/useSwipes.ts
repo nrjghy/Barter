@@ -44,6 +44,7 @@ export const useSwipes = () => {
   }, [user]);
 
   const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super') => {
+  const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super', offeredItemIds: string[] | null = null) => {
     if (!user) return { error: new Error('No user logged in') };
 
     setLoading(true);
@@ -61,7 +62,8 @@ export const useSwipes = () => {
         .insert([{
           user_id: user.id,
           item_id: itemId,
-          direction
+          direction,
+          offered_item_ids: offeredItemIds
         }]);
 
       if (swipeError) {
@@ -81,7 +83,7 @@ export const useSwipes = () => {
 
       // If it's a right swipe or super like, check for matches
       if (direction === 'right' || direction === 'super') {
-        await checkForMatch(itemId, direction === 'super');
+        await checkForMatch(itemId, direction === 'super', offeredItemIds);
       }
 
       return { error: null };
@@ -93,7 +95,7 @@ export const useSwipes = () => {
     }
   }, [user, checkSwipeLimit]);
 
-  const checkForMatch = async (itemId: string, isSuperLike: boolean = false) => {
+  const checkForMatch = async (itemId: string, isSuperLike: boolean = false, currentUserOfferedItems: string[] | null = null) => {
     if (!user) return;
 
     try {
@@ -120,22 +122,26 @@ export const useSwipes = () => {
       // Check if other user swiped right on any of our items
       const { data: mutualSwipes } = await supabase
         .from('swipes')
-        .select('item_id')
+        .select('item_id, offered_item_ids')
         .eq('user_id', item.user_id)
         .in('item_id', userItemIds)
         .in('direction', ['right', 'super']);
 
       if (mutualSwipes && mutualSwipes.length > 0) {
+        const otherUserSwipe = mutualSwipes[0];
+        
         // Create a match!
         const { error: matchError } = await supabase
           .from('matches')
           .insert([{
-            item_id_1: mutualSwipes[0].item_id,
+            item_id_1: otherUserSwipe.item_id,
             item_id_2: itemId,
             user_id_1: user.id,
             user_id_2: item.user_id,
             is_super_like: isSuperLike,
-            status: 'pending'
+            status: 'pending',
+            user_id_1_offered_item_ids: otherUserSwipe.offered_item_ids,
+            user_id_2_offered_item_ids: currentUserOfferedItems
           }]);
 
         if (!matchError) {

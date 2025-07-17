@@ -4,6 +4,7 @@ import { Send, Image, Smile, MoreVertical, ArrowLeft } from 'lucide-react';
 import { useMessages, QUICK_RESPONSES } from '../hooks/useMessages';
 import { useAuth } from '../hooks/useAuth';
 import { MatchWithItems } from '../hooks/useMatches';
+import { OfferedItemsDisplay } from './OfferedItemsDisplay';
 
 interface ChatInterfaceProps {
   match: MatchWithItems;
@@ -102,6 +103,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
             <p className="text-xs font-medium text-gray-900">{otherUserItem.title}</p>
             <p className="text-xs text-gray-600">Their item</p>
           </div>
+        </div>
+        
+        {/* Trade Offers */}
+        <div className="mt-4 space-y-3">
+          {/* Current user's offered items */}
+          {((match.user_id_1 === user?.id && match.user_id_1_offered_items_details) ||
+            (match.user_id_2 === user?.id && match.user_id_2_offered_items_details)) && (
+            <div className="bg-blue-50 rounded-lg p-3">
+              <OfferedItemsDisplay
+                items={match.user_id_1 === user?.id 
+                  ? match.user_id_1_offered_items_details || []
+                  : match.user_id_2_offered_items_details || []
+                }
+                title="You're offering:"
+                emptyMessage="No additional items offered"
+              />
+            </div>
+          )}
+          
+          {/* Other user's offered items */}
+          {((match.user_id_1 === user?.id && match.user_id_2_offered_items_details) ||
+            (match.user_id_2 === user?.id && match.user_id_1_offered_items_details)) && (
+            <div className="bg-green-50 rounded-lg p-3">
+              <OfferedItemsDisplay
+                items={match.user_id_1 === user?.id 
+                  ? match.user_id_2_offered_items_details || []
+                  : match.user_id_1_offered_items_details || []
+                }
+                title={`${otherUser.username} is offering:`}
+                emptyMessage="No additional items offered"
+              />
+            </div>
+          )}
         </div>
       </div>
 

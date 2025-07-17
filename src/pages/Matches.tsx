@@ -4,6 +4,7 @@ import { Heart, MessageCircle, X, Check } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { OfferedItemsDisplay } from '../components/OfferedItemsDisplay';
 import toast from 'react-hot-toast';
 
 export const Matches: React.FC = () => {
@@ -114,6 +115,51 @@ export const Matches: React.FC = () => {
                       <p className="text-sm font-medium text-gray-900">{otherUserItem.title}</p>
                       <p className="text-xs text-gray-600">Their item</p>
                     </div>
+                  </div>
+
+                  {/* Trade Offers */}
+                  <div className="mb-4 space-y-4">
+                    {/* Current user's offered items */}
+                    {isCurrentUserRequest ? (
+                      match.user_id_1_offered_items_details && match.user_id_1_offered_items_details.length > 0 && (
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <OfferedItemsDisplay
+                            items={match.user_id_1_offered_items_details}
+                            title="You're offering to trade:"
+                          />
+                        </div>
+                      )
+                    ) : (
+                      match.user_id_2_offered_items_details && match.user_id_2_offered_items_details.length > 0 && (
+                        <div className="bg-blue-50 rounded-lg p-3">
+                          <OfferedItemsDisplay
+                            items={match.user_id_2_offered_items_details}
+                            title="You're offering to trade:"
+                          />
+                        </div>
+                      )
+                    )}
+                    
+                    {/* Other user's offered items */}
+                    {isCurrentUserRequest ? (
+                      match.user_id_2_offered_items_details && match.user_id_2_offered_items_details.length > 0 && (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <OfferedItemsDisplay
+                            items={match.user_id_2_offered_items_details}
+                            title={`${otherUser.username} is offering to trade:`}
+                          />
+                        </div>
+                      )
+                    ) : (
+                      match.user_id_1_offered_items_details && match.user_id_1_offered_items_details.length > 0 && (
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <OfferedItemsDisplay
+                            items={match.user_id_1_offered_items_details}
+                            title={`${otherUser.username} is offering to trade:`}
+                          />
+                        </div>
+                      )
+                    )}
                   </div>
 
                   {!isCurrentUserRequest && (

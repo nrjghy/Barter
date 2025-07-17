@@ -22,6 +22,8 @@ export interface MatchWithItems extends Match {
     username: string;
     avatar_url: string | null;
   };
+  user_id_1_offered_items_details: Item[] | null;
+  user_id_2_offered_items_details: Item[] | null;
 }
 
 export const useMatches = () => {
@@ -66,7 +68,40 @@ export const useMatches = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMatches(data as MatchWithItems[]);
+      
+      // Fetch offered items details for each match
+      const matchesWithOfferedItems = await Promise.all(
+        (data as MatchWithItems[]).map(async (match) => {
+          let user_id_1_offered_items_details = null;
+          let user_id_2_offered_items_details = null;
+          
+          // Fetch user 1's offered items
+          if (match.user_id_1_offered_item_ids && match.user_id_1_offered_item_ids.length > 0) {
+            const { data: user1Items } = await supabase
+              .from('items')
+              .select('*')
+              .in('id', match.user_id_1_offered_item_ids);
+            user_id_1_offered_items_details = user1Items || [];
+          }
+          
+          // Fetch user 2's offered items
+          if (match.user_id_2_offered_item_ids && match.user_id_2_offered_item_ids.length > 0) {
+            const { data: user2Items } = await supabase
+              .from('items')
+              .select('*')
+              .in('id', match.user_id_2_offered_item_ids);
+            user_id_2_offered_items_details = user2Items || [];
+          }
+          
+          return {
+            ...match,
+            user_id_1_offered_items_details,
+            user_id_2_offered_items_details
+          };
+        })
+      );
+      
+      setMatches(matchesWithOfferedItems);
     } catch (error) {
       console.error('Error fetching matches:', error);
     } finally {
@@ -74,7 +109,14 @@ export const useMatches = () => {
     }
   };
 
-  const createMatch = async (itemId1: string, itemId2: string, userId1: string, userId2: string) => {
+  const createMatch = async (
+    itemId1: string, 
+    itemId2: string, 
+    userId1: string, 
+    userId2: string,
+    user1OfferedItems: string[] | null = null,
+    user2OfferedItems: string[] | null = null
+  ) => {
     const { data, error } = await supabase
       .from('matches')
       .insert([
@@ -84,6 +126,8 @@ export const useMatches = () => {
           user_id_1: userId1,
           user_id_2: userId2,
           status: 'pending',
+          user_id_1_offered_item_ids: user1OfferedItems,
+          user_id_2_offered_item_ids: user2OfferedItems,
         },
       ])
       .select()

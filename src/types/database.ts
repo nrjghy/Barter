@@ -53,6 +53,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
           source_url: string | null;
+          offered_item_ids: string[] | null;
         };
         Insert: {
           id?: string;
@@ -67,6 +68,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           source_url?: string | null;
+          offered_item_ids?: string[] | null;
         };
         Update: {
           id?: string;
@@ -81,6 +83,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           source_url?: string | null;
+          offered_item_ids?: string[] | null;
         };
       };
       matches: {
@@ -93,6 +96,8 @@ export interface Database {
           status: 'pending' | 'accepted' | 'rejected';
           created_at: string;
           updated_at: string;
+          user_id_1_offered_item_ids: string[] | null;
+          user_id_2_offered_item_ids: string[] | null;
         };
         Insert: {
           id?: string;
@@ -103,6 +108,8 @@ export interface Database {
           status?: 'pending' | 'accepted' | 'rejected';
           created_at?: string;
           updated_at?: string;
+          user_id_1_offered_item_ids?: string[] | null;
+          user_id_2_offered_item_ids?: string[] | null;
         };
         Update: {
           id?: string;
@@ -113,6 +120,8 @@ export interface Database {
           status?: 'pending' | 'accepted' | 'rejected';
           created_at?: string;
           updated_at?: string;
+          user_id_1_offered_item_ids?: string[] | null;
+          user_id_2_offered_item_ids?: string[] | null;
         };
       };
     };
