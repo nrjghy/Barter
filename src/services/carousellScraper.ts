@@ -61,7 +61,6 @@ export class CarousellScraper {
       // For demonstration, we'll create mock data based on typical Carousell structure
       
       const titleMatch = html.match(/<title[^>]*>([^<]+)</title>/i);
-      )
       const title = titleMatch ? titleMatch[1].replace(' | Carousell Singapore', '').trim() : 'Free Item';
       
       // Extract description from meta tags or content
