@@ -17,7 +17,8 @@ import {
   Flag,
   Eye,
   Clock,
-  Package
+  Package,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
@@ -477,6 +478,36 @@ export const ItemDetail: React.FC = () => {
               </div>
             </div>
 
+            {/* Source URL Section */}
+            {item.source_url && (
+              <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Original Listing</h3>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 mb-2">
+                      This item was imported from an external source
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Click to view the original listing for more details
+                    </p>
+                  </div>
+                  <a
+                    href={item.source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>View Source</span>
+                  </a>
+                </div>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="text-xs text-blue-600 font-mono break-all">
+                    {item.source_url}
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Action Buttons */}
             {user && user.id !== item.user_id && (
               <div className="space-y-3">

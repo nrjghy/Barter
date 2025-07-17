@@ -40,6 +40,7 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
+          source_url: string | null;
         };
         Insert: {
           id?: string;
@@ -53,6 +54,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          source_url?: string | null;
         };
         Update: {
           id?: string;
@@ -66,6 +68,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+          source_url?: string | null;
         };
       };
       matches: {

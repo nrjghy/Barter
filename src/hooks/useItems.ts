@@ -71,6 +71,7 @@ export const useItems = () => {
           user_id,
           is_active,
           price,
+          source_url,
           users!inner (
             id,
             username,
