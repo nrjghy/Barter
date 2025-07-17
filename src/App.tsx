@@ -10,7 +10,6 @@ import { Profile } from './pages/Profile';
 import { Matches } from './pages/Matches';
 import { Messages } from './pages/Messages';
 import { ItemDetail } from './pages/ItemDetail';
-import { CarousellImport } from './pages/CarousellImport';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
@@ -41,7 +40,6 @@ function App() {
           <Route index element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/item/:id" element={<ProtectedRoute><ItemDetail /></ProtectedRoute>} />
           <Route path="/add" element={<ProtectedRoute><AddToy /></ProtectedRoute>} />
-          <Route path="/import" element={<ProtectedRoute><CarousellImport /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
