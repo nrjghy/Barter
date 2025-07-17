@@ -10,6 +10,7 @@ import { Profile } from './pages/Profile';
 import { Matches } from './pages/Matches';
 import { Messages } from './pages/Messages';
 import { ItemDetail } from './pages/ItemDetail';
+import { AdminDashboard } from './pages/AdminDashboard';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         </Route>
       </Routes>
     </Router>

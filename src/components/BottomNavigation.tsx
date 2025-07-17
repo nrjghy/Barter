@@ -1,9 +1,10 @@
 import React from 'react';
-import { Home, Heart, Plus, MessageCircle, User } from 'lucide-react';
+import { Home, Heart, Plus, MessageCircle, User, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useAuth } from '../hooks/useAuth';
 
-const navItems = [
+const baseNavItems = [
   { icon: Home, label: 'Discover', path: '/' },
   { icon: Heart, label: 'Matches', path: '/matches' },
   { icon: Plus, label: 'Add', path: '/add' },
@@ -14,6 +15,12 @@ const navItems = [
 export const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
+  // Conditionally add admin link
+  const navItems = user?.role === 'admin'
+    ? [...baseNavItems, { icon: Settings, label: 'Admin', path: '/admin' }]
+    : baseNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-gray-200/50 px-4 pb-safe shadow-lg">

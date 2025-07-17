@@ -9,6 +9,10 @@ export interface Database {
           avatar_url: string | null;
           created_at: string;
           updated_at: string;
+          role: string;
+          rating: number | null;
+          total_ratings: number | null;
+          rating_sum: number | null;
         };
         Insert: {
           id: string;
@@ -17,6 +21,10 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
+          role?: string;
+          rating?: number | null;
+          total_ratings?: number | null;
+          rating_sum?: number | null;
         };
         Update: {
           id?: string;
@@ -25,6 +33,10 @@ export interface Database {
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
+          role?: string;
+          rating?: number | null;
+          total_ratings?: number | null;
+          rating_sum?: number | null;
         };
       };
       items: {

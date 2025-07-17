@@ -4,6 +4,7 @@ export interface AuthUser {
   username: string;
   location?: string;
   avatar_url?: string;
+  role?: string;
 }
 
 export interface ItemFormData {

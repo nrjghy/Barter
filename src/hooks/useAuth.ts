@@ -42,7 +42,7 @@ export const useAuth = () => {
       console.log('Fetching user profile for:', authUser.email);
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('*, role')
         .eq('id', authUser.id)
         .single();
 
@@ -62,6 +62,7 @@ export const useAuth = () => {
         username: data.username,
         location: data.location || undefined,
         avatar_url: data.avatar_url || undefined,
+        role: data.role || 'user',
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
