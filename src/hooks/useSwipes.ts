@@ -43,9 +43,6 @@ export const useSwipes = () => {
     }
   }, [user]);
 
-  const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super') => {
-  }
-  )
   const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super', offeredItemIds: string[] | null = null) => {
     if (!user) return { error: new Error('No user logged in') };
 
