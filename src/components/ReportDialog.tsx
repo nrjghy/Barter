@@ -108,16 +108,14 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                  {item.image_url ? (
+                  {item.image_url && item.image_url.trim() !== '' ? (
                     <img
                       src={item.image_url}
                       alt={item.title}
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-gray-400">📦</span>
-                    </div>
+                    <div className="w-full h-full bg-gray-200" />
                   )}
                 </div>
                 <div>

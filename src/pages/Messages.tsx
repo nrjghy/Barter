@@ -90,25 +90,25 @@ export const Messages: React.FC = () => {
                   
                   <div className="flex space-x-2">
                     <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden">
-                      {currentUserItem.image_url ? (
+                      {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
                         <img
                           src={currentUserItem.image_url}
                           alt={currentUserItem.title}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
+                        <div className="w-full h-full bg-gray-100" />
                       )}
                     </div>
                     <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden">
-                      {otherUserItem.image_url ? (
+                      {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
                         <img
                           src={otherUserItem.image_url}
                           alt={otherUserItem.title}
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs">📦</div>
+                        <div className="w-full h-full bg-gray-100" />
                       )}
                     </div>
                   </div>

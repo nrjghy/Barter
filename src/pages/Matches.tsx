@@ -78,16 +78,14 @@ export const Matches: React.FC = () => {
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {currentUserItem.image_url ? (
+                        {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
                           <img
                             src={currentUserItem.image_url}
                             alt={currentUserItem.title}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-gray-400 text-2xl">📦</span>
-                          </div>
+                          <div className="w-full h-full bg-gray-100" />
                         )}
                       </div>
                       <p className="text-sm font-medium text-gray-900">{currentUserItem.title}</p>
@@ -100,16 +98,14 @@ export const Matches: React.FC = () => {
 
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {otherUserItem.image_url ? (
+                        {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
                           <img
                             src={otherUserItem.image_url}
                             alt={otherUserItem.title}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <span className="text-gray-400 text-2xl">📦</span>
-                          </div>
+                          <div className="w-full h-full bg-gray-100" />
                         )}
                       </div>
                       <p className="text-sm font-medium text-gray-900">{otherUserItem.title}</p>

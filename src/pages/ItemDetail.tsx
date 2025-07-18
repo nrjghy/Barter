@@ -44,11 +44,7 @@ export const ItemDetail: React.FC = () => {
   const [imageLoading, setImageLoading] = useState(true);
 
   // Mock additional images for demo (in real app, these would come from database)
-  const mockImages = item?.image_url ? [
-    item.image_url,
-    `https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=800`,
-    `https://images.pexels.com/photos/1667088/pexels-photo-1667088.jpeg?auto=compress&cs=tinysrgb&w=800`,
-  ] : [];
+  const mockImages = (item?.image_url && item.image_url.trim() !== '') ? [item.image_url] : [];
 
   useEffect(() => {
     if (id) {
@@ -288,7 +284,7 @@ export const ItemDetail: React.FC = () => {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-gray-200 rounded-2xl overflow-hidden">
-              {mockImages.length > 0 ? (
+              {mockImages.length > 0 && mockImages[0] && mockImages[0].trim() !== '' ? (
                 <>
                   <img
                     src={mockImages[currentImageIndex]}
@@ -331,9 +327,7 @@ export const ItemDetail: React.FC = () => {
                   )}
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Package className="w-16 h-16 text-gray-400" />
-                </div>
+                <div className="w-full h-full bg-gray-200" />
               )}
               
               {/* Badges */}

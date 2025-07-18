@@ -68,7 +68,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
       >
         <div className="relative">
           <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            {item.image_url ? (
+            {item.image_url && item.image_url.trim() !== '' ? (
               <img
                 src={item.image_url}
                 alt={item.title}
@@ -80,9 +80,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
                 }}
               />
             ) : (
-              <div className="text-gray-400">
-                <Tag className="w-12 h-12" />
-              </div>
+              <div className="w-full h-full bg-gray-100" />
             )}
           </div>
           

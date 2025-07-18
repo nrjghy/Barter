@@ -292,7 +292,7 @@ export const AdminDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
-                        {item.image_url ? (
+                        {item.image_url && item.image_url.trim() !== '' ? (
                           <img 
                             className="h-12 w-12 rounded-lg object-cover" 
                             src={item.image_url} 
@@ -302,9 +302,7 @@ export const AdminDashboard: React.FC = () => {
                             }}
                           />
                         ) : (
-                          <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400">
-                            📦
-                          </div>
+                          <div className="h-12 w-12 rounded-lg bg-gray-200" />
                         )}
                       </div>
                       <div className="ml-4">

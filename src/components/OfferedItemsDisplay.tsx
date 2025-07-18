@@ -32,16 +32,14 @@ export const OfferedItemsDisplay: React.FC<OfferedItemsDisplayProps> = ({
             className="flex-shrink-0 w-20 bg-white rounded-lg border border-gray-200 overflow-hidden"
           >
             <div className="aspect-square bg-gray-100">
-              {item.image_url ? (
+              {item.image_url && item.image_url.trim() !== '' ? (
                 <img
                   src={item.image_url}
                   alt={item.title}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Package className="w-6 h-6 text-gray-400" />
-                </div>
+                <div className="w-full h-full bg-gray-100" />
               )}
             </div>
             <div className="p-2">

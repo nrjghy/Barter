@@ -112,7 +112,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(({
       >
         <div className="relative">
           <div className={`${variant === 'compact' ? 'aspect-[3/2]' : 'aspect-[4/3]'} bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden`}>
-            {item.image_url ? (
+            {item.image_url && item.image_url.trim() !== '' ? (
               <>
                 {!imageLoaded && (
                   <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
@@ -130,9 +130,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(({
                 />
               </>
             ) : (
-              <div className="text-gray-400">
-                <Tag className="w-12 h-12" />
-              </div>
+              <div className="w-full h-full bg-gray-100" />
             )}
             
             {/* Gradient overlay for better text readability */}

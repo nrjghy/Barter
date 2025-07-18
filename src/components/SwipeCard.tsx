@@ -101,7 +101,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
         {/* Image */}
         <div className="h-2/3 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-          {item.image_url ? (
+          {item.image_url && item.image_url.trim() !== '' ? (
             <img
               src={item.image_url}
               alt={item.title}
@@ -109,9 +109,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
               draggable={false}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="text-gray-400 text-6xl">📦</div>
-            </div>
+            <div className="w-full h-full bg-gray-100" />
           )}
           
           {/* Price Badge */}

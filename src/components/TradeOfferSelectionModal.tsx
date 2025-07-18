@@ -92,16 +92,14 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
             <p className="text-sm font-medium text-gray-700 mb-2">You're interested in:</p>
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                {currentItem.image_url ? (
+                {currentItem.image_url && currentItem.image_url.trim() !== '' ? (
                   <img
                     src={currentItem.image_url}
                     alt={currentItem.title}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Package className="w-6 h-6 text-gray-400" />
-                  </div>
+                  <div className="w-full h-full bg-gray-200" />
                 )}
               </div>
               <div>
@@ -152,16 +150,14 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
                       whileTap={{ scale: 0.98 }}
                     >
                       <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        {item.image_url ? (
+                        {item.image_url && item.image_url.trim() !== '' ? (
                           <img
                             src={item.image_url}
                             alt={item.title}
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-6 h-6 text-gray-400" />
-                          </div>
+                          <div className="w-full h-full bg-gray-200" />
                         )}
                       </div>
                       

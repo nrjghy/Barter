@@ -72,14 +72,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
         <div className="flex items-center justify-center space-x-4">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-lg mb-2 overflow-hidden">
-              {currentUserItem.image_url ? (
+              {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
                 <img
                   src={currentUserItem.image_url}
                   alt={currentUserItem.title}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+                <div className="w-full h-full bg-gray-200" />
               )}
             </div>
             <p className="text-xs font-medium text-gray-900">{currentUserItem.title}</p>
@@ -90,14 +90,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
           
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-lg mb-2 overflow-hidden">
-              {otherUserItem.image_url ? (
+              {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
                 <img
                   src={otherUserItem.image_url}
                   alt={otherUserItem.title}
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl">📦</div>
+                <div className="w-full h-full bg-gray-200" />
               )}
             </div>
             <p className="text-xs font-medium text-gray-900">{otherUserItem.title}</p>
