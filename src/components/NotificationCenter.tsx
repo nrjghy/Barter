@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, X, Check, Trash2, MarkAsRead } from 'lucide-react';
+import { Bell, X, Check, Trash2, BookMarked as MarkAsRead } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoadingSpinner } from './LoadingSpinner';
 
