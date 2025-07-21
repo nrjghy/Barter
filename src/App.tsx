@@ -11,6 +11,7 @@ import { Matches } from './pages/Matches';
 import { Messages } from './pages/Messages';
 import { ItemDetail } from './pages/ItemDetail';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuthCallback } from './pages/AuthCallback';
 import { useAuth } from './hooks/useAuth';
 
 function App() {
@@ -37,6 +38,7 @@ function App() {
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
         <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/item/:id" element={<ProtectedRoute><ItemDetail /></ProtectedRoute>} />

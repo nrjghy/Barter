@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Chrome, Facebook, Github } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { OAuthProviderButton } from '../components/OAuthProviderButton';
 import toast from 'react-hot-toast';
 
 export const Login: React.FC = () => {
@@ -108,50 +109,26 @@ export const Login: React.FC = () => {
         >
           {/* Social Login Buttons */}
           <div className="space-y-3 mb-6">
-            <button
+            <OAuthProviderButton
+              provider="google"
               onClick={() => handleSocialLogin('google')}
+              loading={socialLoading === 'google'}
               disabled={socialLoading !== null}
-              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === 'google' ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  <Chrome className="w-5 h-5 text-gray-600" />
-                  <span className="font-medium text-gray-700">Continue with Google</span>
-                </>
-              )}
-            </button>
-
-            <button
+            />
+            
+            <OAuthProviderButton
+              provider="facebook"
               onClick={() => handleSocialLogin('facebook')}
+              loading={socialLoading === 'facebook'}
               disabled={socialLoading !== null}
-              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === 'facebook' ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  <Facebook className="w-5 h-5 text-blue-600" />
-                  <span className="font-medium text-gray-700">Continue with Facebook</span>
-                </>
-              )}
-            </button>
-
-            <button
+            />
+            
+            <OAuthProviderButton
+              provider="github"
               onClick={() => handleSocialLogin('github')}
+              loading={socialLoading === 'github'}
               disabled={socialLoading !== null}
-              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {socialLoading === 'github' ? (
-                <LoadingSpinner />
-              ) : (
-                <>
-                  <Github className="w-5 h-5 text-gray-800" />
-                  <span className="font-medium text-gray-700">Continue with GitHub</span>
-                </>
-              )}
-            </button>
+            />
           </div>
 
           <div className="relative mb-6">
