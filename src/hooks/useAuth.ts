@@ -77,6 +77,15 @@ export const useAuth = () => {
     return { error };
   };
 
+  const signInWithOAuth = async (provider: 'google' | 'facebook' | 'github') => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+    return { data, error };
+  };
   const signUp = async (email: string, password: string, username: string, location?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
@@ -91,6 +100,13 @@ export const useAuth = () => {
     return { error };
   };
 
+  const resendVerification = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
+    return { error };
+  };
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -120,7 +136,9 @@ export const useAuth = () => {
     user,
     loading,
     signIn,
+    signInWithOAuth,
     signUp,
+    resendVerification,
     signOut,
     updateProfile,
   };
