@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Bell, Search, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useNotifications } from '../hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { NotificationCenter } from './NotificationCenter';
 
 export const Header: React.FC = () => {
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [showSearch, setShowSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -48,12 +52,17 @@ export const Header: React.FC = () => {
           </motion.button>
           
           <motion.button 
+            onClick={() => setShowNotifications(true)}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
             <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </motion.button>
           
           <motion.button
@@ -111,6 +120,11 @@ export const Header: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <NotificationCenter 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </header>
   );
 };
