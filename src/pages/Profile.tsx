@@ -388,6 +388,60 @@ export const Profile: React.FC = () => {
             </div>
           )}
         </div>
+      ) : activeTab === 'reviews' ? (
+        <div className="space-y-4">
+          {reviews.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-8 h-8 text-gray-400" />
+              </div>
+              <p className="text-gray-600 mb-4">No reviews yet</p>
+              <p className="text-sm text-gray-500">Complete trades to receive reviews from other users</p>
+            </div>
+          ) : (
+            reviews.map((review) => (
+              <div key={review.id} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">
+                        {review.reviewer.username.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{review.reviewer.username}</h4>
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={`text-sm ${
+                              i < review.rating ? 'text-yellow-400' : 'text-gray-300'
+                            }`}
+                          >
+                            ⭐
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {new Date(review.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                
+                {review.comment && (
+                  <p className="text-gray-700 mb-3">{review.comment}</p>
+                )}
+                
+                {review.trade_experience && (
+                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {review.trade_experience.charAt(0).toUpperCase() + review.trade_experience.slice(1)} Experience
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Detailed Analytics */}
