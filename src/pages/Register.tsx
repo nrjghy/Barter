@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, MapPin, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, MapPin, AlertCircle, Chrome, Facebook, Github, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -13,8 +13,10 @@ export const Register: React.FC = () => {
   const [location, setLocation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const { signUp } = useAuth();
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const { signUp, signInWithOAuth } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,8 +48,8 @@ export const Register: React.FC = () => {
           setError(error.message);
         }
       } else {
-        toast.success('Account created successfully!');
-        navigate('/');
+        setShowVerificationMessage(true);
+        toast.success('Account created! Please check your email to verify your account.');
       }
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
@@ -55,6 +57,59 @@ export const Register: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
+    setSocialLoading(provider);
+    setError('');
+
+    try {
+      const { error } = await signInWithOAuth(provider);
+      if (error) {
+        setError(`Failed to sign up with ${provider}. Please try again.`);
+      }
+    } catch (error) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  if (showVerificationMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
+            <p className="text-gray-600 mb-6">
+              We've sent a verification link to <strong>{email}</strong>. 
+              Please click the link in your email to verify your account before signing in.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+              >
+                Go to Sign In
+              </button>
+              <button
+                onClick={() => setShowVerificationMessage(false)}
+                className="w-full text-gray-600 hover:text-gray-800 py-2 font-medium transition-colors"
+              >
+                Back to Registration
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
@@ -83,6 +138,63 @@ export const Register: React.FC = () => {
           transition={{ delay: 0.1 }}
           className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 p-8"
         >
+          {/* Social Login Buttons */}
+          <div className="space-y-3 mb-6">
+            <button
+              onClick={() => handleSocialLogin('google')}
+              disabled={socialLoading !== null}
+              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {socialLoading === 'google' ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <Chrome className="w-5 h-5 text-gray-600" />
+                  <span className="font-medium text-gray-700">Continue with Google</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleSocialLogin('facebook')}
+              disabled={socialLoading !== null}
+              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {socialLoading === 'facebook' ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <Facebook className="w-5 h-5 text-blue-600" />
+                  <span className="font-medium text-gray-700">Continue with Facebook</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleSocialLogin('github')}
+              disabled={socialLoading !== null}
+              className="w-full flex items-center justify-center space-x-3 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {socialLoading === 'github' ? (
+                <LoadingSpinner />
+              ) : (
+                <>
+                  <Github className="w-5 h-5 text-gray-800" />
+                  <span className="font-medium text-gray-700">Continue with GitHub</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or create account with email</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
@@ -180,10 +292,10 @@ export const Register: React.FC = () => {
 
             <motion.button
               type="submit"
-              disabled={loading}
+              disabled={loading || socialLoading !== null}
               className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              whileHover={{ scale: loading ? 1 : 1.02 }}
-              whileTap={{ scale: loading ? 1 : 0.98 }}
+              whileHover={{ scale: loading || socialLoading !== null ? 1 : 1.02 }}
+              whileTap={{ scale: loading || socialLoading !== null ? 1 : 0.98 }}
             >
               {loading ? <LoadingSpinner /> : 'Create Account'}
             </motion.button>
