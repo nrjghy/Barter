@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Edit3, Trash2, Plus, MapPin, Calendar, Heart, MessageCircle, Eye, TrendingUp } from 'lucide-react';
+import { Settings, Edit3, Trash2, Plus, MapPin, Calendar, Heart, MessageCircle, Eye, TrendingUp, Navigation } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useItems } from '../hooks/useItems';
 import { useMatches } from '../hooks/useMatches';
@@ -11,11 +11,17 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 export const Profile: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateProfile } = useAuth();
   const { userItems, loading, deleteItem } = useItems();
   const { matches } = useMatches();
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<'items' | 'stats'>('items');
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileData, setProfileData] = useState({
+    username: user?.username || '',
+    location: user?.location || '',
+  });
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -36,6 +42,80 @@ export const Profile: React.FC = () => {
       } catch (error) {
         toast.error('Failed to delete item');
       }
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by this browser');
+      return;
+    }
+
+    setLocationLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        try {
+          // Try to get a human-readable address using reverse geocoding
+          // For now, we'll just use coordinates, but in production you'd use a geocoding service
+          const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          
+          const { error } = await updateProfile({
+            location: locationString,
+            latitude,
+            longitude,
+          });
+
+          if (error) {
+            toast.error('Failed to update location');
+          } else {
+            setProfileData(prev => ({ ...prev, location: locationString }));
+            toast.success('Location updated successfully!');
+          }
+        } catch (error) {
+          toast.error('Failed to update location');
+        } finally {
+          setLocationLoading(false);
+        }
+      },
+      (error) => {
+        setLocationLoading(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error('Location access denied. Please enable location permissions.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Location information is unavailable.');
+            break;
+          case error.TIMEOUT:
+            toast.error('Location request timed out.');
+            break;
+          default:
+            toast.error('An unknown error occurred while getting location.');
+            break;
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 60000,
+      }
+    );
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      const { error } = await updateProfile(profileData);
+      if (error) {
+        toast.error('Failed to update profile');
+      } else {
+        toast.success('Profile updated successfully!');
+        setEditingProfile(false);
+      }
+    } catch (error) {
+      toast.error('Failed to update profile');
     }
   };
 
@@ -83,6 +163,19 @@ export const Profile: React.FC = () => {
           className="mb-6 p-4 bg-white rounded-lg shadow-lg border"
         >
           <button
+            onClick={() => {
+              setEditingProfile(!editingProfile);
+              setShowSettings(false);
+              setProfileData({
+                username: user?.username || '',
+                location: user?.location || '',
+              });
+            }}
+            className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+          >
+            Edit Profile
+          </button>
+          <button
             onClick={handleSignOut}
             className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           >
@@ -108,22 +201,78 @@ export const Profile: React.FC = () => {
             </div>
           )}
           <div>
-            <h2 className="text-xl font-bold text-gray-900">{user?.username}</h2>
-            <p className="text-gray-600">{user?.email}</p>
+            {editingProfile ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={profileData.username}
+                  onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                  className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
+                  placeholder="Username"
+                />
+                <p className="text-gray-600">{user?.email}</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-xl font-bold text-gray-900">{user?.username}</h2>
+                <p className="text-gray-600">{user?.email}</p>
+              </>
+            )}
           </div>
         </div>
         
-        {user?.location && (
-          <div className="flex items-center text-gray-600 mb-2">
-            <MapPin className="w-4 h-4 mr-2" />
-            <span>{user.location}</span>
-          </div>
-        )}
+        <div className="flex items-center text-gray-600 mb-2">
+          <MapPin className="w-4 h-4 mr-2" />
+          {editingProfile ? (
+            <div className="flex-1 flex items-center space-x-2">
+              <input
+                type="text"
+                value={profileData.location}
+                onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
+                className="flex-1 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
+                placeholder="Enter your location"
+              />
+              <button
+                onClick={getCurrentLocation}
+                disabled={locationLoading}
+                className="flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+              >
+                {locationLoading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    <Navigation className="w-4 h-4" />
+                    <span className="text-xs">GPS</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <span>{user?.location || 'No location set'}</span>
+          )}
+        </div>
         
         <div className="flex items-center text-gray-600">
           <Calendar className="w-4 h-4 mr-2" />
           <span>Member since 2024</span>
         </div>
+
+        {editingProfile && (
+          <div className="flex space-x-3 mt-4 pt-4 border-t">
+            <button
+              onClick={() => setEditingProfile(false)}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+            >
+              Save
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Stats Overview */}
