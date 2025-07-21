@@ -143,9 +143,12 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(({
               <div className={`px-3 py-1 rounded-full text-sm font-medium border backdrop-blur-sm ${getConditionColor(item.condition)}`}>
                 {item.condition}
               </div>
-              {item.price && (
+              {(item.price || item.estimated_value) && (
                 <div className="bg-green-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-bold">
-                  ${item.price}
+                  ${item.price || item.estimated_value}
+                  {item.estimated_value && !item.price && (
+                    <span className="text-xs opacity-75 ml-1">est.</span>
+                  )}
                 </div>
               )}
               {item.users.is_demo && (

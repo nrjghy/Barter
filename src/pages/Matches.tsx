@@ -216,6 +216,19 @@ export const Matches: React.FC = () => {
                       <span>Message</span>
                     </button>
                   </div>
+                  
+                  {/* Review Button for Completed Trades */}
+                  {match.completed_at && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => handleReviewClick(match)}
+                        className="w-full flex items-center justify-center space-x-2 py-2 px-4 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors"
+                      >
+                        <span>⭐</span>
+                        <span>Rate This Trade</span>
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               );
             })}
@@ -231,6 +244,20 @@ export const Matches: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No matches yet</h3>
           <p className="text-gray-600">Start swiping to find items you'd like to exchange!</p>
         </div>
+      )}
+
+      {/* Review Dialog */}
+      {selectedReview && (
+        <ReviewDialog
+          isOpen={showReviewDialog}
+          onClose={() => {
+            setShowReviewDialog(false);
+            setSelectedReview(null);
+          }}
+          matchId={selectedReview.matchId}
+          revieweeId={selectedReview.revieweeId}
+          revieweeName={selectedReview.revieweeName}
+        />
       )}
     </div>
   );

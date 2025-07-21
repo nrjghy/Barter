@@ -4,6 +4,7 @@ import { Settings, Edit3, Trash2, Plus, MapPin, Calendar, Heart, MessageCircle, 
 import { useAuth } from '../hooks/useAuth';
 import { useItems } from '../hooks/useItems';
 import { useMatches } from '../hooks/useMatches';
+import { useReviews } from '../hooks/useReviews';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { StatsCard } from '../components/StatsCard';
 import { EnhancedItemCard } from '../components/EnhancedItemCard';
@@ -14,8 +15,9 @@ export const Profile: React.FC = () => {
   const { user, signOut, updateProfile } = useAuth();
   const { userItems, loading, deleteItem } = useItems();
   const { matches } = useMatches();
+  const { reviews, fetchUserReviews } = useReviews();
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'items' | 'stats'>('items');
+  const [activeTab, setActiveTab] = useState<'items' | 'stats' | 'reviews'>('items');
   const [locationLoading, setLocationLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -24,6 +26,11 @@ export const Profile: React.FC = () => {
   });
   const navigate = useNavigate();
 
+  React.useEffect(() => {
+    if (user) {
+      fetchUserReviews();
+    }
+  }, [user, fetchUserReviews]);
   const handleSignOut = async () => {
     try {
       await signOut();

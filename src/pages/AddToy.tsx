@@ -62,6 +62,8 @@ export const AddToy: React.FC = () => {
         tags,
         image_url: imagePreview, // In a real app, you'd upload to storage first
         is_active: true,
+        estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
+        value_currency: 'USD',
       });
 
       if (error) {
@@ -198,6 +200,28 @@ export const AddToy: React.FC = () => {
           </select>
         </div>
 
+        {/* Estimated Value */}
+        <div>
+          <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
+            Estimated Value (Optional)
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+            <input
+              id="estimatedValue"
+              type="number"
+              value={estimatedValue}
+              onChange={(e) => setEstimatedValue(e.target.value)}
+              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="0.00"
+              min="0"
+              step="0.01"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Help others understand your item's value for fair trades
+          </p>
+        </div>
         {/* Tags */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
