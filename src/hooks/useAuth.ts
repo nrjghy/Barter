@@ -45,7 +45,7 @@ export const useAuth = () => {
         .single();
       
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Query timeout')), 10000); // 10 second timeout
+        setTimeout(() => reject(new Error('Query timeout')), 30000); // 30 second timeout
       });
       
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
