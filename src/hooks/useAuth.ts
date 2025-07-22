@@ -70,6 +70,7 @@ export const useAuth = () => {
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setUser(null);
     }
   };
 
