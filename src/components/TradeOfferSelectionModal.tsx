@@ -110,8 +110,8 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="p-6 pb-4">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner />
@@ -182,7 +182,7 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
 
           {/* Footer */}
           {activeUserItems.length > 0 && (
-            <div className="flex-shrink-0 p-6 border-t bg-gray-50 space-y-3">
+            <div className="flex-shrink-0 p-6 pt-4 border-t bg-gray-50 space-y-3">
               <button
                 onClick={handleConfirm}
                 disabled={selectedItemIds.length === 0}
