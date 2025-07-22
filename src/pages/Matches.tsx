@@ -1,15 +1,35 @@
 import React from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, MessageCircle, X, Check } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { OfferedItemsDisplay } from '../components/OfferedItemsDisplay';
+import { ReviewDialog } from '../components/ReviewDialog';
 import toast from 'react-hot-toast';
 
 export const Matches: React.FC = () => {
   const { matches, loading, updateMatch } = useMatches();
   const { user } = useAuth();
+  const [selectedReview, setSelectedReview] = useState<{
+    matchId: string;
+    revieweeId: string;
+    revieweeName: string;
+  } | null>(null);
+  const [showReviewDialog, setShowReviewDialog] = useState(false);
+
+  const handleReviewClick = (match: any) => {
+    const isCurrentUserRequest = match.user_id_1 === user?.id;
+    const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
+    
+    setSelectedReview({
+      matchId: match.id,
+      revieweeId: otherUser.id,
+      revieweeName: otherUser.username
+    });
+    setShowReviewDialog(true);
+  };
 
   const handleUpdateMatch = async (matchId: string, status: 'accepted' | 'rejected') => {
     try {
