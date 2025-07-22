@@ -80,7 +80,7 @@ serve(async (req) => {
           rating,
           is_demo,
           role,
-          created_at as user_created_at
+          created_at
         )
       `, { count: 'exact' })
 
