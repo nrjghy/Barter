@@ -82,8 +82,12 @@ export const useItems = () => {
             is_demo
           )
         `)
-        .eq('is_active', true)
-        .neq('user_id', user?.id || 'none');
+        .eq('is_active', true);
+
+      // Only filter by user_id if user is logged in
+      if (user?.id) {
+        query = query.neq('user_id', user.id);
+      }
 
       // Apply demo filter - only show demo users if explicitly requested AND user is admin
       if (!includeDemo || (user?.role !== 'admin')) {
