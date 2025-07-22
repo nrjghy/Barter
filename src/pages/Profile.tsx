@@ -70,18 +70,19 @@ export const Profile: React.FC = () => {
           const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
           
           const { error } = await updateProfile({
+            ...profileData,
             location: locationString,
-            latitude,
-            longitude,
           });
 
           if (error) {
+            console.error('Location update error:', error);
             toast.error('Failed to update location');
           } else {
             setProfileData(prev => ({ ...prev, location: locationString }));
             toast.success('Location updated successfully!');
           }
         } catch (error) {
+          console.error('Unexpected location update error:', error);
           toast.error('Failed to update location');
         } finally {
           setLocationLoading(false);
@@ -116,12 +117,14 @@ export const Profile: React.FC = () => {
     try {
       const { error } = await updateProfile(profileData);
       if (error) {
+        console.error('Profile update error:', error);
         toast.error('Failed to update profile');
       } else {
         toast.success('Profile updated successfully!');
         setEditingProfile(false);
       }
     } catch (error) {
+      console.error('Unexpected profile update error:', error);
       toast.error('Failed to update profile');
     }
   };

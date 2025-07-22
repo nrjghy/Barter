@@ -119,6 +119,67 @@ export const useAuth = () => {
   const updateProfile = async (updates: Partial<AuthUser>) => {
     if (!user) return { error: new Error('No user logged in') };
 
+    try {
+      // First check if user exists in users table
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (fetchError && fetchError.code === 'PGRST116') {
+        // User doesn't exist in users table, create them first
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert([{
+            id: user.id,
+            username: updates.username || user.username,
+            location: updates.location || user.location,
+            avatar_url: updates.avatar_url || user.avatar_url,
+          }]);
+
+        if (insertError) {
+          console.error('Error creating user profile:', insertError);
+          return { error: insertError };
+        }
+      } else if (fetchError) {
+        console.error('Error checking user existence:', fetchError);
+        return { error: fetchError };
+      }
+
+      // Now update the user profile
+      const { error } = await supabase
+        .from('users')
+        .update({
+          username: updates.username,
+          location: updates.location,
+          avatar_url: updates.avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (!error) {
+        setUser({ ...user, ...updates });
+      }
+
+      return { error };
+    } catch (error) {
+      console.error('Unexpected error updating profile:', error);
+      return { error: error instanceof Error ? error : new Error('Unknown error occurred') };
+    }
+  };
+
+  return {
+    user,
+    loading,
+    signIn,
+    signInWithOAuth,
+    signUp,
+    resendVerification,
+    signOut,
+    updateProfile,
+  };
+};
     const { error } = await supabase
       .from('users')
       .update({
