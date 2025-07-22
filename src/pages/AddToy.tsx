@@ -16,6 +16,7 @@ export const AddToy: React.FC = () => {
   const [tagInput, setTagInput] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [estimatedValue, setEstimatedValue] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { addItem } = useItems();
