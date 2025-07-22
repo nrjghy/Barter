@@ -48,11 +48,19 @@ export const useAuth = () => {
     try {
       console.log('useAuth: fetchUserProfile - Starting for user ID:', authUser.id);
       console.log('useAuth: fetchUserProfile - Before Supabase users query.');
-      const { data, error } = await supabase
+      
+      // Add timeout to prevent hanging queries
+      const queryPromise = supabase
         .from('users')
         .select('*, role')
         .eq('id', authUser.id)
         .single();
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout')), 10000); // 10 second timeout
+      });
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
       console.log('useAuth: fetchUserProfile - After Supabase users query, data:', data, 'error:', error);
 
