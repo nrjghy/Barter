@@ -19,6 +19,12 @@ export const Matches: React.FC = () => {
   } | null>(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
 
+  // Debug logging
+  React.useEffect(() => {
+    console.log('Matches component - user:', user?.id);
+    console.log('Matches component - matches:', matches.length, matches);
+  }, [user, matches]);
+
   const handleReviewClick = (match: any) => {
     const isCurrentUserRequest = match.user_id_1 === user?.id;
     const otherUser = isCurrentUserRequest ? match.user2 : match.user1;

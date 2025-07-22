@@ -98,6 +98,8 @@ export const useSwipes = () => {
     if (!user) return;
 
     try {
+      console.log('Checking for match for item:', itemId, 'by user:', user.id);
+      
       // Get the item details
       const { data: item, error: itemError } = await supabase
         .from('items')
@@ -106,6 +108,8 @@ export const useSwipes = () => {
         .single();
 
       if (itemError || !item) return;
+      
+      console.log('Target item owner:', item.user_id);
 
       // Check if the other user has swiped right on any of our items
       const { data: userItems } = await supabase
@@ -117,6 +121,7 @@ export const useSwipes = () => {
       if (!userItems || userItems.length === 0) return;
 
       const userItemIds = userItems.map(item => item.id);
+      console.log('Current user items:', userItemIds);
 
       // Check if other user swiped right on any of our items
       const { data: mutualSwipes } = await supabase
@@ -126,8 +131,12 @@ export const useSwipes = () => {
         .in('item_id', userItemIds)
         .in('direction', ['right', 'super']);
 
+      console.log('Mutual swipes found:', mutualSwipes);
+      
       if (mutualSwipes && mutualSwipes.length > 0) {
         const otherUserSwipe = mutualSwipes[0];
+        
+        console.log('Creating match between items:', otherUserSwipe.item_id, 'and', itemId);
         
         // Create a match!
         const { error: matchError } = await supabase
@@ -144,7 +153,10 @@ export const useSwipes = () => {
           }]);
 
         if (!matchError) {
+          console.log('Match created successfully!');
           toast.success(`🎉 It's a match! You both liked each other's items!`);
+        } else {
+          console.error('Error creating match:', matchError);
         }
       }
     } catch (error) {
