@@ -180,31 +180,3 @@ export const useAuth = () => {
     updateProfile,
   };
 };
-    const { error } = await supabase
-      .from('users')
-      .update({
-        username: updates.username,
-        location: updates.location,
-        avatar_url: updates.avatar_url,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id);
-
-    if (!error) {
-      setUser({ ...user, ...updates });
-    }
-
-    return { error };
-  };
-
-  return {
-    user,
-    loading,
-    signIn,
-    signInWithOAuth,
-    signUp,
-    resendVerification,
-    signOut,
-    updateProfile,
-  };
-};
