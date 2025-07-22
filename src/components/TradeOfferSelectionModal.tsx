@@ -63,11 +63,11 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
+          className="bg-white rounded-2xl max-w-md w-full h-[80vh] flex flex-col overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
                 <Package className="w-5 h-5 text-white" />
@@ -88,7 +88,7 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
           </div>
 
           {/* Target Item */}
-          <div className="p-4 bg-gray-50 border-b">
+          <div className="p-4 bg-gray-50 border-b flex-shrink-0">
             <p className="text-sm font-medium text-gray-700 mb-2">You're interested in:</p>
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
@@ -110,8 +110,8 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-6 pb-4">
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-6">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner />
@@ -182,7 +182,7 @@ export const TradeOfferSelectionModal: React.FC<TradeOfferSelectionModalProps> =
 
           {/* Footer */}
           {activeUserItems.length > 0 && (
-            <div className="flex-shrink-0 p-6 pt-4 border-t bg-gray-50 space-y-3">
+            <div className="flex-shrink-0 p-6 border-t bg-gray-50 space-y-3">
               <button
                 onClick={handleConfirm}
                 disabled={selectedItemIds.length === 0}
