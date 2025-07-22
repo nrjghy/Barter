@@ -9,8 +9,17 @@ console.log('Supabase config:', {
   key: supabaseAnonKey ? 'Set' : 'Missing'
 });
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+if (!supabaseUrl || !supabaseAnonKey || 
+    supabaseUrl.includes('your-project-id') || 
+    supabaseAnonKey.includes('your_supabase_anon_key')) {
+  throw new Error('Missing or invalid Supabase environment variables. Please update your .env file with actual Supabase credentials.');
+}
+
+// Validate URL format
+try {
+  new URL(supabaseUrl);
+} catch (error) {
+  throw new Error(`Invalid Supabase URL format: ${supabaseUrl}. Please ensure it starts with https:// and is a valid URL.`);
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
