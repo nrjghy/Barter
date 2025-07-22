@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Heart, MessageCircle, X, Check } from 'lucide-react';
+import { Heart, MessageCircle, X, Check, Package } from 'lucide-react';
 import { useMatches } from '../hooks/useMatches';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -136,46 +136,58 @@ export const Matches: React.FC = () => {
                   {/* Trade Offers */}
                   <div className="mb-4 space-y-4">
                     {/* Current user's offered items */}
-                    {isCurrentUserRequest ? (
-                      match.user_id_1_offered_items_details && match.user_id_1_offered_items_details.length > 0 && (
+                    {(() => {
+                      const currentUserOfferedItems = isCurrentUserRequest 
+                        ? match.user_id_1_offered_items_details 
+                        : match.user_id_2_offered_items_details;
+                      
+                      if (currentUserOfferedItems && currentUserOfferedItems.length > 0) {
+                        return (
+                          <div className="bg-blue-50 rounded-lg p-3">
+                            <OfferedItemsDisplay
+                              items={currentUserOfferedItems}
+                              title="You're offering to trade:"
+                            />
+                          </div>
+                        );
+                      }
+                      
+                      return (
                         <div className="bg-blue-50 rounded-lg p-3">
-                          <OfferedItemsDisplay
-                            items={match.user_id_1_offered_items_details}
-                            title="You're offering to trade:"
-                          />
+                          <div className="text-center py-2">
+                            <Package className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                            <p className="text-sm text-blue-600">No additional items offered</p>
+                          </div>
                         </div>
-                      )
-                    ) : (
-                      match.user_id_2_offered_items_details && match.user_id_2_offered_items_details.length > 0 && (
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <OfferedItemsDisplay
-                            items={match.user_id_2_offered_items_details}
-                            title="You're offering to trade:"
-                          />
-                        </div>
-                      )
-                    )}
+                      );
+                    })()}
                     
                     {/* Other user's offered items */}
-                    {isCurrentUserRequest ? (
-                      match.user_id_2_offered_items_details && match.user_id_2_offered_items_details.length > 0 && (
+                    {(() => {
+                      const otherUserOfferedItems = isCurrentUserRequest 
+                        ? match.user_id_2_offered_items_details 
+                        : match.user_id_1_offered_items_details;
+                      
+                      if (otherUserOfferedItems && otherUserOfferedItems.length > 0) {
+                        return (
+                          <div className="bg-green-50 rounded-lg p-3">
+                            <OfferedItemsDisplay
+                              items={otherUserOfferedItems}
+                              title={`${otherUser.username} is offering to trade:`}
+                            />
+                          </div>
+                        );
+                      }
+                      
+                      return (
                         <div className="bg-green-50 rounded-lg p-3">
-                          <OfferedItemsDisplay
-                            items={match.user_id_2_offered_items_details}
-                            title={`${otherUser.username} is offering to trade:`}
-                          />
+                          <div className="text-center py-2">
+                            <Package className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                            <p className="text-sm text-green-600">{otherUser.username} offered no additional items</p>
+                          </div>
                         </div>
-                      )
-                    ) : (
-                      match.user_id_1_offered_items_details && match.user_id_1_offered_items_details.length > 0 && (
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <OfferedItemsDisplay
-                            items={match.user_id_1_offered_items_details}
-                            title={`${otherUser.username} is offering to trade:`}
-                          />
-                        </div>
-                      )
-                    )}
+                      );
+                    })()}
                   </div>
 
                   {!isCurrentUserRequest && (

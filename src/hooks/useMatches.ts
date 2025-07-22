@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Match } from '../types/database';
+import { Match, Item } from '../types/database';
 import { useAuth } from './useAuth';
 
 export interface MatchWithItems extends Match {
@@ -21,6 +21,7 @@ export interface MatchWithItems extends Match {
   user2: {
     username: string;
     avatar_url: string | null;
+    id: string;
   };
   user_id_1_offered_items_details: Item[] | null;
   user_id_2_offered_items_details: Item[] | null;
@@ -56,10 +57,12 @@ export const useMatches = () => {
             image_url
           ),
           user1:user_id_1 (
+            id,
             username,
             avatar_url
           ),
           user2:user_id_2 (
+            id,
             username,
             avatar_url
           )
@@ -70,6 +73,8 @@ export const useMatches = () => {
       if (error) throw error;
       
       // Fetch offered items details for each match
+      console.log('Raw matches data:', data);
+      
       const matchesWithOfferedItems = await Promise.all(
         (data as MatchWithItems[]).map(async (match) => {
           let user_id_1_offered_items_details = null;
@@ -77,21 +82,31 @@ export const useMatches = () => {
           
           // Fetch user 1's offered items
           if (match.user_id_1_offered_item_ids && match.user_id_1_offered_item_ids.length > 0) {
+            console.log('Fetching user 1 offered items:', match.user_id_1_offered_item_ids);
             const { data: user1Items } = await supabase
               .from('items')
               .select('*')
               .in('id', match.user_id_1_offered_item_ids);
+            console.log('User 1 offered items result:', user1Items);
             user_id_1_offered_items_details = user1Items || [];
           }
           
           // Fetch user 2's offered items
           if (match.user_id_2_offered_item_ids && match.user_id_2_offered_item_ids.length > 0) {
+            console.log('Fetching user 2 offered items:', match.user_id_2_offered_item_ids);
             const { data: user2Items } = await supabase
               .from('items')
               .select('*')
               .in('id', match.user_id_2_offered_item_ids);
+            console.log('User 2 offered items result:', user2Items);
             user_id_2_offered_items_details = user2Items || [];
           }
+          
+          console.log('Final match with offered items:', {
+            matchId: match.id,
+            user_id_1_offered_items_details,
+            user_id_2_offered_items_details
+          });
           
           return {
             ...match,
