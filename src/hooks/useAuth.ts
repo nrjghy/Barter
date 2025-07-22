@@ -8,14 +8,18 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('useAuth: Hook mounted, starting session check.');
     // Get initial session
     const getSession = async () => {
-      console.log('Getting initial session...');
+      console.log('useAuth: getSession - Attempting to get Supabase session.');
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Initial session:', session?.user?.email || 'No session');
+      console.log('useAuth: getSession - Session data received:', session?.user?.email || 'No session user.');
       if (session?.user) {
+        console.log('useAuth: getSession - Calling fetchUserProfile.');
         await fetchUserProfile(session.user);
+        console.log('useAuth: getSession - fetchUserProfile completed.');
       }
+      console.log('useAuth: getSession - Setting loading to false.');
       setLoading(false);
     };
 
@@ -25,12 +29,15 @@ export const useAuth = () => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change:', event, session?.user?.email || 'No user');
+      console.log('useAuth: onAuthStateChange - Event:', event, 'Session user:', session?.user?.email || 'No session user.');
       if (session?.user) {
+        console.log('useAuth: onAuthStateChange - Calling fetchUserProfile.');
         await fetchUserProfile(session.user);
+        console.log('useAuth: onAuthStateChange - fetchUserProfile completed.');
       } else {
         setUser(null);
       }
+      console.log('useAuth: onAuthStateChange - Setting loading to false.');
       setLoading(false);
     });
 
@@ -39,12 +46,15 @@ export const useAuth = () => {
 
   const fetchUserProfile = async (authUser: User) => {
     try {
-      console.log('Fetching user profile for:', authUser.email);
+      console.log('useAuth: fetchUserProfile - Starting for user ID:', authUser.id);
+      console.log('useAuth: fetchUserProfile - Before Supabase users query.');
       const { data, error } = await supabase
         .from('users')
         .select('*, role')
         .eq('id', authUser.id)
         .single();
+
+      console.log('useAuth: fetchUserProfile - After Supabase users query, data:', data, 'error:', error);
 
       if (error) {
         console.error('Error fetching user profile:', error);
@@ -55,7 +65,7 @@ export const useAuth = () => {
         return;
       }
 
-      console.log('User profile fetched:', data);
+      console.log('useAuth: fetchUserProfile - User state updated.');
       setUser({
         id: authUser.id,
         email: authUser.email!,
@@ -64,8 +74,9 @@ export const useAuth = () => {
         avatar_url: data.avatar_url || undefined,
         role: data.role || 'user',
       });
+      console.log('useAuth: fetchUserProfile - Completed successfully.');
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('useAuth: fetchUserProfile - Error in try-catch:', error);
     }
   };
 
