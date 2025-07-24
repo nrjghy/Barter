@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 import { Review } from '../types/database';
@@ -67,7 +67,7 @@ export const useReviews = () => {
     }
   };
 
-  const fetchUserReviews = async (userId?: string) => {
+  const fetchUserReviews = useCallback(async (userId?: string) => {
     const targetUserId = userId || user?.id;
     if (!targetUserId) return;
 
@@ -94,7 +94,7 @@ export const useReviews = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   const checkCanReview = async (matchId: string, revieweeId: string) => {
     if (!user) return false;
