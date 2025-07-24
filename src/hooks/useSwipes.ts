@@ -43,7 +43,7 @@ export const useSwipes = () => {
     }
   }, [user]);
 
-  const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super', offeredItemIds: string[] | null = null) => {
+  const recordSwipe = useCallback(async (itemId: string, direction: 'left' | 'right' | 'super') => {
     if (!user) return { error: new Error('No user logged in') };
 
     setLoading(true);
@@ -61,8 +61,7 @@ export const useSwipes = () => {
         .insert([{
           user_id: user.id,
           item_id: itemId,
-          direction,
-          offered_item_ids: offeredItemIds
+          direction
         }]);
 
       if (swipeError) {
@@ -82,7 +81,7 @@ export const useSwipes = () => {
 
       // If it's a right swipe or super like, check for matches
       if (direction === 'right' || direction === 'super') {
-        await checkForMatch(itemId, direction === 'super', offeredItemIds);
+        await checkForMatch(itemId, direction === 'super');
       }
 
       return { error: null };
@@ -94,7 +93,7 @@ export const useSwipes = () => {
     }
   }, [user, checkSwipeLimit]);
 
-  const checkForMatch = async (itemId: string, isSuperLike: boolean = false, currentUserOfferedItems: string[] | null = null) => {
+  const checkForMatch = async (itemId: string, isSuperLike: boolean = false) => {
     if (!user) return;
 
     try {
@@ -126,7 +125,7 @@ export const useSwipes = () => {
       // Check if other user swiped right on any of our items
       const { data: mutualSwipes } = await supabase
         .from('swipes')
-        .select('item_id, offered_item_ids')
+        .select('item_id')
         .eq('user_id', item.user_id)
         .in('item_id', userItemIds)
         .in('direction', ['right', 'super']);
@@ -147,9 +146,7 @@ export const useSwipes = () => {
             user_id_1: user.id,
             user_id_2: item.user_id,
             is_super_like: isSuperLike,
-            status: 'pending',
-            user_id_1_offered_item_ids: otherUserSwipe.offered_item_ids,
-            user_id_2_offered_item_ids: currentUserOfferedItems
+            status: 'pending'
           }]);
 
         if (!matchError) {

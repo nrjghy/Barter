@@ -4,7 +4,6 @@ import { Send, Image, Smile, MoreVertical, ArrowLeft } from 'lucide-react';
 import { useMessages, QUICK_RESPONSES } from '../hooks/useMessages';
 import { useAuth } from '../hooks/useAuth';
 import { MatchWithItems } from '../hooks/useMatches';
-import { OfferedItemsDisplay } from './OfferedItemsDisplay';
 
 interface ChatInterfaceProps {
   match: MatchWithItems;
@@ -105,37 +104,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
           </div>
         </div>
         
-        {/* Trade Offers */}
-        <div className="mt-4 space-y-3">
-          {/* Current user's offered items */}
-          {((match.user_id_1 === user?.id && match.user_id_1_offered_items_details) ||
-            (match.user_id_2 === user?.id && match.user_id_2_offered_items_details)) && (
-            <div className="bg-blue-50 rounded-lg p-3">
-              <OfferedItemsDisplay
-                items={match.user_id_1 === user?.id 
-                  ? match.user_id_1_offered_items_details || []
-                  : match.user_id_2_offered_items_details || []
-                }
-                title="You're offering:"
-                emptyMessage="No additional items offered"
-              />
-            </div>
-          )}
-          
-          {/* Other user's offered items */}
-          {((match.user_id_1 === user?.id && match.user_id_2_offered_items_details) ||
-            (match.user_id_2 === user?.id && match.user_id_1_offered_items_details)) && (
-            <div className="bg-green-50 rounded-lg p-3">
-              <OfferedItemsDisplay
-                items={match.user_id_1 === user?.id 
-                  ? match.user_id_2_offered_items_details || []
-                  : match.user_id_1_offered_items_details || []
-                }
-                title={`${otherUser.username} is offering:`}
-                emptyMessage="No additional items offered"
-              />
-            </div>
-          )}
+        {/* Simple Trade Description */}
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
+          <p className="text-sm text-gray-600">
+            Trading <span className="font-medium">{currentUserItem.title}</span> for{' '}
+            <span className="font-medium">{otherUserItem.title}</span>
+          </p>
         </div>
       </div>
 

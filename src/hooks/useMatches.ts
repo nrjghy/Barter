@@ -23,8 +23,6 @@ export interface MatchWithItems extends Match {
     avatar_url: string | null;
     id: string;
   };
-  user_id_1_offered_items_details: Item[] | null;
-  user_id_2_offered_items_details: Item[] | null;
 }
 
 export const useMatches = () => {
@@ -76,41 +74,9 @@ export const useMatches = () => {
       
       console.log('Raw matches fetched:', data?.length || 0, data);
       
-      // Fetch offered items details for each match
-      
-      const matchesWithOfferedItems = await Promise.all(
-        (data as MatchWithItems[]).map(async (match) => {
-          let user_id_1_offered_items_details = null;
-          let user_id_2_offered_items_details = null;
-          
-          // Fetch user 1's offered items
-          if (match.user_id_1_offered_item_ids && match.user_id_1_offered_item_ids.length > 0) {
-            const { data: user1Items } = await supabase
-              .from('items')
-              .select('*')
-              .in('id', match.user_id_1_offered_item_ids);
-            user_id_1_offered_items_details = user1Items || [];
-          }
-          
-          // Fetch user 2's offered items
-          if (match.user_id_2_offered_item_ids && match.user_id_2_offered_item_ids.length > 0) {
-            const { data: user2Items } = await supabase
-              .from('items')
-              .select('*')
-              .in('id', match.user_id_2_offered_item_ids);
-            user_id_2_offered_items_details = user2Items || [];
-          }
-          
-          return {
-            ...match,
-            user_id_1_offered_items_details,
-            user_id_2_offered_items_details
-          };
-        })
-      );
-      
-      console.log('Final matches with offered items:', matchesWithOfferedItems.length);
-      setMatches(matchesWithOfferedItems);
+      // No need to fetch offered items details anymore - simplified to one-to-one matching
+      console.log('Final matches:', data.length);
+      setMatches(data as MatchWithItems[]);
     } catch (error) {
       console.error('Error fetching matches:', error);
     } finally {
@@ -122,9 +88,7 @@ export const useMatches = () => {
     itemId1: string, 
     itemId2: string, 
     userId1: string, 
-    userId2: string,
-    user1OfferedItems: string[] | null = null,
-    user2OfferedItems: string[] | null = null
+    userId2: string
   ) => {
     const { data, error } = await supabase
       .from('matches')
@@ -134,9 +98,7 @@ export const useMatches = () => {
           item_id_2: itemId2,
           user_id_1: userId1,
           user_id_2: userId2,
-          status: 'pending',
-          user_id_1_offered_item_ids: user1OfferedItems,
-          user_id_2_offered_item_ids: user2OfferedItems,
+          status: 'pending'
         },
       ])
       .select()
