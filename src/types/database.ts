@@ -58,10 +58,9 @@ export interface Database {
           is_active: boolean;
           created_at: string;
           updated_at: string;
-          source_url: string | null;
-          offered_item_ids: string[] | null;
           estimated_value: number | null;
           value_currency: string;
+          source_url: string | null;
         };
         Insert: {
           id?: string;
@@ -75,10 +74,9 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
-          source_url?: string | null;
-          offered_item_ids?: string[] | null;
           estimated_value?: number | null;
           value_currency?: string;
+          source_url?: string | null;
         };
         Update: {
           id?: string;
@@ -92,10 +90,32 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
-          source_url?: string | null;
-          offered_item_ids?: string[] | null;
           estimated_value?: number | null;
           value_currency?: string;
+          source_url?: string | null;
+        };
+      };
+      swipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          item_id: string;
+          direction: 'left' | 'right' | 'super';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          item_id: string;
+          direction: 'left' | 'right' | 'super';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          item_id?: string;
+          direction?: 'left' | 'right' | 'super';
+          created_at?: string;
         };
       };
       matches: {
@@ -108,8 +128,6 @@ export interface Database {
           status: 'pending' | 'accepted' | 'rejected';
           created_at: string;
           updated_at: string;
-          user_id_1_offered_item_ids: string[] | null;
-          user_id_2_offered_item_ids: string[] | null;
           completed_at: string | null;
           completed_by: string | null;
         };
@@ -122,8 +140,6 @@ export interface Database {
           status?: 'pending' | 'accepted' | 'rejected';
           created_at?: string;
           updated_at?: string;
-          user_id_1_offered_item_ids?: string[] | null;
-          user_id_2_offered_item_ids?: string[] | null;
           completed_at?: string | null;
           completed_by?: string | null;
         };
@@ -136,8 +152,6 @@ export interface Database {
           status?: 'pending' | 'accepted' | 'rejected';
           created_at?: string;
           updated_at?: string;
-          user_id_1_offered_item_ids?: string[] | null;
-          user_id_2_offered_item_ids?: string[] | null;
           completed_at?: string | null;
           completed_by?: string | null;
         };
