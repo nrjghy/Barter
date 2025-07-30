@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, Edit3, Trash2, Plus, MapPin, Calendar, Heart, MessageCircle, Eye, TrendingUp, Navigation } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { useItems } from '../hooks/useItems';
-import { useMatches } from '../hooks/useMatches';
-import { useReviews } from '../hooks/useReviews';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { StatsCard } from '../components/StatsCard';
-import { EnhancedItemCard } from '../components/EnhancedItemCard';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Settings,
+  Edit3,
+  Trash2,
+  Plus,
+  MapPin,
+  Calendar,
+  Heart,
+  MessageCircle,
+  Eye,
+  TrendingUp,
+  Navigation,
+} from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { useItems } from "../hooks/useItems";
+import { useMatches } from "../hooks/useMatches";
+import { useReviews } from "../hooks/useReviews";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { StatsCard } from "../components/StatsCard";
+import { EnhancedItemCard } from "../components/EnhancedItemCard";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export const Profile: React.FC = () => {
   const { user, signOut, updateProfile } = useAuth();
@@ -17,12 +29,12 @@ export const Profile: React.FC = () => {
   const { matches } = useMatches();
   const { reviews, fetchUserReviews } = useReviews();
   const [showSettings, setShowSettings] = useState(false);
-  const [activeTab, setActiveTab] = useState<'items' | 'stats' | 'reviews'>('items');
+  const [activeTab, setActiveTab] = useState<"items" | "stats" | "reviews">("items");
   const [locationLoading, setLocationLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
-    username: user?.username || '',
-    location: user?.location || '',
+    username: user?.username || "",
+    location: user?.location || "",
   });
   const navigate = useNavigate();
 
@@ -34,26 +46,26 @@ export const Profile: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      toast.success('Signed out successfully');
+      toast.success("Signed out successfully");
     } catch (error) {
-      toast.error('Failed to sign out');
+      toast.error("Failed to sign out");
     }
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
+    if (window.confirm("Are you sure you want to delete this item?")) {
       try {
         await deleteItem(itemId);
-        toast.success('Item deleted successfully');
+        toast.success("Item deleted successfully");
       } catch (error) {
-        toast.error('Failed to delete item');
+        toast.error("Failed to delete item");
       }
     }
   };
 
   const getCurrentLocation = async () => {
     if (!navigator.geolocation) {
-      toast.error('Geolocation is not supported by this browser');
+      toast.error("Geolocation is not supported by this browser");
       return;
     }
 
@@ -62,27 +74,27 @@ export const Profile: React.FC = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        
+
         try {
           // Try to get a human-readable address using reverse geocoding
           // For now, we'll just use coordinates, but in production you'd use a geocoding service
           const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          
+
           const { error } = await updateProfile({
             ...profileData,
             location: locationString,
           });
 
           if (error) {
-            console.error('Location update error:', error);
-            toast.error('Failed to update location');
+            console.error("Location update error:", error);
+            toast.error("Failed to update location");
           } else {
-            setProfileData(prev => ({ ...prev, location: locationString }));
-            toast.success('Location updated successfully!');
+            setProfileData((prev) => ({ ...prev, location: locationString }));
+            toast.success("Location updated successfully!");
           }
         } catch (error) {
-          console.error('Unexpected location update error:', error);
-          toast.error('Failed to update location');
+          console.error("Unexpected location update error:", error);
+          toast.error("Failed to update location");
         } finally {
           setLocationLoading(false);
         }
@@ -91,16 +103,16 @@ export const Profile: React.FC = () => {
         setLocationLoading(false);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            toast.error('Location access denied. Please enable location permissions.');
+            toast.error("Location access denied. Please enable location permissions.");
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error('Location information is unavailable.');
+            toast.error("Location information is unavailable.");
             break;
           case error.TIMEOUT:
-            toast.error('Location request timed out.');
+            toast.error("Location request timed out.");
             break;
           default:
-            toast.error('An unknown error occurred while getting location.');
+            toast.error("An unknown error occurred while getting location.");
             break;
         }
       },
@@ -116,30 +128,30 @@ export const Profile: React.FC = () => {
     try {
       const { error } = await updateProfile(profileData);
       if (error) {
-        console.error('Profile update error:', error);
-        toast.error('Failed to update profile');
+        console.error("Profile update error:", error);
+        toast.error("Failed to update profile");
       } else {
-        toast.success('Profile updated successfully!');
+        toast.success("Profile updated successfully!");
         setEditingProfile(false);
       }
     } catch (error) {
-      console.error('Unexpected profile update error:', error);
-      toast.error('Failed to update profile');
+      console.error("Unexpected profile update error:", error);
+      toast.error("Failed to update profile");
     }
   };
 
   const stats = React.useMemo(() => {
-    const totalMatches = matches.filter(match => match.status === 'accepted').length;
-    const pendingMatches = matches.filter(match => match.status === 'pending').length;
+    const totalMatches = matches.filter((match) => match.status === "accepted").length;
+    const pendingMatches = matches.filter((match) => match.status === "pending").length;
     const totalViews = userItems.reduce((acc, item) => acc + Math.floor(Math.random() * 50) + 10, 0);
-    
+
     return {
       totalItems: userItems.length,
-      activeItems: userItems.filter(item => item.is_active).length,
+      activeItems: userItems.filter((item) => item.is_active).length,
       totalMatches,
       pendingMatches,
       totalViews,
-      avgRating: user?.rating || 4.0,
+      avgRating: 4.0, // TODO: Get actual rating from user profile
     };
   }, [userItems, matches, user]);
 
@@ -176,8 +188,8 @@ export const Profile: React.FC = () => {
               setEditingProfile(!editingProfile);
               setShowSettings(false);
               setProfileData({
-                username: user?.username || '',
-                location: user?.location || '',
+                username: user?.username || "",
+                location: user?.location || "",
               });
             }}
             className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
@@ -204,9 +216,7 @@ export const Profile: React.FC = () => {
             />
           ) : (
             <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center ring-4 ring-purple-100">
-              <span className="text-white font-bold text-xl">
-                {user?.username.charAt(0).toUpperCase()}
-              </span>
+              <span className="text-white font-bold text-xl">{user?.username.charAt(0).toUpperCase()}</span>
             </div>
           )}
           <div>
@@ -215,7 +225,7 @@ export const Profile: React.FC = () => {
                 <input
                   type="text"
                   value={profileData.username}
-                  onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                  onChange={(e) => setProfileData((prev) => ({ ...prev, username: e.target.value }))}
                   className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
                   placeholder="Username"
                 />
@@ -229,7 +239,7 @@ export const Profile: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center text-gray-600 mb-2">
           <MapPin className="w-4 h-4 mr-2" />
           {editingProfile ? (
@@ -237,7 +247,7 @@ export const Profile: React.FC = () => {
               <input
                 type="text"
                 value={profileData.location}
-                onChange={(e) => setProfileData(prev => ({ ...prev, location: e.target.value }))}
+                onChange={(e) => setProfileData((prev) => ({ ...prev, location: e.target.value }))}
                 className="flex-1 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
                 placeholder="Enter your location"
               />
@@ -257,10 +267,10 @@ export const Profile: React.FC = () => {
               </button>
             </div>
           ) : (
-            <span>{user?.location || 'No location set'}</span>
+            <span>{user?.location || "No location set"}</span>
           )}
         </div>
-        
+
         <div className="flex items-center text-gray-600">
           <Calendar className="w-4 h-4 mr-2" />
           <span>Member since 2024</span>
@@ -278,9 +288,7 @@ export const Profile: React.FC = () => {
               onClick={handleSaveProfile}
               disabled={!user}
               className={`flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg transition-all duration-200 ${
-                !user 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:from-pink-600 hover:to-purple-600'
+                !user ? "opacity-50 cursor-not-allowed" : "hover:from-pink-600 hover:to-purple-600"
               }`}
             >
               Save
@@ -324,21 +332,17 @@ export const Profile: React.FC = () => {
       {/* Tabs */}
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
         <button
-          onClick={() => setActiveTab('items')}
+          onClick={() => setActiveTab("items")}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'items'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            activeTab === "items" ? "bg-white text-purple-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
           My Items ({stats.activeItems})
         </button>
         <button
-          onClick={() => setActiveTab('stats')}
+          onClick={() => setActiveTab("stats")}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === 'stats'
-              ? 'bg-white text-purple-600 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            activeTab === "stats" ? "bg-white text-purple-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
           Analytics
@@ -346,7 +350,7 @@ export const Profile: React.FC = () => {
       </div>
 
       {/* Content */}
-      {activeTab === 'items' ? (
+      {activeTab === "items" ? (
         <div className="mb-6">
           {userItems.length === 0 ? (
             <div className="text-center py-8">
@@ -355,7 +359,7 @@ export const Profile: React.FC = () => {
               </div>
               <p className="text-gray-600 mb-4">No items added yet</p>
               <button
-                onClick={() => navigate('/add')}
+                onClick={() => navigate("/add")}
                 className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
               >
                 Add Your First Item
@@ -363,11 +367,8 @@ export const Profile: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {userItems.map(item => (
-                <div
-                  key={item.id}
-                  className="relative"
-                >
+              {userItems.map((item) => (
+                <div key={item.id} className="relative">
                   <EnhancedItemCard
                     item={{
                       ...item,
@@ -377,8 +378,14 @@ export const Profile: React.FC = () => {
                         location: user?.location || null,
                         avatar_url: user?.avatar_url || null,
                         rating: 4.8,
-                        is_demo: false,
-                      }
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        role: user?.role || "user",
+                        total_ratings: 0,
+                        rating_sum: 0,
+                        wishlist_categories: [],
+                        notification_preferences: {},
+                      },
                     }}
                     variant="compact"
                   />
@@ -395,7 +402,7 @@ export const Profile: React.FC = () => {
             </div>
           )}
         </div>
-      ) : activeTab === 'reviews' ? (
+      ) : activeTab === "reviews" ? (
         <div className="space-y-4">
           {reviews.length === 0 ? (
             <div className="text-center py-8">
@@ -421,9 +428,7 @@ export const Profile: React.FC = () => {
                         {[...Array(5)].map((_, i) => (
                           <span
                             key={i}
-                            className={`text-sm ${
-                              i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                            }`}
+                            className={`text-sm ${i < review.rating ? "text-yellow-400" : "text-gray-300"}`}
                           >
                             ⭐
                           </span>
@@ -431,15 +436,11 @@ export const Profile: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(review.created_at).toLocaleDateString()}
-                  </span>
+                  <span className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString()}</span>
                 </div>
-                
-                {review.comment && (
-                  <p className="text-gray-700 mb-3">{review.comment}</p>
-                )}
-                
+
+                {review.comment && <p className="text-gray-700 mb-3">{review.comment}</p>}
+
                 {review.trade_experience && (
                   <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     {review.trade_experience.charAt(0).toUpperCase() + review.trade_experience.slice(1)} Experience
@@ -505,7 +506,7 @@ export const Profile: React.FC = () => {
       {/* Add Item Button */}
       <div className="fixed bottom-20 right-4">
         <motion.button
-          onClick={() => navigate('/add')}
+          onClick={() => navigate("/add")}
           className="w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}

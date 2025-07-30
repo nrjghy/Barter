@@ -1,0 +1,213 @@
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { User } from "@supabase/supabase-js";
+import { supabase } from "../lib/supabase";
+import { AuthUser } from "../types";
+
+interface AuthContextType {
+  user: AuthUser | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithOAuth: (provider: "google" | "facebook" | "github") => Promise<{ data: any; error: any }>;
+  signUp: (email: string, password: string, username: string, location?: string) => Promise<{ error: any }>;
+  resendVerification: (email: string) => Promise<{ error: any }>;
+  signOut: () => Promise<{ error: any }>;
+  updateProfile: (updates: Partial<AuthUser>) => Promise<{ error: any }>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUserProfile = async (authUser: User) => {
+    try {
+      // Add timeout to prevent hanging queries
+      const queryPromise = supabase.from("users").select("*, role").eq("id", authUser.id).single();
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Query timeout")), 30000); // 30 second timeout
+      });
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        // If user doesn't exist in users table, create them
+        if (error.code === "PGRST116") {
+          console.log("User not found in users table, this might be expected for demo");
+        }
+        return;
+      }
+
+      setUser({
+        id: authUser.id,
+        email: authUser.email!,
+        username: data.username,
+        location: data.location || undefined,
+        avatar_url: data.avatar_url || undefined,
+        role: data.role || "user",
+      });
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      setUser(null);
+    }
+  };
+
+  useEffect(() => {
+    // Get initial session
+    const getSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchUserProfile(session.user);
+      }
+      setLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        await fetchUserProfile(session.user);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signInWithOAuth = async (provider: "google" | "facebook" | "github") => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          access_type: "offline",
+          prompt: "consent",
+        },
+      },
+    });
+    return { data, error };
+  };
+
+  const signUp = async (email: string, password: string, username: string, location?: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+          location: location || "",
+        },
+      },
+    });
+    return { error };
+  };
+
+  const resendVerification = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    return { error };
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    return { error };
+  };
+
+  const updateProfile = async (updates: Partial<AuthUser>) => {
+    if (!user) return { error: new Error("No user logged in") };
+
+    try {
+      // First check if user exists in users table
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchError && fetchError.code === "PGRST116") {
+        // User doesn't exist in users table, create them first
+        const { error: insertError } = await supabase.from("users").insert([
+          {
+            id: user.id,
+            username: updates.username || user.username,
+            location: updates.location || user.location,
+            avatar_url: updates.avatar_url || user.avatar_url,
+          },
+        ]);
+
+        if (insertError) {
+          console.error("Error creating user profile:", insertError);
+          return { error: insertError };
+        }
+      } else if (fetchError) {
+        console.error("Error checking user existence:", fetchError);
+        return { error: fetchError };
+      }
+
+      // Now update the user profile
+      const { error } = await supabase
+        .from("users")
+        .update({
+          username: updates.username,
+          location: updates.location,
+          avatar_url: updates.avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (!error) {
+        setUser({ ...user, ...updates });
+      }
+
+      return { error };
+    } catch (error) {
+      console.error("Unexpected error updating profile:", error);
+      return { error: error instanceof Error ? error : new Error("Unknown error occurred") };
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signIn,
+        signInWithOAuth,
+        signUp,
+        resendVerification,
+        signOut,
+        updateProfile,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Custom hook that uses context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
