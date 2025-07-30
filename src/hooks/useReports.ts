@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./useAuth";
 
 export interface Report {
   id: string;
@@ -9,7 +9,7 @@ export interface Report {
   reported_user_id: string;
   reason: string;
   description: string | null;
-  status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  status: "pending" | "reviewed" | "resolved" | "dismissed";
   admin_notes: string | null;
   created_at: string;
   updated_at: string;
@@ -23,85 +23,81 @@ export interface CreateReportData {
 }
 
 export const REPORT_REASONS = [
-  { value: 'inappropriate_content', label: 'Inappropriate Content' },
-  { value: 'misleading_description', label: 'Misleading Description' },
-  { value: 'prohibited_item', label: 'Prohibited Item' },
-  { value: 'spam', label: 'Spam' },
-  { value: 'fake_listing', label: 'Fake Listing' },
-  { value: 'offensive_language', label: 'Offensive Language' },
-  { value: 'copyright_violation', label: 'Copyright Violation' },
-  { value: 'safety_concern', label: 'Safety Concern' },
-  { value: 'other', label: 'Other' },
+  { value: "inappropriate_content", label: "Inappropriate Content" },
+  { value: "misleading_description", label: "Misleading Description" },
+  { value: "prohibited_item", label: "Prohibited Item" },
+  { value: "spam", label: "Spam" },
+  { value: "fake_listing", label: "Fake Listing" },
+  { value: "offensive_language", label: "Offensive Language" },
+  { value: "copyright_violation", label: "Copyright Violation" },
+  { value: "safety_concern", label: "Safety Concern" },
+  { value: "other", label: "Other" },
 ] as const;
+
+const fetchUserReports = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("reports")
+    .select(
+      `
+      *,
+      reported_item:items(title, image_url),
+      reported_user:users(username)
+    `
+    )
+    .eq("reporter_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as Report[];
+};
+
+const createReportFn = async ({ reportData, userId }: { reportData: CreateReportData; userId: string }) => {
+  const { data, error } = await supabase
+    .from("reports")
+    .insert([
+      {
+        ...reportData,
+        reporter_id: userId,
+      },
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
 
 export const useReports = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState<Report[]>([]);
+  const queryClient = useQueryClient();
 
-  const createReport = async (reportData: CreateReportData) => {
-    if (!user) return { error: new Error('No user logged in') };
+  const {
+    data: reports = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["reports", user?.id],
+    queryFn: () => fetchUserReports(user!.id),
+    enabled: !!user,
+  });
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reports')
-        .insert([
-          {
-            ...reportData,
-            reporter_id: user.id,
-          },
-        ])
-        .select()
-        .single();
+  const createReport = useMutation({
+    mutationFn: ({ reportData }: { reportData: CreateReportData }) => createReportFn({ reportData, userId: user!.id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reports", user?.id] });
+    },
+  });
 
-      if (error) throw error;
-
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error creating report:', error);
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserReports = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('reports')
-        .select(`
-          *,
-          reported_item:items(title, image_url),
-          reported_user:users(username)
-        `)
-        .eq('reporter_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setReports(data || []);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Check if the user has already reported this item
   const checkExistingReport = async (itemId: string) => {
     if (!user) return false;
-
     try {
       const { data, error } = await supabase
-        .from('reports')
-        .select('id')
-        .eq('reporter_id', user.id)
-        .eq('reported_item_id', itemId)
-        .in('status', ['pending', 'reviewed'])
+        .from("reports")
+        .select("id")
+        .eq("reporter_id", user.id)
+        .eq("reported_item_id", itemId)
+        .in("status", ["pending", "reviewed"])
         .single();
-
       return !error && data;
     } catch (error) {
       return false;
@@ -111,8 +107,9 @@ export const useReports = () => {
   return {
     loading,
     reports,
-    createReport,
-    fetchUserReports,
+    error,
+    createReport: (reportData: CreateReportData) => createReport.mutateAsync({ reportData }),
+    refetch,
     checkExistingReport,
   };
 };

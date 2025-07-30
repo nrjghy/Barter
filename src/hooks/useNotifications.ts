@@ -1,131 +1,119 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
-import { Notification } from '../types/database';
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./useAuth";
+import { Notification } from "../types/database";
+
+const fetchNotifications = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data as Notification[];
+};
+
+const markAsReadFn = async (notificationId: string) => {
+  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
+  if (error) throw error;
+  return notificationId;
+};
+
+const markAllAsReadFn = async (userId: string) => {
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("user_id", userId)
+    .eq("is_read", false);
+  if (error) throw error;
+  return true;
+};
+
+const deleteNotificationFn = async (notificationId: string) => {
+  const { error } = await supabase.from("notifications").delete().eq("id", notificationId);
+  if (error) throw error;
+  return notificationId;
+};
 
 export const useNotifications = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const queryClient = useQueryClient();
 
-  const fetchNotifications = useCallback(async () => {
-    if (!user) return;
+  const {
+    data: notifications = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["notifications", user?.id],
+    queryFn: () => fetchNotifications(user!.id),
+    enabled: !!user,
+  });
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-      if (error) throw error;
-      
-      setNotifications(data || []);
-      setUnreadCount(data?.filter(n => !n.is_read).length || 0);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  // Mutations
+  const markAsRead = useMutation({
+    mutationFn: markAsReadFn,
+    onSuccess: (notificationId) => {
+      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
+        old.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
+    },
+  });
 
+  const markAllAsRead = useMutation({
+    mutationFn: () => markAllAsReadFn(user!.id),
+    onSuccess: () => {
+      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
+        old.map((n) => ({ ...n, is_read: true }))
+      );
+    },
+  });
+
+  const deleteNotification = useMutation({
+    mutationFn: deleteNotificationFn,
+    onSuccess: (notificationId) => {
+      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
+        old.filter((n) => n.id !== notificationId)
+      );
+    },
+  });
+
+  // Real-time subscription for new notifications
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  useEffect(() => {
     if (!user) return;
-
-    // Subscribe to new notifications
-    const subscription = supabase
+    const channel = supabase
       .channel(`notifications:${user.id}`)
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           const newNotification = payload.new as Notification;
-          setNotifications(prev => [newNotification, ...prev]);
-          setUnreadCount(prev => prev + 1);
+          queryClient.setQueryData(["notifications", user.id], (old: Notification[] = []) => [newNotification, ...old]);
         }
       )
       .subscribe();
-
     return () => {
-      subscription.unsubscribe();
+      channel.unsubscribe();
     };
-  }, [user]);
-
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, is_read: true } : n
-        )
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const markAllAsRead = async () => {
-    if (!user) return;
-
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user.id)
-        .eq('is_read', false);
-
-      if (error) throw error;
-
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true }))
-      );
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-    }
-  };
-
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
-  };
+  }, [user, queryClient]);
 
   return {
     notifications,
     loading,
     unreadCount,
-    markAsRead,
-    markAllAsRead,
-    deleteNotification,
-    refetch: fetchNotifications,
+    error,
+    markAsRead: (id: string) => markAsRead.mutateAsync(id),
+    markAllAsRead: () => markAllAsRead.mutateAsync(),
+    deleteNotification: (id: string) => deleteNotification.mutateAsync(id),
+    refetch,
   };
 };

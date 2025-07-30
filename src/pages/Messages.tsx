@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
-import { MessageCircle, Search, ArrowLeft } from 'lucide-react';
-import { useMatches } from '../hooks/useMatches';
-import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ChatInterface } from '../components/ChatInterface';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { MessageCircle, Search, ArrowLeft } from "lucide-react";
+import { useMatches, MatchWithItems } from "../hooks/useMatches";
+import { useAuth } from "../hooks/useAuth";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { ChatInterface } from "../components/ChatInterface";
+import { motion } from "framer-motion";
 
 export const Messages: React.FC = () => {
-  const { matches, loading } = useMatches();
+  const { matches, loading, error } = useMatches();
   const { user } = useAuth();
-  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [selectedMatch, setSelectedMatch] = useState<MatchWithItems | null>(null);
 
   if (loading) {
     return (
@@ -19,18 +19,26 @@ export const Messages: React.FC = () => {
     );
   }
 
-  if (selectedMatch) {
+  if (error) {
     return (
-      <div className="h-screen">
-        <ChatInterface 
-          match={selectedMatch} 
-          onBack={() => setSelectedMatch(null)} 
-        />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-red-700 mb-2">Error</h2>
+          <p className="text-red-600 mb-4">{error.message || "Failed to load matches."}</p>
+        </div>
       </div>
     );
   }
 
-  const acceptedMatches = matches.filter(match => match.status === 'accepted');
+  if (selectedMatch) {
+    return (
+      <div className="h-screen">
+        <ChatInterface match={selectedMatch} onBack={() => setSelectedMatch(null)} />
+      </div>
+    );
+  }
+
+  const acceptedMatches = matches.filter((match) => match.status === "accepted");
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
@@ -51,7 +59,7 @@ export const Messages: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {acceptedMatches.map(match => {
+          {acceptedMatches.map((match) => {
             const otherUser = match.user_id_1 === user?.id ? match.user2 : match.user1;
             const currentUserItem = match.user_id_1 === user?.id ? match.item1 : match.item2;
             const otherUserItem = match.user_id_1 === user?.id ? match.item2 : match.item1;
@@ -66,31 +74,23 @@ export const Messages: React.FC = () => {
               >
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold">
-                      {otherUser.username.charAt(0).toUpperCase()}
-                    </span>
+                    <span className="text-white font-bold">{otherUser.username.charAt(0).toUpperCase()}</span>
                   </div>
-                  
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <h3 className="font-semibold text-gray-900">{otherUser.username}</h3>
-                      <span className="text-xs text-gray-500">
-                        {new Date(match.created_at).toLocaleDateString()}
-                      </span>
+                      <span className="text-xs text-gray-500">{new Date(match.created_at).toLocaleDateString()}</span>
                     </div>
-                    
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <span className="truncate">{currentUserItem.title}</span>
                       <span>↔</span>
                       <span className="truncate">{otherUserItem.title}</span>
                     </div>
-                    
                     <p className="text-sm text-green-600 mt-1">✓ Matched - Start chatting!</p>
                   </div>
-                  
                   <div className="flex space-x-2">
                     <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden">
-                      {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
+                      {currentUserItem.image_url && currentUserItem.image_url.trim() !== "" ? (
                         <img
                           src={currentUserItem.image_url}
                           alt={currentUserItem.title}
@@ -101,7 +101,7 @@ export const Messages: React.FC = () => {
                       )}
                     </div>
                     <div className="w-8 h-8 bg-gray-100 rounded overflow-hidden">
-                      {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
+                      {otherUserItem.image_url && otherUserItem.image_url.trim() !== "" ? (
                         <img
                           src={otherUserItem.image_url}
                           alt={otherUserItem.title}

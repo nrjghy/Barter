@@ -27,7 +27,7 @@ export const Profile: React.FC = () => {
   const { user, signOut, updateProfile } = useAuth();
   const { userItems, loading, deleteItem } = useItems();
   const { matches } = useMatches();
-  const { reviews, fetchUserReviews } = useReviews();
+  const { reviews, loading: reviewsLoading, error: reviewsError, refetch: refetchReviews } = useReviews();
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<"items" | "stats" | "reviews">("items");
   const [locationLoading, setLocationLoading] = useState(false);
@@ -38,11 +38,6 @@ export const Profile: React.FC = () => {
   });
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (user) {
-      fetchUserReviews();
-    }
-  }, [user, fetchUserReviews]);
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -99,27 +94,9 @@ export const Profile: React.FC = () => {
           setLocationLoading(false);
         }
       },
-      (error) => {
+      () => {
+        toast.error("Failed to get current location");
         setLocationLoading(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            toast.error("Location access denied. Please enable location permissions.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            toast.error("Location information is unavailable.");
-            break;
-          case error.TIMEOUT:
-            toast.error("Location request timed out.");
-            break;
-          default:
-            toast.error("An unknown error occurred while getting location.");
-            break;
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
       }
     );
   };
@@ -404,7 +381,11 @@ export const Profile: React.FC = () => {
         </div>
       ) : activeTab === "reviews" ? (
         <div className="space-y-4">
-          {reviews.length === 0 ? (
+          {reviewsLoading ? (
+            <LoadingSpinner />
+          ) : reviewsError ? (
+            <div className="text-center py-8 text-red-600">Error loading reviews: {reviewsError.message}</div>
+          ) : reviews.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <TrendingUp className="w-8 h-8 text-gray-400" />

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from './useAuth';
-import { UserBlock } from '../types/database';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "./useAuth";
+import { UserBlock } from "../types/database";
 
 export interface UserBlockWithUser extends UserBlock {
   blocked_user: {
@@ -10,137 +10,104 @@ export interface UserBlockWithUser extends UserBlock {
   };
 }
 
+const fetchBlockedUsers = async (userId: string) => {
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select(
+      `
+      *,
+      blocked_user:users!user_blocks_blocked_id_fkey(username, avatar_url)
+    `
+    )
+    .eq("blocker_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as UserBlockWithUser[];
+};
+
+const blockUserFn = async ({ userId, blockedId, reason }: { userId: string; blockedId: string; reason?: string }) => {
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .insert([
+      {
+        blocker_id: userId,
+        blocked_id: blockedId,
+        reason,
+      },
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+const unblockUserFn = async ({ userId, blockedId }: { userId: string; blockedId: string }) => {
+  const { error } = await supabase.from("user_blocks").delete().eq("blocker_id", userId).eq("blocked_id", blockedId);
+  if (error) throw error;
+  return blockedId;
+};
+
+const isUserBlockedFn = async (userId: string, blockedId: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select("id")
+    .eq("blocker_id", userId)
+    .eq("blocked_id", blockedId)
+    .single();
+  return !error && !!data;
+};
+
+const getBlockedUserIdsFn = async (userId: string): Promise<string[]> => {
+  const { data, error } = await supabase.from("user_blocks").select("blocked_id").eq("blocker_id", userId);
+  if (error) throw error;
+  return data.map((block: any) => block.blocked_id);
+};
+
 export const useUserBlocks = () => {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [blockedUsers, setBlockedUsers] = useState<UserBlockWithUser[]>([]);
+  const queryClient = useQueryClient();
 
-  const blockUser = async (userId: string, reason?: string) => {
-    if (!user) return { error: new Error('No user logged in') };
+  const {
+    data: blockedUsers = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["blockedUsers", user?.id],
+    queryFn: () => fetchBlockedUsers(user!.id),
+    enabled: !!user,
+  });
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_blocks')
-        .insert([
-          {
-            blocker_id: user.id,
-            blocked_id: userId,
-            reason,
-          },
-        ])
-        .select()
-        .single();
+  const blockUser = useMutation({
+    mutationFn: ({ blockedId, reason }: { blockedId: string; reason?: string }) =>
+      blockUserFn({ userId: user!.id, blockedId, reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers", user?.id] });
+    },
+  });
 
-      if (error) throw error;
+  const unblockUser = useMutation({
+    mutationFn: ({ blockedId }: { blockedId: string }) => unblockUserFn({ userId: user!.id, blockedId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["blockedUsers", user?.id] });
+    },
+  });
 
-      // Refresh blocked users list
-      await fetchBlockedUsers();
+  // Check if a user is blocked
+  const isUserBlocked = (blockedId: string) => isUserBlockedFn(user!.id, blockedId);
 
-      return { data, error: null };
-    } catch (error) {
-      console.error('Error blocking user:', error);
-      return { data: null, error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const unblockUser = async (userId: string) => {
-    if (!user) return { error: new Error('No user logged in') };
-
-    setLoading(true);
-    try {
-      const { error } = await supabase
-        .from('user_blocks')
-        .delete()
-        .eq('blocker_id', user.id)
-        .eq('blocked_id', userId);
-
-      if (error) throw error;
-
-      // Refresh blocked users list
-      await fetchBlockedUsers();
-
-      return { error: null };
-    } catch (error) {
-      console.error('Error unblocking user:', error);
-      return { error };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchBlockedUsers = async () => {
-    if (!user) return;
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('user_blocks')
-        .select(`
-          *,
-          blocked_user:users!user_blocks_blocked_id_fkey(username, avatar_url)
-        `)
-        .eq('blocker_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setBlockedUsers(data as UserBlockWithUser[]);
-    } catch (error) {
-      console.error('Error fetching blocked users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isUserBlocked = async (userId: string): Promise<boolean> => {
-    if (!user) return false;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_blocks')
-        .select('id')
-        .eq('blocker_id', user.id)
-        .eq('blocked_id', userId)
-        .single();
-
-      return !error && !!data;
-    } catch (error) {
-      return false;
-    }
-  };
-
-  const getBlockedUserIds = async (): Promise<string[]> => {
-    if (!user) return [];
-
-    try {
-      const { data, error } = await supabase
-        .from('user_blocks')
-        .select('blocked_id')
-        .eq('blocker_id', user.id);
-
-      if (error) throw error;
-      return data.map(block => block.blocked_id);
-    } catch (error) {
-      console.error('Error fetching blocked user IDs:', error);
-      return [];
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchBlockedUsers();
-    }
-  }, [user]);
+  // Get all blocked user IDs
+  const getBlockedUserIds = () => getBlockedUserIdsFn(user!.id);
 
   return {
     loading,
     blockedUsers,
-    blockUser,
-    unblockUser,
+    error,
+    blockUser: ({ blockedId, reason }: { blockedId: string; reason?: string }) =>
+      blockUser.mutateAsync({ blockedId, reason }),
+    unblockUser: ({ blockedId }: { blockedId: string }) => unblockUser.mutateAsync({ blockedId }),
     isUserBlocked,
     getBlockedUserIds,
-    refetch: fetchBlockedUsers,
+    refetch,
   };
 };

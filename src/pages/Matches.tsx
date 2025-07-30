@@ -1,16 +1,18 @@
-import React from 'react';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, MessageCircle, X, Check, Package } from 'lucide-react';
-import { useMatches } from '../hooks/useMatches';
-import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ReviewDialog } from '../components/ReviewDialog';
-import toast from 'react-hot-toast';
+import React from "react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Heart, MessageCircle, X, Check, Package } from "lucide-react";
+import { useMatches } from "../hooks/useMatches";
+import { useAuth } from "../hooks/useAuth";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { ReviewDialog } from "../components/ReviewDialog";
+import toast from "react-hot-toast";
+import { useReviews } from "../hooks/useReviews";
 
 export const Matches: React.FC = () => {
   const { matches, loading, updateMatch } = useMatches();
   const { user } = useAuth();
+  const { createReview, checkCanReview } = useReviews();
   const [selectedReview, setSelectedReview] = useState<{
     matchId: string;
     revieweeId: string;
@@ -20,28 +22,27 @@ export const Matches: React.FC = () => {
 
   // Debug logging
   React.useEffect(() => {
-    console.log('Matches component - user:', user?.id);
-    console.log('Matches component - matches:', matches.length, matches);
+    console.log("Matches component - user:", user?.id);
+    console.log("Matches component - matches:", matches.length, matches);
   }, [user, matches]);
 
   const handleReviewClick = (match: any) => {
     const isCurrentUserRequest = match.user_id_1 === user?.id;
     const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
-    
     setSelectedReview({
       matchId: match.id,
       revieweeId: otherUser.id,
-      revieweeName: otherUser.username
+      revieweeName: otherUser.username,
     });
     setShowReviewDialog(true);
   };
 
-  const handleUpdateMatch = async (matchId: string, status: 'accepted' | 'rejected') => {
+  const handleUpdateMatch = async (matchId: string, status: "accepted" | "rejected") => {
     try {
-      await updateMatch(matchId, status);
-      toast.success(status === 'accepted' ? 'Match accepted!' : 'Match rejected');
+      await updateMatch({ matchId, status });
+      toast.success(status === "accepted" ? "Match accepted!" : "Match rejected");
     } catch (error) {
-      toast.error('Failed to update match');
+      toast.error("Failed to update match");
     }
   };
 
@@ -53,8 +54,8 @@ export const Matches: React.FC = () => {
     );
   }
 
-  const pendingMatches = matches.filter(match => match.status === 'pending');
-  const acceptedMatches = matches.filter(match => match.status === 'accepted');
+  const pendingMatches = matches.filter((match) => match.status === "pending");
+  const acceptedMatches = matches.filter((match) => match.status === "accepted");
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
@@ -68,7 +69,7 @@ export const Matches: React.FC = () => {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Requests</h2>
           <div className="space-y-4">
-            {pendingMatches.map(match => {
+            {pendingMatches.map((match) => {
               const isCurrentUserRequest = match.user_id_1 === user?.id;
               const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
               const currentUserItem = isCurrentUserRequest ? match.item1 : match.item2;
@@ -91,19 +92,17 @@ export const Matches: React.FC = () => {
                       <div>
                         <p className="font-semibold text-gray-900">{otherUser.username}</p>
                         <p className="text-sm text-gray-600">
-                          {isCurrentUserRequest ? 'Sent request' : 'Received request'}
+                          {isCurrentUserRequest ? "Sent request" : "Received request"}
                         </p>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(match.created_at).toLocaleDateString()}
-                    </div>
+                    <div className="text-xs text-gray-500">{new Date(match.created_at).toLocaleDateString()}</div>
                   </div>
 
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
+                        {currentUserItem.image_url && currentUserItem.image_url.trim() !== "" ? (
                           <img
                             src={currentUserItem.image_url}
                             alt={currentUserItem.title}
@@ -123,7 +122,7 @@ export const Matches: React.FC = () => {
 
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
+                        {otherUserItem.image_url && otherUserItem.image_url.trim() !== "" ? (
                           <img
                             src={otherUserItem.image_url}
                             alt={otherUserItem.title}
@@ -141,8 +140,8 @@ export const Matches: React.FC = () => {
                   {/* Simple Trade Description */}
                   <div className="mb-4 p-3 bg-gray-50 rounded-lg text-center">
                     <p className="text-sm text-gray-600">
-                      <span className="font-medium">{isCurrentUserRequest ? 'You' : otherUser.username}</span> want to trade{' '}
-                      <span className="font-medium">{currentUserItem.title}</span> for{' '}
+                      <span className="font-medium">{isCurrentUserRequest ? "You" : otherUser.username}</span> want to
+                      trade <span className="font-medium">{currentUserItem.title}</span> for{" "}
                       <span className="font-medium">{otherUserItem.title}</span>
                     </p>
                   </div>
@@ -150,14 +149,14 @@ export const Matches: React.FC = () => {
                   {!isCurrentUserRequest && (
                     <div className="flex space-x-3">
                       <button
-                        onClick={() => handleUpdateMatch(match.id, 'rejected')}
+                        onClick={() => handleUpdateMatch(match.id, "rejected")}
                         className="flex-1 flex items-center justify-center space-x-2 py-2 px-4 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                       >
                         <X className="w-4 h-4" />
                         <span>Decline</span>
                       </button>
                       <button
-                        onClick={() => handleUpdateMatch(match.id, 'accepted')}
+                        onClick={() => handleUpdateMatch(match.id, "accepted")}
                         className="flex-1 flex items-center justify-center space-x-2 py-2 px-4 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
                       >
                         <Check className="w-4 h-4" />
@@ -177,7 +176,7 @@ export const Matches: React.FC = () => {
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Matches</h2>
           <div className="space-y-4">
-            {acceptedMatches.map(match => {
+            {acceptedMatches.map((match) => {
               const isCurrentUserRequest = match.user_id_1 === user?.id;
               const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
 
@@ -205,7 +204,7 @@ export const Matches: React.FC = () => {
                       <span>Message</span>
                     </button>
                   </div>
-                  
+
                   {/* Review Button for Completed Trades */}
                   {match.completed_at && (
                     <div className="mt-3 pt-3 border-t border-gray-100">

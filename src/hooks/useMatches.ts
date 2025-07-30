@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
-import { Match, Item } from "../types/database";
+import { Match } from "../types/database";
 import { useAuth } from "../contexts/AuthContext";
 
 export interface MatchWithItems extends Match {
@@ -25,109 +25,114 @@ export interface MatchWithItems extends Match {
   };
 }
 
+const fetchMatches = async (userId: string): Promise<MatchWithItems[]> => {
+  const { data, error } = await supabase
+    .from("matches")
+    .select(
+      `
+      *,
+      item1:item_id_1 (
+        id,
+        title,
+        image_url
+      ),
+      item2:item_id_2 (
+        id,
+        title,
+        image_url
+      ),
+      user1:user_id_1 (
+        id,
+        username,
+        avatar_url
+      ),
+      user2:user_id_2 (
+        id,
+        username,
+        avatar_url
+      )
+    `
+    )
+    .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as MatchWithItems[];
+};
+
+const createMatchFn = async ({
+  itemId1,
+  itemId2,
+  userId1,
+  userId2,
+}: {
+  itemId1: string;
+  itemId2: string;
+  userId1: string;
+  userId2: string;
+}) => {
+  const { data, error } = await supabase
+    .from("matches")
+    .insert([
+      {
+        item_id_1: itemId1,
+        item_id_2: itemId2,
+        user_id_1: userId1,
+        user_id_2: userId2,
+        status: "pending",
+      },
+    ])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
+const updateMatchFn = async ({ matchId, status }: { matchId: string; status: "accepted" | "rejected" }) => {
+  const { data, error } = await supabase
+    .from("matches")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", matchId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 export const useMatches = () => {
   const { user } = useAuth();
-  const [matches, setMatches] = useState<MatchWithItems[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchMatches();
-    }
-  }, [user]);
+  const {
+    data: matches = [],
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["matches", user?.id],
+    queryFn: () => fetchMatches(user!.id),
+    enabled: !!user,
+  });
 
-  const fetchMatches = async () => {
-    if (!user) return;
+  const createMatch = useMutation({
+    mutationFn: createMatchFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
+    },
+  });
 
-    console.log("Fetching matches for user:", user.id);
-
-    try {
-      const { data, error } = await supabase
-        .from("matches")
-        .select(
-          `
-          *,
-          item1:item_id_1 (
-            id,
-            title,
-            image_url
-          ),
-          item2:item_id_2 (
-            id,
-            title,
-            image_url
-          ),
-          user1:user_id_1 (
-            id,
-            username,
-            avatar_url
-          ),
-          user2:user_id_2 (
-            id,
-            username,
-            avatar_url
-          )
-        `
-        )
-        .or(`user_id_1.eq.${user.id},user_id_2.eq.${user.id}`)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      console.log("Raw matches fetched:", data?.length || 0, data);
-
-      // No need to fetch offered items details anymore - simplified to one-to-one matching
-      console.log("Final matches:", data.length);
-      setMatches(data as MatchWithItems[]);
-    } catch (error) {
-      console.error("Error fetching matches:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createMatch = async (itemId1: string, itemId2: string, userId1: string, userId2: string) => {
-    const { data, error } = await supabase
-      .from("matches")
-      .insert([
-        {
-          item_id_1: itemId1,
-          item_id_2: itemId2,
-          user_id_1: userId1,
-          user_id_2: userId2,
-          status: "pending",
-        },
-      ])
-      .select()
-      .single();
-
-    if (!error) {
-      await fetchMatches();
-    }
-
-    return { data, error };
-  };
-
-  const updateMatch = async (matchId: string, status: "accepted" | "rejected") => {
-    const { data, error } = await supabase
-      .from("matches")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", matchId)
-      .select()
-      .single();
-
-    if (!error) {
-      await fetchMatches();
-    }
-
-    return { data, error };
-  };
+  const updateMatch = useMutation({
+    mutationFn: updateMatchFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
+    },
+  });
 
   return {
     matches,
     loading,
-    createMatch,
-    updateMatch,
-    refetch: fetchMatches,
+    error,
+    createMatch: createMatch.mutateAsync,
+    updateMatch: updateMatch.mutateAsync,
+    refetch,
   };
 };

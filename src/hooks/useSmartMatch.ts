@@ -1,6 +1,5 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { ItemWithUser } from './useItems';
+import { useMutation } from "@tanstack/react-query";
+import { ItemWithUser } from "./useItems";
 
 export interface UserPreferences {
   categories: string[];
@@ -50,65 +49,41 @@ export interface MatchResponse {
   message?: string;
 }
 
-export const useSmartMatch = () => {
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<SmartMatchResult[]>([]);
-  const [metadata, setMetadata] = useState<MatchResponse['metadata'] | null>(null);
-
-  const findMatches = async (request: MatchRequest): Promise<MatchResponse> => {
-    setLoading(true);
-    
-    try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-match`;
-      
-      const headers = {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch matches');
-      }
-
-      const data: MatchResponse = await response.json();
-      
-      setResults(data.listings);
-      setMetadata(data.metadata || null);
-      
-      return data;
-    } catch (error) {
-      console.error('Smart match error:', error);
-      const errorResponse: MatchResponse = {
-        listings: [],
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
-      };
-      
-      setResults([]);
-      setMetadata(null);
-      
-      return errorResponse;
-    } finally {
-      setLoading(false);
-    }
+const fetchSmartMatch = async (request: MatchRequest): Promise<MatchResponse> => {
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-match`;
+  const headers = {
+    Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
   };
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch matches");
+  }
+  const data: MatchResponse = await response.json();
+  return data;
+};
 
+export const useSmartMatch = () => {
+  const mutation = useMutation({
+    mutationFn: fetchSmartMatch,
+  });
+
+  // Helper to clear results (reset mutation state)
   const clearResults = () => {
-    setResults([]);
-    setMetadata(null);
+    mutation.reset();
   };
 
   return {
-    loading,
-    results,
-    metadata,
-    findMatches,
+    loading: mutation.isLoading,
+    results: mutation.data?.listings ?? [],
+    metadata: mutation.data?.metadata ?? null,
+    error: mutation.error,
+    findMatches: mutation.mutateAsync,
     clearResults,
   };
 };
