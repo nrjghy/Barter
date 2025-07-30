@@ -85,6 +85,7 @@ export const useNotifications = () => {
   // Real-time subscription for new notifications
   useEffect(() => {
     if (!user) return;
+
     const channel = supabase
       .channel(`notifications:${user.id}`)
       .on(
@@ -101,10 +102,11 @@ export const useNotifications = () => {
         }
       )
       .subscribe();
+
     return () => {
       channel.unsubscribe();
     };
-  }, [user, queryClient]);
+  }, [user?.id]); // Only depend on user.id, not queryClient
 
   return {
     notifications,

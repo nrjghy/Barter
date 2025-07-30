@@ -177,7 +177,7 @@ export const useItems = () => {
   });
 
   // Pagination helpers
-  const hasMore = items.length === ITEMS_PER_PAGE;
+  const hasMore = items.length === ITEMS_PER_PAGE && !isFetching;
   const loadMoreItems = () => {
     if (!hasMore || loading || isFetching) return;
     setPage((prev) => prev + 1);

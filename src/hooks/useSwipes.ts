@@ -112,17 +112,13 @@ export const useSwipes = () => {
     enabled: !!user,
   });
 
-  // Check swipe limit
-  const checkSwipeLimit = useMutation({
-    mutationFn: () => checkSwipeLimitFn(user!.id),
-  });
-
   // Record swipe
   const recordSwipe = useMutation({
     mutationFn: ({ itemId, direction }: { itemId: string; direction: "left" | "right" | "super" }) =>
       recordSwipeFn({ userId: user!.id, itemId, direction }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swipedItems", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["swipeLimit", user?.id] });
     },
   });
 
@@ -139,7 +135,7 @@ export const useSwipes = () => {
     swipeLimit,
     recordSwipe: ({ itemId, direction }: { itemId: string; direction: "left" | "right" | "super" }) =>
       recordSwipe.mutateAsync({ itemId, direction }),
-    checkSwipeLimit: () => checkSwipeLimit.mutateAsync(),
+    checkSwipeLimit: () => checkSwipeLimitFn(user!.id),
     getSwipedItems: () => refetchSwipedItems().then((res) => res.data ?? []),
   };
 };

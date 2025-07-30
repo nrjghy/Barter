@@ -21,19 +21,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchUserProfile = async (authUser: User) => {
+    console.log("[AuthContext] fetchUserProfile called", authUser);
     try {
-      // Removed manual timeout
       const { data, error } = await supabase.from("users").select("*, role").eq("id", authUser.id).single();
-
+      console.log("[AuthContext] fetchUserProfile result", { data, error });
       if (error) {
-        console.error("Error fetching user profile:", error);
-        // If user doesn't exist in users table, create them
+        console.error("[AuthContext] Error fetching user profile:", error);
         if (error.code === "PGRST116") {
-          console.log("User not found in users table, this might be expected for demo");
+          console.log("[AuthContext] User not found in users table, this might be expected for demo");
         }
         return;
       }
-
       setUser({
         id: authUser.id,
         email: authUser.email!,
@@ -43,39 +41,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: data.role || "user",
       });
     } catch (error) {
-      console.error("Error fetching user profile:", error);
+      console.error("[AuthContext] Error in fetchUserProfile (catch):", error);
       setUser(null);
     }
   };
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    // On mount, get the session and set user/loading immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        await fetchUserProfile(session.user);
-      }
-      setLoading(false);
-    };
-
-    getSession();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        await fetchUserProfile(session.user);
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          username: session.user.user_metadata?.username || "",
+          location: session.user.user_metadata?.location || undefined,
+          avatar_url: session.user.user_metadata?.avatar_url || undefined,
+          role: session.user.user_metadata?.role || "user",
+        });
       } else {
         setUser(null);
       }
       setLoading(false);
+      console.log("[AuthContext] setLoading(false) called after getSession");
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          username: session.user.user_metadata?.username || "",
+          location: session.user.user_metadata?.location || undefined,
+          avatar_url: session.user.user_metadata?.avatar_url || undefined,
+          role: session.user.user_metadata?.role || "user",
+        });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+      console.log("[AuthContext] setLoading(false) called in onAuthStateChange");
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Optionally, fetch user profile from your users table after user is set
+  useEffect(() => {
+    if (user) {
+      // You can fetch additional profile info here if needed
+      // fetchUserProfile(user.id) ...
+    }
+  }, [user]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({

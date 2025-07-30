@@ -35,7 +35,7 @@ export const Dashboard: React.FC = () => {
     if (user) {
       loadSwipedItems();
     }
-  }, [user, getSwipedItems]);
+  }, [user]); // Remove getSwipedItems from dependencies
 
   // Filter items based on selected categories and conditions
   const filteredItems = React.useMemo(() => {
