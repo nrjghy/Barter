@@ -23,7 +23,8 @@ export const Matches: React.FC = () => {
   // Debug logging
   React.useEffect(() => {
     console.log("Matches component - user:", user?.id);
-    console.log("Matches component - matches:", matches.length, matches);
+    console.log("Matches component - matches count:", matches.length);
+    console.log("Matches component - all matches:", matches);
   }, [user, matches]);
 
   const handleReviewClick = (match: any) => {
@@ -46,6 +47,15 @@ export const Matches: React.FC = () => {
     }
   };
 
+  const pendingMatches = matches.filter((match) => match.status === "pending");
+  const acceptedMatches = matches.filter((match) => match.status === "accepted");
+
+  // Debug logging for filtered matches
+  React.useEffect(() => {
+    console.log("Matches component - pending matches:", pendingMatches.length);
+    console.log("Matches component - accepted matches:", acceptedMatches.length);
+  }, [pendingMatches, acceptedMatches]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -53,9 +63,6 @@ export const Matches: React.FC = () => {
       </div>
     );
   }
-
-  const pendingMatches = matches.filter((match) => match.status === "pending");
-  const acceptedMatches = matches.filter((match) => match.status === "accepted");
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">

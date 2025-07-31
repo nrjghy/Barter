@@ -79,6 +79,13 @@ export const Dashboard: React.FC = () => {
 
   const handleSwipe = async (direction: "left" | "right" | "super") => {
     if (!currentItem || !user) return;
+
+    // Check swipe limit before proceeding
+    if (dailySwipeCount >= swipeLimit) {
+      toast.error("Daily swipe limit reached! Come back tomorrow for more swipes.");
+      return;
+    }
+
     try {
       await recordSwipe({ itemId: currentItem.id, direction });
       setSwipedItems((prev) => new Set(prev).add(currentItem.id));
@@ -88,9 +95,6 @@ export const Dashboard: React.FC = () => {
         toast.success("Right swipe!");
       }
     } catch (error: any) {
-      if (error.message && error.message.includes("Daily swipe limit reached")) {
-        return; // Toast already shown in useSwipes
-      }
       toast.error("Failed to record swipe");
     }
   };

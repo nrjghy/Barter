@@ -100,21 +100,21 @@ export interface Database {
           id: string;
           user_id: string;
           item_id: string;
-          direction: 'left' | 'right' | 'super';
+          direction: "left" | "right" | "super";
           created_at: string;
         };
         Insert: {
           id?: string;
           user_id: string;
           item_id: string;
-          direction: 'left' | 'right' | 'super';
+          direction: "left" | "right" | "super";
           created_at?: string;
         };
         Update: {
           id?: string;
           user_id?: string;
           item_id?: string;
-          direction?: 'left' | 'right' | 'super';
+          direction?: "left" | "right" | "super";
           created_at?: string;
         };
       };
@@ -125,11 +125,12 @@ export interface Database {
           item_id_2: string;
           user_id_1: string;
           user_id_2: string;
-          status: 'pending' | 'accepted' | 'rejected';
+          status: "pending" | "accepted" | "rejected";
           created_at: string;
           updated_at: string;
           completed_at: string | null;
           completed_by: string | null;
+          is_super_like: boolean;
         };
         Insert: {
           id?: string;
@@ -137,11 +138,12 @@ export interface Database {
           item_id_2: string;
           user_id_1: string;
           user_id_2: string;
-          status?: 'pending' | 'accepted' | 'rejected';
+          status?: "pending" | "accepted" | "rejected";
           created_at?: string;
           updated_at?: string;
           completed_at?: string | null;
           completed_by?: string | null;
+          is_super_like?: boolean;
         };
         Update: {
           id?: string;
@@ -149,11 +151,12 @@ export interface Database {
           item_id_2?: string;
           user_id_1?: string;
           user_id_2?: string;
-          status?: 'pending' | 'accepted' | 'rejected';
+          status?: "pending" | "accepted" | "rejected";
           created_at?: string;
           updated_at?: string;
           completed_at?: string | null;
           completed_by?: string | null;
+          is_super_like?: boolean;
         };
       };
       reviews: {
@@ -164,7 +167,7 @@ export interface Database {
           reviewee_id: string;
           rating: number;
           comment: string | null;
-          trade_experience: 'excellent' | 'good' | 'fair' | 'poor' | null;
+          trade_experience: "excellent" | "good" | "fair" | "poor" | null;
           created_at: string;
           updated_at: string;
         };
@@ -175,7 +178,7 @@ export interface Database {
           reviewee_id: string;
           rating: number;
           comment?: string | null;
-          trade_experience?: 'excellent' | 'good' | 'fair' | 'poor' | null;
+          trade_experience?: "excellent" | "good" | "fair" | "poor" | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -186,7 +189,7 @@ export interface Database {
           reviewee_id?: string;
           rating?: number;
           comment?: string | null;
-          trade_experience?: 'excellent' | 'good' | 'fair' | 'poor' | null;
+          trade_experience?: "excellent" | "good" | "fair" | "poor" | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -218,7 +221,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          type: 'match' | 'message' | 'trade_completed' | 'review' | 'system';
+          type: "match" | "message" | "trade_completed" | "review" | "system";
           title: string;
           content: string;
           data: any;
@@ -229,7 +232,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          type: 'match' | 'message' | 'trade_completed' | 'review' | 'system';
+          type: "match" | "message" | "trade_completed" | "review" | "system";
           title: string;
           content: string;
           data?: any;
@@ -240,7 +243,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          type?: 'match' | 'message' | 'trade_completed' | 'review' | 'system';
+          type?: "match" | "message" | "trade_completed" | "review" | "system";
           title?: string;
           content?: string;
           data?: any;
@@ -253,9 +256,9 @@ export interface Database {
   };
 }
 
-export type User = Database['public']['Tables']['users']['Row'];
-export type Item = Database['public']['Tables']['items']['Row'];
-export type Match = Database['public']['Tables']['matches']['Row'];
-export type Review = Database['public']['Tables']['reviews']['Row'];
-export type UserBlock = Database['public']['Tables']['user_blocks']['Row'];
-export type Notification = Database['public']['Tables']['notifications']['Row'];
+export type User = Database["public"]["Tables"]["users"]["Row"];
+export type Item = Database["public"]["Tables"]["items"]["Row"];
+export type Match = Database["public"]["Tables"]["matches"]["Row"];
+export type Review = Database["public"]["Tables"]["reviews"]["Row"];
+export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
+export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
