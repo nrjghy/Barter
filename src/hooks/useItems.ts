@@ -1,218 +1,119 @@
-import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
-import { Item, User } from "../types/database";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "./useAuth";
+import { ItemService } from "../services";
 
-export interface ItemWithUser extends Item {
-  users: User;
-}
-
-const ITEMS_PER_PAGE = 20;
-
-const fetchItems = async ({
-  userId,
-  role,
-  page,
-  includeDemoUsers,
-}: {
-  userId?: string;
+export const useItems = (options?: {
+  page?: number;
+  limit?: number;
+  categories?: string[];
+  conditions?: string[];
+  excludeUserId?: string;
+  includeDemoUsers?: boolean;
   role?: string;
-  page: number;
-  includeDemoUsers: boolean;
 }) => {
-  let query = supabase
-    .from("items")
-    .select(
-      `
-      id,
-      title,
-      description,
-      category,
-      condition,
-      image_url,
-      tags,
-      created_at,
-      updated_at,
-      user_id,
-      is_active,
-      price,
-      source_url,
-      users!inner (
-        id,
-        username,
-        location,
-        avatar_url,
-        rating,
-        is_demo
-      )
-    `
-    )
-    .eq("is_active", true);
-
-  if (userId) {
-    query = query.neq("user_id", userId);
-  }
-  if (!includeDemoUsers || role !== "admin") {
-    query = query.eq("users.is_demo", false);
-  }
-  query = query.order("created_at", { ascending: false }).range(page * ITEMS_PER_PAGE, (page + 1) * ITEMS_PER_PAGE - 1);
-
-  const { data, error } = await query;
-  if (error) throw error;
-  return data as ItemWithUser[];
-};
-
-const fetchUserItems = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("items")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data as Item[];
-};
-
-const addItemFn = async ({
-  itemData,
-  userId,
-}: {
-  itemData: Omit<Item, "id" | "user_id" | "created_at" | "updated_at">;
-  userId: string;
-}) => {
-  const { data, error } = await supabase
-    .from("items")
-    .insert([
-      {
-        ...itemData,
-        user_id: userId,
-      },
-    ])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-};
-
-const updateItemFn = async ({ id, updates }: { id: string; updates: Partial<Item> }) => {
-  const { data, error } = await supabase
-    .from("items")
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-};
-
-const deleteItemFn = async (id: string) => {
-  const { error } = await supabase.from("items").delete().eq("id", id);
-  if (error) throw error;
-  return id;
-};
-
-export const useItems = () => {
   const { user } = useAuth();
-  const [page, setPage] = useState(0);
-  const [includeDemoUsers, setIncludeDemoUsers] = useState(false);
   const queryClient = useQueryClient();
+  const { page = 1, limit = 10, categories, conditions, excludeUserId, includeDemoUsers = false, role } = options || {};
 
-  // Items for browsing
+  // Get items for browsing (with pagination and filters)
   const {
-    data: items = [],
-    isLoading: loading,
-    error,
+    data: itemsData,
+    isLoading: itemsLoading,
+    error: itemsError,
     isFetching,
   } = useQuery({
-    queryKey: ["items", user?.id, user?.role, page, includeDemoUsers],
-    queryFn: () => fetchItems({ userId: user?.id, role: user?.role, page, includeDemoUsers }),
+    queryKey: ["items", { page, limit, categories, conditions, excludeUserId, includeDemoUsers, role }],
+    queryFn: () =>
+      ItemService.getItems({
+        page,
+        limit,
+        categories,
+        conditions,
+        excludeUserId,
+        includeDemoUsers,
+        role,
+      }),
     enabled: !!user,
-    keepPreviousData: true,
   });
 
-  // User's own items
+  // Get user's own items
   const {
-    data: userItems = [],
+    data: userItemsData,
     isLoading: userItemsLoading,
     error: userItemsError,
-    refetch: refetchUserItems,
   } = useQuery({
     queryKey: ["userItems", user?.id],
-    queryFn: () => fetchUserItems(user!.id),
+    queryFn: () => ItemService.getUserItems(user!.id),
     enabled: !!user,
   });
 
-  // Mutations
-  const addItem = useMutation({
-    mutationFn: ({
-      itemData,
-      userId,
-    }: {
-      itemData: Omit<Item, "id" | "user_id" | "created_at" | "updated_at">;
-      userId: string;
-    }) => addItemFn({ itemData, userId }),
+  // Get single item by ID
+  const getItem = (itemId: string) => {
+    return useQuery({
+      queryKey: ["item", itemId],
+      queryFn: () => ItemService.getItem(itemId),
+      enabled: !!itemId,
+    });
+  };
+
+  // Create item mutation
+  const createItem = useMutation({
+    mutationFn: (itemData: any) => ItemService.createItem(itemData, user!.id),
     onSuccess: () => {
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["items"] });
-      queryClient.invalidateQueries({ queryKey: ["userItems"] });
+      queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
     },
   });
 
+  // Update item mutation
   const updateItem = useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Item> }) => updateItemFn({ id, updates }),
+    mutationFn: ({ itemId, updates }: { itemId: string; updates: any }) => ItemService.updateItem(itemId, updates),
     onSuccess: () => {
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["items"] });
-      queryClient.invalidateQueries({ queryKey: ["userItems"] });
+      queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["item"] });
     },
   });
 
+  // Delete item mutation
   const deleteItem = useMutation({
-    mutationFn: (id: string) => deleteItemFn(id),
+    mutationFn: (itemId: string) => ItemService.deleteItem(itemId),
     onSuccess: () => {
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["items"] });
-      queryClient.invalidateQueries({ queryKey: ["userItems"] });
+      queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["item"] });
     },
   });
-
-  // Pagination helpers
-  const hasMore = items.length === ITEMS_PER_PAGE && !isFetching;
-  const loadMoreItems = () => {
-    if (!hasMore || loading || isFetching) return;
-    setPage((prev) => prev + 1);
-  };
-
-  // Demo user toggle
-  const toggleDemoUsers = (include: boolean) => {
-    setIncludeDemoUsers(include);
-    setPage(0);
-    queryClient.invalidateQueries({ queryKey: ["items"] });
-  };
-
-  // Filter out current user's items and inactive items
-  const availableItems = useMemo(
-    () => items.filter((item) => item.user_id !== user?.id && item.is_active),
-    [items, user?.id]
-  );
 
   return {
-    items: availableItems,
-    userItems,
-    loading: loading || userItemsLoading,
-    error: error || userItemsError,
-    hasMore,
-    includeDemoUsers,
-    toggleDemoUsers,
-    loadMoreItems,
-    addItem: (itemData: Omit<Item, "id" | "user_id" | "created_at" | "updated_at">) =>
-      addItem.mutateAsync({ itemData, userId: user!.id }),
-    updateItem: (id: string, updates: Partial<Item>) => updateItem.mutateAsync({ id, updates }),
-    deleteItem: (id: string) => deleteItem.mutateAsync(id),
-    refetch: () => {
-      setPage(0);
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      refetchUserItems();
-    },
+    // Browse items
+    items: itemsData?.data || [],
+    itemsLoading,
+    itemsError: itemsError?.message,
+    isFetching,
+
+    // User's own items
+    userItems: userItemsData?.data || [],
+    userItemsLoading,
+    userItemsError: userItemsError?.message,
+
+    // Actions
+    createItem: createItem.mutate,
+    createItemLoading: createItem.isPending,
+    createItemError: createItem.error?.message,
+
+    updateItem: updateItem.mutate,
+    updateItemLoading: updateItem.isPending,
+    updateItemError: updateItem.error?.message,
+
+    deleteItem: deleteItem.mutate,
+    deleteItemLoading: deleteItem.isPending,
+    deleteItemError: deleteItem.error?.message,
+
+    // Helper function to get single item
+    getItem,
   };
 };

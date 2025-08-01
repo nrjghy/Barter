@@ -16,15 +16,19 @@ The service layer follows a **Service-Oriented Architecture (SOA)** pattern with
 
 ```
 src/services/
-├── types.ts           # Service-specific types and interfaces
-├── config.ts          # Configuration constants and business rules
-├── validation.ts      # Input validation service
-├── swipeService.ts    # Swipe and match creation logic
-├── itemService.ts     # Item management logic
-├── matchService.ts    # Match management logic
-├── userService.ts     # User profile management logic
-├── index.ts          # Service exports
-└── README.md         # This documentation
+├── types.ts              # Service-specific types and interfaces
+├── config.ts             # Configuration constants and business rules
+├── validation.ts         # Input validation service
+├── swipeService.ts       # Swipe and match creation logic
+├── itemService.ts        # Item management logic
+├── matchService.ts       # Match management logic
+├── userService.ts        # User profile management logic
+├── reviewService.ts      # Review management logic
+├── reportService.ts      # Report management logic
+├── notificationService.ts # Notification management logic
+├── messageService.ts     # Message management logic
+├── index.ts             # Service exports
+└── README.md            # This documentation
 ```
 
 ## Core Services
@@ -143,6 +147,107 @@ import { UserService } from "../services";
 
 // Get user profile
 const result = await UserService.getUserProfile(userId);
+```
+
+### 6. ReviewService
+
+Handles user review creation and management.
+
+**Key Features:**
+
+- Review creation and validation
+- Review retrieval and filtering
+- Review statistics
+- Match-based review validation
+
+**Usage:**
+
+```typescript
+import { ReviewService } from "../services";
+
+// Create a review
+const result = await ReviewService.createReview({
+  reviewerId: "user-id",
+  revieweeId: "target-user-id",
+  matchId: "match-id",
+  rating: 5,
+  comment: "Great trade experience!",
+});
+```
+
+### 7. ReportService
+
+Manages user and item reporting functionality.
+
+**Key Features:**
+
+- Report creation and validation
+- Report retrieval and filtering
+- Report status management
+- Report statistics
+
+**Usage:**
+
+```typescript
+import { ReportService } from "../services";
+
+// Create a report
+const result = await ReportService.createReport({
+  reporterId: "user-id",
+  reportedUserId: "target-user-id",
+  reason: "inappropriate_behavior",
+  description: "User was rude during trade",
+});
+```
+
+### 8. NotificationService
+
+Handles user notification management and delivery.
+
+**Key Features:**
+
+- Notification creation and delivery
+- Read/unread status management
+- Notification filtering and pagination
+- Notification statistics
+- Automatic cleanup of old notifications
+
+**Usage:**
+
+```typescript
+import { NotificationService } from "../services";
+
+// Get user notifications
+const result = await NotificationService.getUserNotifications(userId, {
+  page: 0,
+  limit: 20,
+  unreadOnly: false,
+});
+```
+
+### 9. MessageService
+
+Manages messaging between matched users.
+
+**Key Features:**
+
+- Message sending and retrieval
+- Read/unread status management
+- Message filtering and pagination
+- Message statistics
+- Match-based message validation
+
+**Usage:**
+
+```typescript
+import { MessageService } from "../services";
+
+// Send a message
+const result = await MessageService.sendMessage({
+  senderId: "user-id",
+  matchId: "match-id",
+  content: "Hello! Are you still interested in trading?",
+});
 ```
 
 ## Configuration
@@ -287,6 +392,40 @@ When migrating from direct Supabase calls to services:
 3. **Add validation**: Use `ValidationService` for input validation
 4. **Update types**: Use service-specific interfaces
 5. **Test thoroughly**: Ensure all functionality works as expected
+
+## Phase Completion Status
+
+### Phase 1 (Completed)
+
+- ✅ **ValidationService**: Input validation and sanitization
+- ✅ **SwipeService**: Swipe recording and match creation
+- ✅ **ItemService**: Item CRUD operations and filtering
+- ✅ **MatchService**: Match lifecycle management
+- ✅ **UserService**: User profile management
+- ✅ **Hook Migrations**: Updated `useSwipes`, `useMatches`, `useItems` to use services
+
+### Phase 2 (Completed)
+
+- ✅ **ReviewService**: Review creation and management
+- ✅ **ReportService**: Report creation and management
+- ✅ **NotificationService**: Notification delivery and management
+- ✅ **MessageService**: Messaging between matched users
+- ✅ **Hook Migrations**: Updated `useReviews`, `useReports`, `useNotifications`, `useMessages` to use services
+- ✅ **Configuration**: Centralized business rules and validation
+- ✅ **Type Safety**: Comprehensive TypeScript interfaces
+- ✅ **Error Handling**: Standardized error propagation
+
+### Completed Hook Migrations
+
+- ✅ `useSwipes` → Uses `SwipeService`
+- ✅ `useMatches` → Uses `MatchService`
+- ✅ `useItems` → Uses `ItemService`
+- ✅ `useReviews` → Uses `ReviewService`
+- ✅ `useReports` → Uses `ReportService`
+- ✅ `useNotifications` → Uses `NotificationService`
+- ✅ `useMessages` → Uses `MessageService`
+- ✅ `useUserBlocks` → Refactored to React Query pattern
+- ✅ `useSmartMatch` → Refactored to React Query pattern
 
 ## Future Enhancements
 

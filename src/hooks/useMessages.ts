@@ -1,166 +1,129 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { supabase } from "../lib/supabase";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
-
-export interface Message {
-  id: string;
-  match_id: string;
-  sender_id: string;
-  content: string;
-  message_type: "text" | "image" | "template";
-  is_read: boolean;
-  created_at: string;
-}
-
-export interface MessageWithSender extends Message {
-  sender: {
-    username: string;
-    avatar_url?: string;
-  };
-}
-
-export const QUICK_RESPONSES = [
-  "Hi! I'm interested in your item 👋",
-  "Is this still available?",
-  "Would you like to trade?",
-  "Can we meet up to exchange?",
-  "Thanks for the trade! 🙏",
-  "Great doing business with you!",
-];
+import { MessageService } from "../services";
 
 export const useMessages = (matchId?: string) => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<MessageWithSender[]>([]);
-  const [loading, setLoading] = useState(false);
-  const isMountedRef = useRef(true);
+  const queryClient = useQueryClient();
 
-  const fetchMessages = useCallback(async () => {
-    if (!matchId || !user) return;
+  // Get messages for a specific match
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    error: messagesError,
+  } = useQuery({
+    queryKey: ["messages", matchId],
+    queryFn: () => MessageService.getMatchMessages(matchId!),
+    enabled: !!matchId && !!user,
+  });
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .select(
-          `
-          *,
-          sender:users!messages_sender_id_fkey (
-            username,
-            avatar_url
-          )
-        `
-        )
-        .eq("match_id", matchId)
-        .order("created_at", { ascending: true });
+  // Get unread messages for a specific match
+  const {
+    data: unreadMessagesData,
+    isLoading: unreadMessagesLoading,
+    error: unreadMessagesError,
+  } = useQuery({
+    queryKey: ["unreadMessages", matchId, user?.id],
+    queryFn: () => MessageService.getUnreadMessages(matchId!, user!.id),
+    enabled: !!matchId && !!user,
+  });
 
-      if (error) throw error;
-      if (isMountedRef.current) {
-        setMessages(data as MessageWithSender[]);
+  // Get message statistics for a match
+  const {
+    data: messageStatsData,
+    isLoading: messageStatsLoading,
+    error: messageStatsError,
+  } = useQuery({
+    queryKey: ["messageStats", matchId],
+    queryFn: () => MessageService.getMessageStats(matchId!),
+    enabled: !!matchId && !!user,
+  });
+
+  // Get unread message count across all matches
+  const {
+    data: unreadMessageCountData,
+    isLoading: unreadMessageCountLoading,
+    error: unreadMessageCountError,
+  } = useQuery({
+    queryKey: ["unreadMessageCount", user?.id],
+    queryFn: () => MessageService.getUnreadMessageCount(user!.id),
+    enabled: !!user,
+  });
+
+  // Send message mutation
+  const sendMessage = useMutation({
+    mutationFn: ({ messageData }: { messageData: any }) => MessageService.sendMessage(messageData, user!.id),
+    onSuccess: () => {
+      // Invalidate related queries
+      if (matchId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
       }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
+      queryClient.invalidateQueries({ queryKey: ["unreadMessageCount", user?.id] });
+    },
+  });
+
+  // Mark messages as read mutation
+  const markMessagesAsRead = useMutation({
+    mutationFn: ({ messageIds }: { messageIds?: string[] } = {}) =>
+      MessageService.markMessagesAsRead(matchId!, user!.id, messageIds),
+    onSuccess: () => {
+      // Invalidate related queries
+      if (matchId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
       }
-    }
-  }, [matchId, user]);
+      queryClient.invalidateQueries({ queryKey: ["unreadMessageCount", user?.id] });
+    },
+  });
 
-  useEffect(() => {
-    isMountedRef.current = true;
-    fetchMessages();
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [matchId, user]); // Remove fetchMessages from dependencies
-
-  useEffect(() => {
-    if (!matchId) return;
-
-    // Subscribe to new messages
-    const subscription = supabase
-      .channel(`messages:${matchId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `match_id=eq.${matchId}`,
-        },
-        (payload) => {
-          // Fetch the complete message with sender info
-          supabase
-            .from("messages")
-            .select(
-              `
-              *,
-              sender:users!messages_sender_id_fkey (
-                username,
-                avatar_url
-              )
-            `
-            )
-            .eq("id", payload.new.id)
-            .single()
-            .then(({ data }) => {
-              if (data && isMountedRef.current) {
-                setMessages((prev) => [...prev, data as MessageWithSender]);
-              }
-            });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [matchId]);
-
-  const sendMessage = async (content: string, messageType: "text" | "template" = "text") => {
-    if (!user || !matchId || !content.trim()) return { error: new Error("Invalid message data") };
-
-    try {
-      const { data, error } = await supabase
-        .from("messages")
-        .insert([
-          {
-            match_id: matchId,
-            sender_id: user.id,
-            content: content.trim(),
-            message_type: messageType,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error("Error sending message:", error);
-      return { data: null, error };
-    }
-  };
-
-  const markAsRead = async (messageId: string) => {
-    try {
-      const { error } = await supabase
-        .from("messages")
-        .update({ is_read: true })
-        .eq("id", messageId)
-        .eq("sender_id", user?.id, { negate: true }); // Only mark as read if not sender
-
-      if (error) throw error;
-    } catch (error) {
-      console.error("Error marking message as read:", error);
-    }
-  };
+  // Delete message mutation
+  const deleteMessage = useMutation({
+    mutationFn: (messageId: string) => MessageService.deleteMessage(messageId, user!.id),
+    onSuccess: () => {
+      // Invalidate related queries
+      if (matchId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
+      }
+    },
+  });
 
   return {
-    messages,
-    loading,
-    sendMessage,
-    markAsRead,
-    refetch: fetchMessages,
+    // Messages for current match
+    messages: messagesData?.data || [],
+    messagesLoading,
+    messagesError: messagesError?.message,
+
+    // Unread messages for current match
+    unreadMessages: unreadMessagesData?.data || [],
+    unreadMessagesLoading,
+    unreadMessagesError: unreadMessagesError?.message,
+
+    // Message statistics for current match
+    messageStats: messageStatsData?.data,
+    messageStatsLoading,
+    messageStatsError: messageStatsError?.message,
+
+    // Unread message count across all matches
+    unreadMessageCount: unreadMessageCountData?.data || 0,
+    unreadMessageCountLoading,
+    unreadMessageCountError: unreadMessageCountError?.message,
+
+    // Actions
+    sendMessage: sendMessage.mutate,
+    sendMessageLoading: sendMessage.isPending,
+    sendMessageError: sendMessage.error?.message,
+
+    markMessagesAsRead: markMessagesAsRead.mutate,
+    markMessagesAsReadLoading: markMessagesAsRead.isPending,
+    markMessagesAsReadError: markMessagesAsRead.error?.message,
+
+    deleteMessage: deleteMessage.mutate,
+    deleteMessageLoading: deleteMessage.isPending,
+    deleteMessageError: deleteMessage.error?.message,
   };
 };

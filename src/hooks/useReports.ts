@@ -1,115 +1,97 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "./useAuth";
-
-export interface Report {
-  id: string;
-  reporter_id: string;
-  reported_item_id: string;
-  reported_user_id: string;
-  reason: string;
-  description: string | null;
-  status: "pending" | "reviewed" | "resolved" | "dismissed";
-  admin_notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateReportData {
-  reported_item_id: string;
-  reported_user_id: string;
-  reason: string;
-  description?: string;
-}
-
-export const REPORT_REASONS = [
-  { value: "inappropriate_content", label: "Inappropriate Content" },
-  { value: "misleading_description", label: "Misleading Description" },
-  { value: "prohibited_item", label: "Prohibited Item" },
-  { value: "spam", label: "Spam" },
-  { value: "fake_listing", label: "Fake Listing" },
-  { value: "offensive_language", label: "Offensive Language" },
-  { value: "copyright_violation", label: "Copyright Violation" },
-  { value: "safety_concern", label: "Safety Concern" },
-  { value: "other", label: "Other" },
-] as const;
-
-const fetchUserReports = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("reports")
-    .select(
-      `
-      *,
-      reported_item:items(title, image_url),
-      reported_user:users(username)
-    `
-    )
-    .eq("reporter_id", userId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data as Report[];
-};
-
-const createReportFn = async ({ reportData, userId }: { reportData: CreateReportData; userId: string }) => {
-  const { data, error } = await supabase
-    .from("reports")
-    .insert([
-      {
-        ...reportData,
-        reporter_id: userId,
-      },
-    ])
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
-};
+import { ReportService } from "../services";
 
 export const useReports = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Get user reports (reports made by the user)
   const {
-    data: reports = [],
-    isLoading: loading,
-    error,
-    refetch,
+    data: reportsData,
+    isLoading: reportsLoading,
+    error: reportsError,
   } = useQuery({
     queryKey: ["reports", user?.id],
-    queryFn: () => fetchUserReports(user!.id),
+    queryFn: () => ReportService.getUserReports(user!.id),
     enabled: !!user,
   });
 
+  // Get reports against user (admin function)
+  const {
+    data: reportsAgainstUserData,
+    isLoading: reportsAgainstUserLoading,
+    error: reportsAgainstUserError,
+  } = useQuery({
+    queryKey: ["reportsAgainstUser", user?.id],
+    queryFn: () => ReportService.getReportsAgainstUser(user!.id),
+    enabled: !!user,
+  });
+
+  // Get report statistics
+  const {
+    data: reportStatsData,
+    isLoading: reportStatsLoading,
+    error: reportStatsError,
+  } = useQuery({
+    queryKey: ["reportStats"],
+    queryFn: () => ReportService.getReportStats(),
+  });
+
+  // Create report mutation
   const createReport = useMutation({
-    mutationFn: ({ reportData }: { reportData: CreateReportData }) => createReportFn({ reportData, userId: user!.id }),
+    mutationFn: ({ reportData }: { reportData: any }) => ReportService.createReport(reportData, user!.id),
     onSuccess: () => {
+      // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["reports", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["reportStats"] });
     },
   });
 
-  // Check if the user has already reported this item
-  const checkExistingReport = async (itemId: string) => {
+  // Update report status (admin function)
+  const updateReport = useMutation({
+    mutationFn: ({ reportId, updateData }: { reportId: string; updateData: any }) =>
+      ReportService.updateReport(reportId, updateData, user!.id),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["reports", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["reportsAgainstUser", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["reportStats"] });
+    },
+  });
+
+  // Check if user can report an item
+  const canReportItem = async (itemId: string) => {
     if (!user) return false;
-    try {
-      const { data, error } = await supabase
-        .from("reports")
-        .select("id")
-        .eq("reporter_id", user.id)
-        .eq("reported_item_id", itemId)
-        .in("status", ["pending", "reviewed"])
-        .single();
-      return !error && data;
-    } catch (error) {
-      return false;
-    }
+    const result = await ReportService.canReportItem(itemId, user.id);
+    return result.data || false;
   };
 
   return {
-    loading,
-    reports,
-    error,
-    createReport: (reportData: CreateReportData) => createReport.mutateAsync({ reportData }),
-    refetch,
-    checkExistingReport,
+    // Reports made by user
+    reports: reportsData?.data || [],
+    reportsLoading,
+    reportsError: reportsError?.message,
+
+    // Reports against user
+    reportsAgainstUser: reportsAgainstUserData?.data || [],
+    reportsAgainstUserLoading,
+    reportsAgainstUserError: reportsAgainstUserError?.message,
+
+    // Report statistics
+    reportStats: reportStatsData?.data,
+    reportStatsLoading,
+    reportStatsError: reportStatsError?.message,
+
+    // Actions
+    createReport: createReport.mutate,
+    createReportLoading: createReport.isPending,
+    createReportError: createReport.error?.message,
+
+    updateReport: updateReport.mutate,
+    updateReportLoading: updateReport.isPending,
+    updateReportError: updateReport.error?.message,
+
+    canReportItem,
   };
 };

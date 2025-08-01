@@ -1,121 +1,139 @@
-import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "./useAuth";
-import { Notification } from "../types/database";
-
-const fetchNotifications = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("notifications")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(50);
-  if (error) throw error;
-  return data as Notification[];
-};
-
-const markAsReadFn = async (notificationId: string) => {
-  const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
-  if (error) throw error;
-  return notificationId;
-};
-
-const markAllAsReadFn = async (userId: string) => {
-  const { error } = await supabase
-    .from("notifications")
-    .update({ is_read: true })
-    .eq("user_id", userId)
-    .eq("is_read", false);
-  if (error) throw error;
-  return true;
-};
-
-const deleteNotificationFn = async (notificationId: string) => {
-  const { error } = await supabase.from("notifications").delete().eq("id", notificationId);
-  if (error) throw error;
-  return notificationId;
-};
+import { NotificationService } from "../services";
 
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  // Get user notifications
   const {
-    data: notifications = [],
-    isLoading: loading,
-    error,
-    refetch,
+    data: notificationsData,
+    isLoading: notificationsLoading,
+    error: notificationsError,
   } = useQuery({
     queryKey: ["notifications", user?.id],
-    queryFn: () => fetchNotifications(user!.id),
+    queryFn: () => NotificationService.getUserNotifications(user!.id),
     enabled: !!user,
   });
 
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
+  // Get unread notifications
+  const {
+    data: unreadNotificationsData,
+    isLoading: unreadNotificationsLoading,
+    error: unreadNotificationsError,
+  } = useQuery({
+    queryKey: ["unreadNotifications", user?.id],
+    queryFn: () => NotificationService.getUnreadNotifications(user!.id),
+    enabled: !!user,
+  });
 
-  // Mutations
+  // Get notification statistics
+  const {
+    data: notificationStatsData,
+    isLoading: notificationStatsLoading,
+    error: notificationStatsError,
+  } = useQuery({
+    queryKey: ["notificationStats", user?.id],
+    queryFn: () => NotificationService.getNotificationStats(user!.id),
+    enabled: !!user,
+  });
+
+  // Get unread count
+  const {
+    data: unreadCountData,
+    isLoading: unreadCountLoading,
+    error: unreadCountError,
+  } = useQuery({
+    queryKey: ["unreadCount", user?.id],
+    queryFn: () => NotificationService.getUnreadCount(user!.id),
+    enabled: !!user,
+  });
+
+  // Mark notification as read
   const markAsRead = useMutation({
-    mutationFn: markAsReadFn,
-    onSuccess: (notificationId) => {
-      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
-        old.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
-      );
-    },
-  });
-
-  const markAllAsRead = useMutation({
-    mutationFn: () => markAllAsReadFn(user!.id),
+    mutationFn: (notificationId: string) => NotificationService.markAsRead(notificationId),
     onSuccess: () => {
-      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
-        old.map((n) => ({ ...n, is_read: true }))
-      );
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notificationStats", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadCount", user?.id] });
     },
   });
 
+  // Mark all notifications as read
+  const markAllAsRead = useMutation({
+    mutationFn: () => NotificationService.markAllAsRead(user!.id),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notificationStats", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadCount", user?.id] });
+    },
+  });
+
+  // Delete notification
   const deleteNotification = useMutation({
-    mutationFn: deleteNotificationFn,
-    onSuccess: (notificationId) => {
-      queryClient.setQueryData(["notifications", user?.id], (old: Notification[] = []) =>
-        old.filter((n) => n.id !== notificationId)
-      );
+    mutationFn: (notificationId: string) => NotificationService.deleteNotification(notificationId),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notificationStats", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadCount", user?.id] });
     },
   });
 
-  // Real-time subscription for new notifications
-  useEffect(() => {
-    if (!user) return;
-
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const newNotification = payload.new as Notification;
-          queryClient.setQueryData(["notifications", user.id], (old: Notification[] = []) => [newNotification, ...old]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [user?.id]); // Only depend on user.id, not queryClient
+  // Create notification (for internal use)
+  const createNotification = useMutation({
+    mutationFn: (notificationData: any) => NotificationService.createNotification(notificationData),
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ["notifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadNotifications", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["notificationStats", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["unreadCount", user?.id] });
+    },
+  });
 
   return {
-    notifications,
-    loading,
-    unreadCount,
-    error,
-    markAsRead: (id: string) => markAsRead.mutateAsync(id),
-    markAllAsRead: () => markAllAsRead.mutateAsync(),
-    deleteNotification: (id: string) => deleteNotification.mutateAsync(id),
-    refetch,
+    // All notifications
+    notifications: notificationsData?.data || [],
+    notificationsLoading,
+    notificationsError: notificationsError?.message,
+
+    // Unread notifications
+    unreadNotifications: unreadNotificationsData?.data || [],
+    unreadNotificationsLoading,
+    unreadNotificationsError: unreadNotificationsError?.message,
+
+    // Notification statistics
+    notificationStats: notificationStatsData?.data,
+    notificationStatsLoading,
+    notificationStatsError: notificationStatsError?.message,
+
+    // Unread count
+    unreadCount: unreadCountData?.data || 0,
+    unreadCountLoading,
+    unreadCountError: unreadCountError?.message,
+
+    // Actions
+    markAsRead: markAsRead.mutate,
+    markAsReadLoading: markAsRead.isPending,
+    markAsReadError: markAsRead.error?.message,
+
+    markAllAsRead: markAllAsRead.mutate,
+    markAllAsReadLoading: markAllAsRead.isPending,
+    markAllAsReadError: markAllAsRead.error?.message,
+
+    deleteNotification: deleteNotification.mutate,
+    deleteNotificationLoading: deleteNotification.isPending,
+    deleteNotificationError: deleteNotification.error?.message,
+
+    createNotification: createNotification.mutate,
+    createNotificationLoading: createNotification.isPending,
+    createNotificationError: createNotification.error?.message,
   };
 };
