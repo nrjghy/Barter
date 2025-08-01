@@ -1,12 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
-import { Heart, X, Zap, MapPin, Clock, Star } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ItemWithUser } from '../hooks/useItems';
+import React, { useState, useRef } from "react";
+import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
+import { Heart, X, Zap, MapPin, Clock, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ItemWithUser } from "../hooks/useItems";
 
 interface SwipeCardProps {
   item: ItemWithUser;
-  onSwipe: (direction: 'left' | 'right' | 'super') => void;
+  onSwipe: (direction: "left" | "right" | "super") => void;
   style?: React.CSSProperties;
 }
 
@@ -16,7 +16,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
   const opacity = useTransform(x, [-200, -100, 0, 100, 200], [0, 1, 1, 1, 0]);
-  
+
   // Transform for swipe indicators
   const leftIndicatorOpacity = useTransform(x, [-150, -50], [1, 0]);
   const rightIndicatorOpacity = useTransform(x, [50, 150], [1, 0]);
@@ -32,28 +32,28 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
     // Super like (upward swipe)
     if (info.offset.y < -100 && Math.abs(movement) < 50) {
       setExitX(0);
-      onSwipe('super');
+      onSwipe("super");
       return;
     }
 
     // Regular swipes
     if (movement > threshold || velocity > 500) {
       setExitX(1000);
-      onSwipe('right');
+      onSwipe("right");
     } else if (movement < -threshold || velocity < -500) {
       setExitX(-1000);
-      onSwipe('left');
+      onSwipe("left");
     }
   };
 
-  const formattedDate = new Date(item.created_at).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
+  const formattedDate = new Date(item.created_at).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
   });
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't navigate if currently dragging or clicking action buttons
-    if ((e.target as HTMLElement).closest('button') || Math.abs(x.get()) > 10) {
+    if ((e.target as HTMLElement).closest("button") || Math.abs(x.get()) > 10) {
       return;
     }
     navigate(`/item/${item.id}`);
@@ -84,7 +84,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
         >
           <X className="w-6 h-6" />
         </motion.div>
-        
+
         <motion.div
           className="absolute top-8 right-8 z-10 bg-green-500 text-white px-4 py-2 rounded-full font-bold text-lg border-4 border-white shadow-lg"
           style={{ opacity: rightIndicatorOpacity }}
@@ -101,24 +101,19 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
         {/* Image */}
         <div className="h-2/3 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-          {item.image_url && item.image_url.trim() !== '' ? (
-            <img
-              src={item.image_url}
-              alt={item.title}
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
+          {item.image_url && item.image_url.trim() !== "" ? (
+            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
-          
+
           {/* Price Badge */}
           {item.price && (
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
               <span className="text-lg font-bold text-green-600">${item.price}</span>
             </div>
           )}
-          
+
           {/* Condition Badge */}
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
             <span className="text-sm font-medium text-gray-700">{item.condition}</span>
@@ -145,12 +140,10 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
                 {formattedDate}
               </div>
             </div>
-            
-            {item.description && (
-              <p className="text-gray-600 text-sm line-clamp-2 mb-3">{item.description}</p>
-            )}
+
+            {item.description && <p className="text-gray-600 text-sm line-clamp-2 mb-3">{item.description}</p>}
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               {item.users.avatar_url ? (
@@ -161,9 +154,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
                 />
               ) : (
                 <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">
-                    {item.users.username.charAt(0).toUpperCase()}
-                  </span>
+                  <span className="text-white font-bold text-sm">{item.users.username.charAt(0).toUpperCase()}</span>
                 </div>
               )}
               <div>
@@ -185,20 +176,15 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
               </div>
             </div>
           </div>
-          
+
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {item.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
-                >
+                <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                   #{tag}
                 </span>
               ))}
-              {item.tags.length > 3 && (
-                <span className="text-gray-500 text-xs">+{item.tags.length - 3} more</span>
-              )}
+              {item.tags.length > 3 && <span className="text-gray-500 text-xs">+{item.tags.length - 3} more</span>}
             </div>
           )}
         </div>
