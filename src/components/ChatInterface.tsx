@@ -1,9 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Image, Smile, MoreVertical, ArrowLeft } from 'lucide-react';
-import { useMessages, QUICK_RESPONSES } from '../hooks/useMessages';
+import { useMessages } from '../hooks/useMessages';
 import { useAuth } from '../hooks/useAuth';
 import { MatchWithItems } from '../hooks/useMatches';
+
+const QUICK_RESPONSES = [
+  "Hi! I'm interested in trading!",
+  "Can we meet up to exchange?",
+  "Is your item still available?",
+  "Thanks for the match!",
+  "When would be a good time?",
+  "Looks great! Let's do it!"
+];
 
 interface ChatInterfaceProps {
   match: MatchWithItems;
