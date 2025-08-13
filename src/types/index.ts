@@ -66,3 +66,14 @@ export const ITEM_CONDITIONS = [
 
 export type ItemCategory = typeof ITEM_CATEGORIES[number];
 export type ItemCondition = typeof ITEM_CONDITIONS[number];
+export const REPORT_REASONS = [
+  { value: 'inappropriate_content', label: 'Inappropriate Content' },
+  { value: 'misleading_description', label: 'Misleading Description' },
+  { value: 'prohibited_item', label: 'Prohibited Item' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'fake_listing', label: 'Fake Listing' },
+  { value: 'offensive_language', label: 'Offensive Language' },
+  { value: 'copyright_violation', label: 'Copyright Violation' },
+  { value: 'safety_concern', label: 'Safety Concern' },
+  { value: 'other', label: 'Other' }
+] as const;

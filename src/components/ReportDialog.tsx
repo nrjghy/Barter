@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Flag, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useReports, REPORT_REASONS } from '../hooks/useReports';
+import { useReports } from '../hooks/useReports';
+import { REPORT_REASONS } from '../types';
 import { ItemWithUser } from '../hooks/useItems';
 import { LoadingSpinner } from './LoadingSpinner';
 import toast from 'react-hot-toast';
