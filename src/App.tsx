@@ -14,24 +14,8 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthCallback } from "./pages/AuthCallback";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
-function AppContent() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-xl">B</span>
-          </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Barter
-          </h1>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
 
   return (
     <Router>
@@ -100,14 +84,14 @@ function AppContent() {
       </Routes>
     </Router>
   );
-}
+};
 
-function App() {
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
-}
+};
 
 export default App;

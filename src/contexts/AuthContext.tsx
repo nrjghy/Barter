@@ -19,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchUserProfile = async (authUser: User) => {
     console.log("[AuthContext] fetchUserProfile called", authUser);
@@ -28,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         console.error("[AuthContext] Error fetching user profile:", error);
         if (error.code === "PGRST116") {
-          console.log("[AuthContext] User not found in users table, this might be expected for demo");
+          console.log("[AuthContext] User not found in users table");
         }
         return;
       }
@@ -62,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       }
       setLoading(false);
+      setInitialized(true);
       console.log("[AuthContext] setLoading(false) called after getSession");
     });
 
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       }
       setLoading(false);
+      setInitialized(true);
       console.log("[AuthContext] setLoading(false) called in onAuthStateChange");
     });
 
@@ -94,6 +97,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // fetchUserProfile(user.id) ...
     }
   }, [user]);
+
+  // Don't render children until the context is fully initialized
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-xl">B</span>
+          </div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
+            Barter
+          </h1>
+          <p className="text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -219,6 +239,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
+    console.error("[useAuth] Hook called outside of AuthProvider");
+    console.error("[useAuth] Stack trace:", new Error().stack);
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

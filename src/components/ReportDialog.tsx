@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Flag, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useReports, REPORT_REASONS } from '../hooks/useReports';
-import { ItemWithUser } from '../hooks/useItems';
-import { LoadingSpinner } from './LoadingSpinner';
-import toast from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Flag, AlertTriangle, CheckCircle } from "lucide-react";
+import { useReports } from "../hooks/useReports";
+import { ItemWithUser } from "../services/itemService";
+import { REPORT_REASONS } from "../types";
+import { LoadingSpinner } from "./LoadingSpinner";
+import toast from "react-hot-toast";
 
 interface ReportDialogProps {
   isOpen: boolean;
@@ -14,8 +15,8 @@ interface ReportDialogProps {
 
 export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, item }) => {
   const { createReport, checkExistingReport, loading } = useReports();
-  const [reason, setReason] = useState('');
-  const [description, setDescription] = useState('');
+  const [reason, setReason] = useState("");
+  const [description, setDescription] = useState("");
   const [hasExistingReport, setHasExistingReport] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -32,42 +33,42 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!reason) {
-      toast.error('Please select a reason for reporting');
+      toast.error("Please select a reason for reporting");
       return;
     }
 
     try {
       const { error } = await createReport({
         reported_item_id: item.id,
-        reported_user_id: item.user_id,
+        reported_user_id: item.userId,
         reason,
         description: description.trim() || undefined,
       });
 
       if (error) {
-        toast.error('Failed to submit report');
+        toast.error("Failed to submit report");
       } else {
         setSubmitted(true);
-        toast.success('Report submitted successfully');
+        toast.success("Report submitted successfully");
         setTimeout(() => {
           onClose();
           setSubmitted(false);
-          setReason('');
-          setDescription('');
+          setReason("");
+          setDescription("");
         }, 2000);
       }
     } catch (error) {
-      toast.error('Failed to submit report');
+      toast.error("Failed to submit report");
     }
   };
 
   const handleClose = () => {
     onClose();
     setSubmitted(false);
-    setReason('');
-    setDescription('');
+    setReason("");
+    setDescription("");
   };
 
   if (!isOpen) return null;
@@ -95,10 +96,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
               </div>
               <h2 className="text-xl font-bold text-gray-900">Report Listing</h2>
             </div>
-            <button
-              onClick={handleClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -108,19 +106,15 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                  {item.image_url && item.image_url.trim() !== '' ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover"
-                    />
+                  {item.imageUrl && item.imageUrl.trim() !== "" ? (
+                    <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-gray-200" />
                   )}
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                  <p className="text-sm text-gray-600">by {item.users.username}</p>
+                  <p className="text-sm text-gray-600">by {item.user.username}</p>
                 </div>
               </div>
             </div>
@@ -128,19 +122,13 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
             {hasExistingReport ? (
               <div className="text-center py-8">
                 <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Already Reported
-                </h3>
-                <p className="text-gray-600">
-                  You have already reported this listing. Our team will review it soon.
-                </p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Already Reported</h3>
+                <p className="text-gray-600">You have already reported this listing. Our team will review it soon.</p>
               </div>
             ) : submitted ? (
               <div className="text-center py-8">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  Report Submitted
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Report Submitted</h3>
                 <p className="text-gray-600">
                   Thank you for helping keep our community safe. We'll review this report soon.
                 </p>
@@ -184,9 +172,7 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
                     placeholder="Provide any additional context that might help our review..."
                     maxLength={500}
                   />
-                  <div className="text-xs text-gray-500 mt-1">
-                    {description.length}/500 characters
-                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{description.length}/500 characters</div>
                 </div>
 
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -195,7 +181,8 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
                     <div className="text-sm text-yellow-800">
                       <p className="font-medium mb-1">Important:</p>
                       <p>
-                        False reports may result in account restrictions. Only report listings that genuinely violate our community guidelines.
+                        False reports may result in account restrictions. Only report listings that genuinely violate
+                        our community guidelines.
                       </p>
                     </div>
                   </div>

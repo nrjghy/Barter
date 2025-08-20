@@ -6,13 +6,14 @@ import { EnhancedItemCard } from "../components/EnhancedItemCard";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { SmartMatchDialog } from "../components/SmartMatchDialog";
-import { useItems, ItemWithUser } from "../hooks/useItems";
+import { useItems } from "../hooks/useItems";
+import { ItemWithUser } from "../services/itemService";
 import { useSwipes } from "../hooks/useSwipes";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 
 export const Dashboard: React.FC = () => {
-  const { items, loading, error, hasMore, loadMoreItems, refetch, includeDemoUsers, toggleDemoUsers } = useItems();
+  const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems();
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
   const { user } = useAuth();
   const [debugInfo, setDebugInfo] = useState(false);
@@ -23,7 +24,6 @@ export const Dashboard: React.FC = () => {
   const [viewMode, setViewMode] = useState<"swipe" | "grid">("swipe");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   // Load previously swiped items
   useEffect(() => {
@@ -58,13 +58,10 @@ export const Dashboard: React.FC = () => {
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
 
-    setLoadingMore(true);
     try {
       await loadMoreItems();
     } catch (error) {
       toast.error("Failed to load more items");
-    } finally {
-      setLoadingMore(false);
     }
   };
 
@@ -96,7 +93,6 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleUndo = () => {
-    // For demo purposes, allow undo of last swipe
     if (swipedItems.size > 0) {
       const lastSwipedItem = Array.from(swipedItems).pop();
       if (lastSwipedItem) {
@@ -173,6 +169,13 @@ export const Dashboard: React.FC = () => {
           >
             <RefreshCw className="w-4 h-4 text-gray-600" />
           </button>
+          <button
+            onClick={() => setSwipedItems(new Set())}
+            className="p-2 text-xs bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+            title="Clear swiped items (debug)"
+          >
+            Clear Swipes
+          </button>
           <div className="flex bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => setViewMode("swipe")}
@@ -216,29 +219,6 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Demo Users Filter - Only show for admin users */}
-      {user?.role === "admin" && (
-        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-blue-600" />
-              <span className="text-sm font-medium text-blue-900">Admin Controls</span>
-            </div>
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={includeDemoUsers}
-                onChange={(e) => toggleDemoUsers(e.target.checked)}
-                className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-blue-700">Show Demo Listings</span>
-            </label>
-          </div>
-          <div className="mt-2 text-xs text-blue-600">
-            {includeDemoUsers ? "Showing all listings including demo users" : "Hiding listings from demo users"}
-          </div>
-        </div>
-      )}
       {/* Debug Information */}
       {debugInfo && (
         <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
@@ -257,10 +237,10 @@ export const Dashboard: React.FC = () => {
               <strong>User role:</strong> {user?.role || "user"}
             </p>
             <p>
-              <strong>Include demo users:</strong> {includeDemoUsers ? "Yes" : "No"}
+              <strong>Swiped items count:</strong> {swipedItems.size}
             </p>
             <p>
-              <strong>Swiped items count:</strong> {swipedItems.size}
+              <strong>Swiped item IDs:</strong> {Array.from(swipedItems).join(", ") || "None"}
             </p>
             <p>
               <strong>Selected categories:</strong>{" "}
@@ -277,7 +257,7 @@ export const Dashboard: React.FC = () => {
               <strong>Has more items:</strong> {hasMore ? "Yes" : "No"}
             </p>
             <p>
-              <strong>Current page:</strong> {Math.floor(items.length / 20)}
+              <strong>Loading more:</strong> {loadingMore ? "Yes" : "No"}
             </p>
           </div>
         </div>

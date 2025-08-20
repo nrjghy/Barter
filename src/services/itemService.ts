@@ -12,7 +12,7 @@ export class ItemService {
    * Get items for browsing with pagination and filtering
    */
   static async getItems(
-    options: PaginationOptions & FilterOptions & { userId?: string; role?: string }
+    options: PaginationOptions & FilterOptions & { userId?: string }
   ): Promise<ServiceResult<ItemWithUser[]>> {
     try {
       // Validate pagination parameters
@@ -43,8 +43,7 @@ export class ItemService {
             username,
             location,
             avatar_url,
-            rating,
-            is_demo
+            rating
           )
         `
         )
@@ -61,11 +60,6 @@ export class ItemService {
 
       if (options.conditions && options.conditions.length > 0) {
         query = query.in("condition", options.conditions);
-      }
-
-      // Handle demo users filter
-      if (!options.includeDemoUsers || options.role !== "admin") {
-        query = query.eq("users.is_demo", false);
       }
 
       // Apply pagination
@@ -107,7 +101,6 @@ export class ItemService {
           role: "", // Not included in select
           rating: item.users.rating,
           totalRatings: 0, // Not included in select
-          isDemo: item.users.is_demo,
         },
       }));
 
@@ -195,8 +188,7 @@ export class ItemService {
             username,
             location,
             avatar_url,
-            rating,
-            is_demo
+            rating
           )
         `
         )
@@ -242,7 +234,6 @@ export class ItemService {
           role: "", // Not included in select
           rating: data.users.rating,
           totalRatings: 0, // Not included in select
-          isDemo: data.users.is_demo,
         },
       };
 

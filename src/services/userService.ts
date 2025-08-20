@@ -12,7 +12,6 @@ export interface UserProfile {
   role: string;
   rating?: number;
   totalRatings?: number;
-  isDemo: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,7 +62,7 @@ export class UserService {
         role: data.role,
         rating: data.rating,
         totalRatings: data.total_ratings,
-        isDemo: data.is_demo,
+
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -129,7 +128,6 @@ export class UserService {
         role: data.role,
         rating: data.rating,
         totalRatings: data.total_ratings,
-        isDemo: data.is_demo,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -185,7 +183,6 @@ export class UserService {
         role: data.role,
         rating: data.rating,
         totalRatings: data.total_ratings,
-        isDemo: data.is_demo,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };

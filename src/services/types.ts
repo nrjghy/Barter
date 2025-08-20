@@ -42,7 +42,6 @@ export interface UserData {
   role: string;
   rating?: number;
   totalRatings?: number;
-  isDemo: boolean;
 }
 
 export interface ReviewData {
@@ -73,7 +72,6 @@ export interface NotificationData {
 export interface PaginationOptions {
   page: number;
   limit: number;
-  includeDemoUsers?: boolean;
 }
 
 export interface FilterOptions {

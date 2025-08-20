@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { Heart, X, Zap, MapPin, Clock, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ItemWithUser } from "../hooks/useItems";
+import { ItemWithUser } from "../services/itemService";
 
 interface SwipeCardProps {
   item: ItemWithUser;
@@ -46,7 +46,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
     }
   };
 
-  const formattedDate = new Date(item.created_at).toLocaleDateString("en-US", {
+  const formattedDate = new Date(item.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
@@ -101,8 +101,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
         {/* Image */}
         <div className="h-2/3 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-          {item.image_url && item.image_url.trim() !== "" ? (
-            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" draggable={false} />
+          {item.imageUrl && item.imageUrl.trim() !== "" ? (
+            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
@@ -118,13 +118,6 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
             <span className="text-sm font-medium text-gray-700">{item.condition}</span>
           </div>
-
-          {/* Demo Badge */}
-          {item.users.is_demo && (
-            <div className="absolute bottom-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-              DEMO ACCOUNT
-            </div>
-          )}
         </div>
 
         {/* Content */}
@@ -146,30 +139,30 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              {item.users.avatar_url ? (
+              {item.user.avatarUrl ? (
                 <img
-                  src={item.users.avatar_url}
-                  alt={item.users.username}
+                  src={item.user.avatarUrl}
+                  alt={item.user.username}
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
                 <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">{item.users.username.charAt(0).toUpperCase()}</span>
+                  <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
                 </div>
               )}
               <div>
-                <p className="font-medium text-gray-900">{item.users.username}</p>
+                <p className="font-medium text-gray-900">{item.user.username}</p>
                 <div className="flex items-center space-x-2">
-                  {item.users.location && (
+                  {item.user.location && (
                     <div className="flex items-center text-gray-500 text-xs">
                       <MapPin className="w-3 h-3 mr-1" />
-                      {item.users.location}
+                      {item.user.location}
                     </div>
                   )}
-                  {item.users.rating && (
+                  {item.user.rating && (
                     <div className="flex items-center text-gray-500 text-xs">
                       <Star className="w-3 h-3 mr-1 fill-current text-yellow-400" />
-                      {item.users.rating}
+                      <span>{item.user.rating}</span>
                     </div>
                   )}
                 </div>
