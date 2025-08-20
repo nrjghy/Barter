@@ -79,6 +79,12 @@ export interface FilterOptions {
   conditions?: string[];
   excludeUserId?: string;
   isActive?: boolean;
+  // Advanced filter options
+  radius?: number;
+  minValue?: string;
+  maxValue?: string;
+  maxAge?: number;
+  minRating?: number;
 }
 
 export interface ServiceError {

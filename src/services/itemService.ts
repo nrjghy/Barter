@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { ItemData, UserData, ServiceResult, PaginationOptions, FilterOptions } from "./types";
+import { ItemData, UserData, ServiceResult, ServiceError, PaginationOptions, FilterOptions } from "./types";
 import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
@@ -60,6 +60,33 @@ export class ItemService {
 
       if (options.conditions && options.conditions.length > 0) {
         query = query.in("condition", options.conditions);
+      }
+
+      // Apply advanced filters
+      if (options.minValue && options.minValue !== "") {
+        query = query.gte("estimated_value", parseFloat(options.minValue));
+      }
+
+      if (options.maxValue && options.maxValue !== "") {
+        query = query.lte("estimated_value", parseFloat(options.maxValue));
+      }
+
+      if (options.maxAge && options.maxAge > 0) {
+        const maxAgeDate = new Date();
+        maxAgeDate.setDate(maxAgeDate.getDate() - options.maxAge);
+        query = query.gte("created_at", maxAgeDate.toISOString());
+      }
+
+      if (options.minRating && options.minRating > 0) {
+        query = query.gte("users.rating", options.minRating);
+      }
+
+      // Apply radius filter if user location is available
+      if (options.radius && options.radius > 0) {
+        // For now, we'll implement basic radius filtering
+        // This would need to be enhanced with proper geospatial queries
+        // when user location data is available
+        // TODO: Implement proper radius filtering with user location
       }
 
       // Apply pagination

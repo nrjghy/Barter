@@ -8,14 +8,33 @@ export const useItems = (options?: {
   categories?: string[];
   conditions?: string[];
   excludeUserId?: string;
+  // Advanced filter options
+  radius?: number;
+  minValue?: string;
+  maxValue?: string;
+  maxAge?: number;
+  minRating?: number;
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { limit = 20, categories, conditions, excludeUserId } = options || {};
+  const {
+    limit = 20,
+    categories,
+    conditions,
+    excludeUserId,
+    radius,
+    minValue,
+    maxValue,
+    maxAge,
+    minRating,
+  } = options || {};
 
   // Get items for browsing with infinite pagination
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
-    queryKey: ["items", { limit, categories, conditions, excludeUserId }],
+    queryKey: [
+      "items",
+      { limit, categories, conditions, excludeUserId, radius, minValue, maxValue, maxAge, minRating },
+    ],
     queryFn: ({ pageParam = 0 }) =>
       ItemService.getItems({
         page: pageParam as number,
@@ -23,6 +42,11 @@ export const useItems = (options?: {
         categories,
         conditions,
         excludeUserId,
+        radius,
+        minValue,
+        maxValue,
+        maxAge,
+        minRating,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: ServiceResult<ItemWithUser[]>, allPages) => {

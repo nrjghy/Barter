@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, X, Check } from 'lucide-react';
-import { ITEM_CATEGORIES, ITEM_CONDITIONS } from '../types';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Filter, X, Check } from "lucide-react";
+import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 
 interface CategoryFilterProps {
   selectedCategories: string[];
@@ -9,6 +9,17 @@ interface CategoryFilterProps {
   onCategoriesChange: (categories: string[]) => void;
   onConditionsChange: (conditions: string[]) => void;
   onClose: () => void;
+  // Advanced filter props
+  radius?: number;
+  minValue?: string;
+  maxValue?: string;
+  maxAge?: number;
+  minRating?: number;
+  onRadiusChange?: (radius: number) => void;
+  onMinValueChange?: (value: string) => void;
+  onMaxValueChange?: (value: string) => void;
+  onMaxAgeChange?: (age: number) => void;
+  onMinRatingChange?: (rating: number) => void;
 }
 
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
@@ -17,28 +28,74 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   onCategoriesChange,
   onConditionsChange,
   onClose,
+  // Advanced filter props
+  radius = 50,
+  minValue = "",
+  maxValue = "",
+  maxAge = 30,
+  minRating = 3.0,
+  onRadiusChange,
+  onMinValueChange,
+  onMaxValueChange,
+  onMaxAgeChange,
+  onMinRatingChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'categories' | 'conditions'>('categories');
+  // Local state for filters - only applied when user clicks Apply
+  const [localCategories, setLocalCategories] = useState(selectedCategories);
+  const [localConditions, setLocalConditions] = useState(selectedConditions);
+  const [localRadius, setLocalRadius] = useState(radius);
+  const [localMinValue, setLocalMinValue] = useState(minValue);
+  const [localMaxValue, setLocalMaxValue] = useState(maxValue);
+  const [localMaxAge, setLocalMaxAge] = useState(maxAge);
+  const [localMinRating, setLocalMinRating] = useState(minRating);
+
+  // Update local state when props change (e.g., when component reopens)
+  React.useEffect(() => {
+    setLocalCategories(selectedCategories);
+    setLocalConditions(selectedConditions);
+    setLocalRadius(radius);
+    setLocalMinValue(minValue);
+    setLocalMaxValue(maxValue);
+    setLocalMaxAge(maxAge);
+    setLocalMinRating(minRating);
+  }, [selectedCategories, selectedConditions, radius, minValue, maxValue, maxAge, minRating]);
 
   const toggleCategory = (category: string) => {
-    if (selectedCategories.includes(category)) {
-      onCategoriesChange(selectedCategories.filter(c => c !== category));
+    if (localCategories.includes(category)) {
+      setLocalCategories(localCategories.filter((c) => c !== category));
     } else {
-      onCategoriesChange([...selectedCategories, category]);
+      setLocalCategories([...localCategories, category]);
     }
   };
 
   const toggleCondition = (condition: string) => {
-    if (selectedConditions.includes(condition)) {
-      onConditionsChange(selectedConditions.filter(c => c !== condition));
+    if (localConditions.includes(condition)) {
+      setLocalConditions(localConditions.filter((c) => c !== condition));
     } else {
-      onConditionsChange([...selectedConditions, condition]);
+      setLocalConditions([...localConditions, condition]);
     }
   };
 
   const clearAll = () => {
-    onCategoriesChange([]);
-    onConditionsChange([]);
+    setLocalCategories([]);
+    setLocalConditions([]);
+    setLocalRadius(50);
+    setLocalMinValue("");
+    setLocalMaxValue("");
+    setLocalMaxAge(30);
+    setLocalMinRating(3.0);
+  };
+
+  const handleApply = () => {
+    // Apply all local changes at once
+    onCategoriesChange(localCategories);
+    onConditionsChange(localConditions);
+    if (onRadiusChange) onRadiusChange(localRadius);
+    if (onMinValueChange) onMinValueChange(localMinValue);
+    if (onMaxValueChange) onMaxValueChange(localMaxValue);
+    if (onMaxAgeChange) onMaxAgeChange(localMaxAge);
+    if (onMinRatingChange) onMinRatingChange(localMinRating);
+    onClose();
   };
 
   return (
@@ -65,111 +122,151 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             <h2 className="text-xl font-bold text-gray-900">Filter Items</h2>
           </div>
           <div className="flex items-center space-x-2">
-            <button
-              onClick={clearAll}
-              className="text-sm text-purple-600 hover:text-purple-700 font-medium"
-            >
+            <button onClick={clearAll} className="text-sm text-purple-600 hover:text-purple-700 font-medium">
               Clear All
             </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b">
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'categories'
-                ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Categories ({selectedCategories.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('conditions')}
-            className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${
-              activeTab === 'conditions'
-                ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Conditions ({selectedConditions.length})
-          </button>
-        </div>
-
-        {/* Content */}
+        {/* Content - Single scrollable interface */}
         <div className="p-6 overflow-y-auto max-h-96">
-          <AnimatePresence mode="wait">
-            {activeTab === 'categories' ? (
-              <motion.div
-                key="categories"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-3"
-              >
-                {ITEM_CATEGORIES.map((category) => (
-                  <motion.button
-                    key={category}
-                    onClick={() => toggleCategory(category)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                      selectedCategories.includes(category)
-                        ? 'bg-purple-50 border-purple-200 text-purple-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="font-medium">{category}</span>
-                    {selectedCategories.includes(category) && (
-                      <Check className="w-5 h-5 text-purple-600" />
-                    )}
-                  </motion.button>
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="conditions"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-3"
-              >
-                {ITEM_CONDITIONS.map((condition) => (
-                  <motion.button
-                    key={condition}
-                    onClick={() => toggleCondition(condition)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all ${
-                      selectedConditions.includes(condition)
-                        ? 'bg-purple-50 border-purple-200 text-purple-700'
-                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="font-medium">{condition}</span>
-                    {selectedConditions.includes(condition) && (
-                      <Check className="w-5 h-5 text-purple-600" />
-                    )}
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Categories Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {ITEM_CATEGORIES.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => toggleCategory(category)}
+                  className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                    localCategories.includes(category)
+                      ? "bg-purple-50 border-purple-200 text-purple-700"
+                      : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Conditions Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Condition</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {ITEM_CONDITIONS.map((condition) => (
+                <button
+                  key={condition}
+                  onClick={() => toggleCondition(condition)}
+                  className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                    localConditions.includes(condition)
+                      ? "bg-purple-50 border-purple-200 text-purple-700"
+                      : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {condition}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Radius Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Search Radius</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>0 km</span>
+                <span className="font-medium text-purple-600">{localRadius} km</span>
+                <span>100 km</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={localRadius}
+                onChange={(e) => setLocalRadius(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+          </div>
+
+          {/* Value Range Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estimated Value</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Min Value</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={localMinValue}
+                  onChange={(e) => setLocalMinValue(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">Max Value</label>
+                <input
+                  type="number"
+                  placeholder="1000"
+                  value={localMaxValue}
+                  onChange={(e) => setLocalMaxValue(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Age Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Maximum Listing Age</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>1 day</span>
+                <span className="font-medium text-purple-600">{localMaxAge} days</span>
+                <span>365 days</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="365"
+                value={localMaxAge}
+                onChange={(e) => setLocalMaxAge(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+          </div>
+
+          {/* Rating Section */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Minimum Seller Rating</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>1.0</span>
+                <span className="font-medium text-purple-600">{localMinRating.toFixed(1)}</span>
+                <span>5.0</span>
+              </div>
+              <input
+                type="range"
+                min="1.0"
+                max="5.0"
+                step="0.1"
+                value={localMinRating}
+                onChange={(e) => setLocalMinRating(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
         <div className="p-6 border-t bg-gray-50">
           <button
-            onClick={onClose}
-            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-xl font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 shadow-lg"
+            onClick={handleApply}
+            className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
           >
             Apply Filters
           </button>
