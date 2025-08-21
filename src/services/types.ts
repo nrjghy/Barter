@@ -31,6 +31,7 @@ export interface ItemData {
   isActive: boolean;
   price?: number;
   sourceUrl?: string;
+  createdAt: string;
 }
 
 export interface UserData {

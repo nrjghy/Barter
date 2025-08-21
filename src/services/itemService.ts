@@ -119,6 +119,7 @@ export class ItemService {
         isActive: item.is_active,
         price: item.price,
         sourceUrl: item.source_url,
+        createdAt: item.created_at,
         user: {
           id: item.users.id,
           username: item.users.username,
@@ -181,6 +182,7 @@ export class ItemService {
         isActive: item.is_active,
         price: item.price,
         sourceUrl: item.source_url,
+        createdAt: item.created_at,
       }));
 
       return { data: transformedData };
