@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { ItemData, UserData, ServiceResult, PaginationOptions, FilterOptions } from "./types";
+import { ItemData, UserData, ServiceResult, ServiceError, PaginationOptions, FilterOptions } from "./types";
 import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
@@ -12,7 +12,7 @@ export class ItemService {
    * Get items for browsing with pagination and filtering
    */
   static async getItems(
-    options: PaginationOptions & FilterOptions & { userId?: string; role?: string }
+    options: PaginationOptions & FilterOptions & { userId?: string }
   ): Promise<ServiceResult<ItemWithUser[]>> {
     try {
       // Validate pagination parameters
@@ -38,13 +38,14 @@ export class ItemService {
           is_active,
           price,
           source_url,
+          estimated_value,
+          value_currency,
           users!inner (
             id,
             username,
             location,
             avatar_url,
-            rating,
-            is_demo
+            rating
           )
         `
         )
@@ -63,9 +64,31 @@ export class ItemService {
         query = query.in("condition", options.conditions);
       }
 
-      // Handle demo users filter
-      if (!options.includeDemoUsers || options.role !== "admin") {
-        query = query.eq("users.is_demo", false);
+      // Apply advanced filters
+      if (options.minValue && options.minValue !== "") {
+        query = query.gte("estimated_value", parseFloat(options.minValue));
+      }
+
+      if (options.maxValue && options.maxValue !== "") {
+        query = query.lte("estimated_value", parseFloat(options.maxValue));
+      }
+
+      if (options.maxAge && options.maxAge > 0) {
+        const maxAgeDate = new Date();
+        maxAgeDate.setDate(maxAgeDate.getDate() - options.maxAge);
+        query = query.gte("created_at", maxAgeDate.toISOString());
+      }
+
+      if (options.minRating && options.minRating > 0) {
+        query = query.gte("users.rating", options.minRating);
+      }
+
+      // Apply radius filter if user location is available
+      if (options.radius && options.radius > 0) {
+        // For now, we'll implement basic radius filtering
+        // This would need to be enhanced with proper geospatial queries
+        // when user location data is available
+        // TODO: Implement proper radius filtering with user location
       }
 
       // Apply pagination
@@ -96,8 +119,12 @@ export class ItemService {
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
-        price: item.price,
+        // Update to use correct fields:
+        estimatedValue: item.estimated_value,
+        valueCurrency: item.value_currency,
         sourceUrl: item.source_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
         user: {
           id: item.users.id,
           username: item.users.username,
@@ -107,7 +134,6 @@ export class ItemService {
           role: "", // Not included in select
           rating: item.users.rating,
           totalRatings: 0, // Not included in select
-          isDemo: item.users.is_demo,
         },
       }));
 
@@ -149,6 +175,7 @@ export class ItemService {
         };
       }
 
+      // Transform data to match our interface
       const transformedData: ItemData[] = data.map((item: any) => ({
         id: item.id,
         title: item.title,
@@ -159,8 +186,12 @@ export class ItemService {
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
-        price: item.price,
+        // Update to use correct fields:
+        estimatedValue: item.estimated_value,
+        valueCurrency: item.value_currency,
         sourceUrl: item.source_url,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
       }));
 
       return { data: transformedData };
@@ -195,8 +226,7 @@ export class ItemService {
             username,
             location,
             avatar_url,
-            rating,
-            is_demo
+            rating
           )
         `
         )
@@ -231,8 +261,12 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
-        price: data.price,
+        // Update to use correct fields:
+        estimatedValue: data.estimated_value,
+        valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
         user: {
           id: data.users.id,
           username: data.users.username,
@@ -242,7 +276,6 @@ export class ItemService {
           role: "", // Not included in select
           rating: data.users.rating,
           totalRatings: 0, // Not included in select
-          isDemo: data.users.is_demo,
         },
       };
 
@@ -286,8 +319,12 @@ export class ItemService {
             tags: itemData.tags,
             user_id: userId,
             is_active: itemData.isActive,
-            price: itemData.price,
+            // Update field mappings to match database schema:
+            estimated_value: itemData.estimatedValue,
+            value_currency: itemData.valueCurrency,
             source_url: itemData.sourceUrl,
+            created_at: itemData.createdAt,
+            updated_at: itemData.updatedAt,
           },
         ])
         .select()
@@ -313,8 +350,12 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
-        price: data.price,
+        // Update to use correct fields:
+        estimatedValue: data.estimated_value,
+        valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
       };
 
       return { data: transformedData };
@@ -360,7 +401,9 @@ export class ItemService {
           image_url: updates.imageUrl,
           tags: updates.tags,
           is_active: updates.isActive,
-          price: updates.price,
+          // Update to use correct fields:
+          estimated_value: updates.estimatedValue,
+          value_currency: updates.valueCurrency,
           source_url: updates.sourceUrl,
           updated_at: new Date().toISOString(),
         })
@@ -388,8 +431,12 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
-        price: data.price,
+        // Update to use correct fields:
+        estimatedValue: data.estimated_value,
+        valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
       };
 
       return { data: transformedData };

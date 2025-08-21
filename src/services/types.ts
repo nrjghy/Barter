@@ -29,8 +29,12 @@ export interface ItemData {
   tags?: string[];
   userId: string;
   isActive: boolean;
-  price?: number;
+  // Update fields to match database schema:
+  estimatedValue?: number | null;
+  valueCurrency?: string;
   sourceUrl?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserData {
@@ -42,7 +46,6 @@ export interface UserData {
   role: string;
   rating?: number;
   totalRatings?: number;
-  isDemo: boolean;
 }
 
 export interface ReviewData {
@@ -73,7 +76,6 @@ export interface NotificationData {
 export interface PaginationOptions {
   page: number;
   limit: number;
-  includeDemoUsers?: boolean;
 }
 
 export interface FilterOptions {
@@ -81,6 +83,12 @@ export interface FilterOptions {
   conditions?: string[];
   excludeUserId?: string;
   isActive?: boolean;
+  // Advanced filter options
+  radius?: number;
+  minValue?: string;
+  maxValue?: string;
+  maxAge?: number;
+  minRating?: number;
 }
 
 export interface ServiceError {

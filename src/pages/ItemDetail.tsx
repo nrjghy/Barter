@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Heart, 
-  Share2, 
-  MessageCircle, 
-  MapPin, 
-  Calendar, 
-  Tag, 
-  Star, 
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  MessageCircle,
+  MapPin,
+  Calendar,
+  Tag,
+  Star,
   Bookmark,
   ChevronLeft,
   ChevronRight,
@@ -18,22 +18,22 @@ import {
   Eye,
   Clock,
   Package,
-  ExternalLink
-} from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../hooks/useAuth';
-import { useSwipes } from '../hooks/useSwipes';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ReportDialog } from '../components/ReportDialog';
-import { ItemWithUser } from '../hooks/useItems';
-import toast from 'react-hot-toast';
+  ExternalLink,
+} from "lucide-react";
+import { supabase } from "../lib/supabase";
+import { useAuth } from "../hooks/useAuth";
+import { useSwipes } from "../hooks/useSwipes";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { ReportDialog } from "../components/ReportDialog";
+import { ItemWithUser } from "../hooks/useItems";
+import toast from "react-hot-toast";
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { recordSwipe } = useSwipes();
-  
+
   const [item, setItem] = useState<ItemWithUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,8 +43,8 @@ export const ItemDetail: React.FC = () => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
-  // Mock additional images for demo (in real app, these would come from database)
-  const mockImages = (item?.image_url && item.image_url.trim() !== '') ? [item.image_url] : [];
+  // Mock additional images (in real app, these would come from database)
+  const mockImages = item?.image_url && item.image_url.trim() !== "" ? [item.image_url] : [];
 
   useEffect(() => {
     if (id) {
@@ -54,14 +54,15 @@ export const ItemDetail: React.FC = () => {
 
   const fetchItem = async () => {
     if (!id) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const { data, error } = await supabase
-        .from('items')
-        .select(`
+        .from("items")
+        .select(
+          `
           *,
           users!inner (
             id,
@@ -69,45 +70,45 @@ export const ItemDetail: React.FC = () => {
             location,
             avatar_url,
             rating,
-            is_demo,
             created_at
           )
-        `)
-        .eq('id', id)
-        .eq('is_active', true)
+        `
+        )
+        .eq("id", id)
+        .eq("is_active", true)
         .single();
 
       if (error) throw error;
-      
+
       setItem(data as ItemWithUser);
     } catch (error) {
-      console.error('Error fetching item:', error);
-      setError('Failed to load item details');
+      console.error("Error fetching item:", error);
+      setError("Failed to load item details");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSwipe = async (direction: 'left' | 'right' | 'super') => {
+  const handleSwipe = async (direction: "left" | "right" | "super") => {
     if (!item || !user) return;
 
     const { error } = await recordSwipe(item.id, direction);
-    
+
     if (error) {
-      toast.error('Failed to record action');
+      toast.error("Failed to record action");
       return;
     }
 
-    if (direction === 'super') {
-      toast.success('Super Like sent! ⚡');
-    } else if (direction === 'right') {
-      toast.success('Liked! 💖');
+    if (direction === "super") {
+      toast.success("Super Like sent! ⚡");
+    } else if (direction === "right") {
+      toast.success("Liked! 💖");
     } else {
-      toast.success('Passed');
+      toast.success("Passed");
     }
 
     // Navigate back to discover after action
-    setTimeout(() => navigate('/'), 1000);
+    setTimeout(() => navigate("/"), 1000);
   };
 
   const handleShare = async () => {
@@ -126,52 +127,54 @@ export const ItemDetail: React.FC = () => {
     } else {
       // Fallback: copy to clipboard
       await navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard!');
+      toast.success("Link copied to clipboard!");
     }
     setShowMoreMenu(false);
   };
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
-    toast.success(isBookmarked ? 'Removed from saved' : 'Saved to bookmarks');
+    toast.success(isBookmarked ? "Removed from saved" : "Saved to bookmarks");
     setShowMoreMenu(false);
   };
 
   const handleContact = () => {
     if (!item || !user) return;
-    
+
     // In a real app, this would create a match or direct message
-    toast.success('Contact request sent!');
+    toast.success("Contact request sent!");
   };
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === mockImages.length - 1 ? 0 : prev + 1
-    );
+    setCurrentImageIndex((prev) => (prev === mockImages.length - 1 ? 0 : prev + 1));
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? mockImages.length - 1 : prev - 1
-    );
+    setCurrentImageIndex((prev) => (prev === 0 ? mockImages.length - 1 : prev - 1));
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
-      case 'Like New': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Very Good': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Good': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Fair': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Poor': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case "Like New":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "Very Good":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "Good":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "Fair":
+        return "bg-orange-100 text-orange-800 border-orange-200";
+      case "Poor":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -194,9 +197,9 @@ export const ItemDetail: React.FC = () => {
             <Package className="w-8 h-8 text-red-600" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Item Not Found</h3>
-          <p className="text-gray-600 mb-4">{error || 'This item may have been removed or is no longer available.'}</p>
+          <p className="text-gray-600 mb-4">{error || "This item may have been removed or is no longer available."}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             Back to Discover
@@ -217,21 +220,18 @@ export const ItemDetail: React.FC = () => {
       <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
           </button>
-          
+
           <div className="flex items-center space-x-2">
-            <button
-              onClick={handleShare}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+            <button onClick={handleShare} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
-            
+
             <div className="relative">
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -239,7 +239,7 @@ export const ItemDetail: React.FC = () => {
               >
                 <MoreVertical className="w-5 h-5" />
               </button>
-              
+
               <AnimatePresence>
                 {showMoreMenu && (
                   <motion.div
@@ -252,8 +252,10 @@ export const ItemDetail: React.FC = () => {
                       onClick={handleBookmark}
                       className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
                     >
-                      <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-current text-purple-600' : 'text-gray-600'}`} />
-                      <span>{isBookmarked ? 'Saved' : 'Save'}</span>
+                      <Bookmark
+                        className={`w-4 h-4 ${isBookmarked ? "fill-current text-purple-600" : "text-gray-600"}`}
+                      />
+                      <span>{isBookmarked ? "Saved" : "Save"}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -284,13 +286,13 @@ export const ItemDetail: React.FC = () => {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-gray-200 rounded-2xl overflow-hidden">
-              {mockImages.length > 0 && mockImages[0] && mockImages[0].trim() !== '' ? (
+              {mockImages.length > 0 && mockImages[0] && mockImages[0].trim() !== "" ? (
                 <>
                   <img
                     src={mockImages[currentImageIndex]}
                     alt={item.title}
                     className={`w-full h-full object-cover transition-opacity duration-300 ${
-                      imageLoading ? 'opacity-0' : 'opacity-100'
+                      imageLoading ? "opacity-0" : "opacity-100"
                     }`}
                     onLoad={() => setImageLoading(false)}
                     onError={() => setImageLoading(false)}
@@ -300,7 +302,7 @@ export const ItemDetail: React.FC = () => {
                       <LoadingSpinner />
                     </div>
                   )}
-                  
+
                   {/* Navigation Arrows */}
                   {mockImages.length > 1 && (
                     <>
@@ -318,7 +320,7 @@ export const ItemDetail: React.FC = () => {
                       </button>
                     </>
                   )}
-                  
+
                   {/* Image Counter */}
                   {mockImages.length > 1 && (
                     <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
@@ -329,10 +331,14 @@ export const ItemDetail: React.FC = () => {
               ) : (
                 <div className="w-full h-full bg-gray-200" />
               )}
-              
+
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col space-y-2">
-                <div className={`px-3 py-1 rounded-full text-sm font-medium border backdrop-blur-sm ${getConditionColor(item.condition)}`}>
+                <div
+                  className={`px-3 py-1 rounded-full text-sm font-medium border backdrop-blur-sm ${getConditionColor(
+                    item.condition
+                  )}`}
+                >
                   {item.condition}
                 </div>
                 {item.price && (
@@ -340,13 +346,8 @@ export const ItemDetail: React.FC = () => {
                     ${item.price}
                   </div>
                 )}
-                {item.users.is_demo && (
-                  <div className="bg-blue-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold">
-                    DEMO
-                  </div>
-                )}
               </div>
-              
+
               {/* View Count */}
               <div className="absolute top-4 right-4">
                 <div className="flex items-center space-x-1 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs">
@@ -355,7 +356,7 @@ export const ItemDetail: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Thumbnail Gallery */}
             {mockImages.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
@@ -364,16 +365,12 @@ export const ItemDetail: React.FC = () => {
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                      index === currentImageIndex 
-                        ? 'border-purple-500 ring-2 ring-purple-200' 
-                        : 'border-gray-200 hover:border-gray-300'
+                      index === currentImageIndex
+                        ? "border-purple-500 ring-2 ring-purple-200"
+                        : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <img
-                      src={image}
-                      alt={`${item.title} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={image} alt={`${item.title} ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -415,12 +412,8 @@ export const ItemDetail: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Value Information</h3>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-green-700">
-                      ${item.price || item.estimated_value}
-                    </span>
-                    <span className="text-sm text-green-600">
-                      {item.price ? 'Listed Price' : 'Estimated Value'}
-                    </span>
+                    <span className="text-2xl font-bold text-green-700">${item.price || item.estimated_value}</span>
+                    <span className="text-sm text-green-600">{item.price ? "Listed Price" : "Estimated Value"}</span>
                   </div>
                   {item.estimated_value && !item.price && (
                     <p className="text-xs text-green-600 mt-1">
@@ -451,43 +444,41 @@ export const ItemDetail: React.FC = () => {
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Seller</h3>
               <div className="flex items-start space-x-4">
-                {item.users.avatar_url ? (
+                {item.user.avatarUrl ? (
                   <img
-                    src={item.users.avatar_url}
-                    alt={item.users.username}
+                    src={item.user.avatarUrl}
+                    alt={item.user.username}
                     className="w-16 h-16 rounded-full object-cover ring-2 ring-purple-100"
                   />
                 ) : (
                   <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center ring-2 ring-purple-100">
-                    <span className="text-white font-bold text-xl">
-                      {item.users.username.charAt(0).toUpperCase()}
-                    </span>
+                    <span className="text-white font-bold text-xl">{item.user.username.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
-                
+
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 text-lg">{item.users.username}</h4>
-                  
+                  <h4 className="font-semibold text-gray-900 text-lg">{item.user.username}</h4>
+
                   <div className="flex items-center space-x-4 mt-2">
-                    {item.users.rating && (
+                    {item.user.rating && (
                       <div className="flex items-center space-x-1">
                         <Star className="w-4 h-4 fill-current text-yellow-400" />
-                        <span className="font-medium">{item.users.rating}</span>
+                        <span className="font-medium">{item.user.rating}</span>
                         <span className="text-gray-500 text-sm">rating</span>
                       </div>
                     )}
-                    
-                    {item.users.location && (
+
+                    {item.user.location && (
                       <div className="flex items-center space-x-1 text-gray-600">
                         <MapPin className="w-4 h-4" />
-                        <span className="text-sm">{item.users.location}</span>
+                        <span className="text-sm">{item.user.location}</span>
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center space-x-1 text-gray-500 text-sm mt-1">
                     <Calendar className="w-4 h-4" />
-                    <span>Member since {formatDate(item.users.created_at)}</span>
+                    <span>Member since {formatDate(item.user.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -499,12 +490,8 @@ export const ItemDetail: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Original Listing</h3>
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600 mb-2">
-                      This item was imported from an external source
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Click to view the original listing for more details
-                    </p>
+                    <p className="text-sm text-gray-600 mb-2">This item was imported from an external source</p>
+                    <p className="text-xs text-gray-500">Click to view the original listing for more details</p>
                   </div>
                   <a
                     href={item.source_url}
@@ -517,9 +504,7 @@ export const ItemDetail: React.FC = () => {
                   </a>
                 </div>
                 <div className="mt-3 pt-3 border-t border-blue-200">
-                  <p className="text-xs text-blue-600 font-mono break-all">
-                    {item.source_url}
-                  </p>
+                  <p className="text-xs text-blue-600 font-mono break-all">{item.source_url}</p>
                 </div>
               </div>
             )}
@@ -533,16 +518,16 @@ export const ItemDetail: React.FC = () => {
                   <MessageCircle className="w-5 h-5" />
                   <span>Contact Seller</span>
                 </button>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleSwipe('left')}
+                    onClick={() => handleSwipe("left")}
                     className="flex items-center justify-center space-x-2 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
                   >
                     <span>Pass</span>
                   </button>
                   <button
-                    onClick={() => handleSwipe('right')}
+                    onClick={() => handleSwipe("right")}
                     className="flex items-center justify-center space-x-2 py-3 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors"
                   >
                     <Heart className="w-4 h-4" />
@@ -556,18 +541,9 @@ export const ItemDetail: React.FC = () => {
       </div>
 
       {/* Click outside to close menu */}
-      {showMoreMenu && (
-        <div
-          className="fixed inset-0 z-10"
-          onClick={() => setShowMoreMenu(false)}
-        />
-      )}
+      {showMoreMenu && <div className="fixed inset-0 z-10" onClick={() => setShowMoreMenu(false)} />}
 
-      <ReportDialog
-        isOpen={showReportDialog}
-        onClose={() => setShowReportDialog(false)}
-        item={item}
-      />
+      <ReportDialog isOpen={showReportDialog} onClose={() => setShowReportDialog(false)} item={item} />
     </motion.div>
   );
 };

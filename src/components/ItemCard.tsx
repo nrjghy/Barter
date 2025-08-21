@@ -1,13 +1,13 @@
-import React, { useState, memo, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { ItemWithUser } from '../hooks/useItems';
-import { ReportDialog } from './ReportDialog';
+import React, { useState, memo, useCallback } from "react";
+import { motion } from "framer-motion";
+import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ItemWithUser } from "../hooks/useItems";
+import { ReportDialog } from "./ReportDialog";
 
 interface ItemCardProps {
   item: ItemWithUser;
-  onSwipe?: (direction: 'left' | 'right') => void;
+  onSwipe?: (direction: "left" | "right") => void;
   showActions?: boolean;
 }
 
@@ -19,16 +19,19 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
 
   // Memoize date formatting
   const formattedDate = React.useMemo(() => {
-    return new Date(item.created_at).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
+    return new Date(item.created_at).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
     });
   }, [item.created_at]);
 
-  const handleMenuClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowMenu(!showMenu);
-  }, [showMenu]);
+  const handleMenuClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setShowMenu(!showMenu);
+    },
+    [showMenu]
+  );
 
   const handleReportClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,23 +39,29 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
     setShowMenu(false);
   }, []);
 
-  const handleCardClick = useCallback((e: React.MouseEvent) => {
-    // Don't navigate if clicking on action buttons
-    if ((e.target as HTMLElement).closest('button')) {
-      return;
-    }
-    navigate(`/item/${item.id}`);
-  }, [navigate, item.id]);
+  const handleCardClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't navigate if clicking on action buttons
+      if ((e.target as HTMLElement).closest("button")) {
+        return;
+      }
+      navigate(`/item/${item.id}`);
+    },
+    [navigate, item.id]
+  );
 
-  const handleDragEnd = useCallback((_, info) => {
-    if (!onSwipe) return;
-    
-    if (info.offset.x > 100) {
-      onSwipe('right');
-    } else if (info.offset.x < -100) {
-      onSwipe('left');
-    }
-  }, [onSwipe]);
+  const handleDragEnd = useCallback(
+    (_, info) => {
+      if (!onSwipe) return;
+
+      if (info.offset.x > 100) {
+        onSwipe("right");
+      } else if (info.offset.x < -100) {
+        onSwipe("left");
+      }
+    },
+    [onSwipe]
+  );
 
   return (
     <>
@@ -68,7 +77,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
       >
         <div className="relative">
           <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            {item.image_url && item.image_url.trim() !== '' ? (
+            {item.image_url && item.image_url.trim() !== "" ? (
               <img
                 src={item.image_url}
                 alt={item.title}
@@ -76,19 +85,19 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
                 loading="lazy" // Add lazy loading
                 onError={(e) => {
                   // Fallback for broken images
-                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.style.display = "none";
                 }}
               />
             ) : (
               <div className="w-full h-full bg-gray-100" />
             )}
           </div>
-          
+
           <div className="absolute top-4 right-4 flex items-center space-x-2">
             <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
               <span className="text-sm font-medium text-gray-700">{item.condition}</span>
             </div>
-            
+
             {showActions && (
               <div className="relative">
                 <button
@@ -97,7 +106,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
                 >
                   <MoreVertical className="w-4 h-4 text-gray-600" />
                 </button>
-                
+
                 {showMenu && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -133,7 +142,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
             </>
           )}
         </div>
-        
+
         <div className="p-6">
           <div className="flex items-start justify-between mb-3">
             <div>
@@ -145,37 +154,30 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
               {formattedDate}
             </div>
           </div>
-          
-          {item.description && (
-            <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>
-          )}
-          
+
+          {item.description && <p className="text-gray-600 mb-4 line-clamp-2">{item.description}</p>}
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-sm">
-                  {item.users.username.charAt(0).toUpperCase()}
-                </span>
+                <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
               </div>
               <div>
-                <p className="font-medium text-gray-900">{item.users.username}</p>
-                {item.users.location && (
+                <p className="font-medium text-gray-900">{item.user.username}</p>
+                {item.user.location && (
                   <div className="flex items-center text-gray-500 text-sm">
                     <MapPin className="w-3 h-3 mr-1" />
-                    {item.users.location}
+                    {item.user.location}
                   </div>
                 )}
               </div>
             </div>
           </div>
-          
+
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               {item.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium"
-                >
+                <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
                   #{tag}
                 </span>
               ))}
@@ -185,20 +187,11 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
       </motion.div>
 
       {/* Click outside to close menu */}
-      {showMenu && (
-        <div
-          className="fixed inset-0 z-5"
-          onClick={() => setShowMenu(false)}
-        />
-      )}
+      {showMenu && <div className="fixed inset-0 z-5" onClick={() => setShowMenu(false)} />}
 
-      <ReportDialog
-        isOpen={showReportDialog}
-        onClose={() => setShowReportDialog(false)}
-        item={item}
-      />
+      <ReportDialog isOpen={showReportDialog} onClose={() => setShowReportDialog(false)} item={item} />
     </>
   );
 });
 
-ItemCard.displayName = 'ItemCard';
+ItemCard.displayName = "ItemCard";

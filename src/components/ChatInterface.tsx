@@ -1,18 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, Smile, MoreVertical, ArrowLeft } from 'lucide-react';
-import { useMessages } from '../hooks/useMessages';
-import { useAuth } from '../hooks/useAuth';
-import { MatchWithItems } from '../hooks/useMatches';
-
-const QUICK_RESPONSES = [
-  "Hi! I'm interested in trading!",
-  "Can we meet up to exchange?",
-  "Is your item still available?",
-  "Thanks for the match!",
-  "When would be a good time?",
-  "Looks great! Let's do it!"
-];
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, Image, Smile, MoreVertical, ArrowLeft } from "lucide-react";
+import { useMessages } from "../hooks/useMessages";
+import { useAuth } from "../hooks/useAuth";
+import { MatchWithItems } from "../hooks/useMatches";
 
 interface ChatInterfaceProps {
   match: MatchWithItems;
@@ -22,7 +13,7 @@ interface ChatInterfaceProps {
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) => {
   const { user } = useAuth();
   const { messages, loading, sendMessage } = useMessages(match.id);
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const [showQuickResponses, setShowQuickResponses] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,19 +22,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
   const otherUserItem = match.user_id_1 === user?.id ? match.item2 : match.item1;
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSendMessage = async (content: string, messageType: 'text' | 'template' = 'text') => {
+  const handleSendMessage = async (content: string, messageType: "text" | "template" = "text") => {
     if (!content.trim()) return;
 
     await sendMessage(content, messageType);
-    setNewMessage('');
+    setNewMessage("");
     setShowQuickResponses(false);
   };
 
   const handleQuickResponse = (response: string) => {
-    handleSendMessage(response, 'template');
+    handleSendMessage(response, "template");
   };
 
   return (
@@ -51,25 +42,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
         <div className="flex items-center space-x-3">
-          <button
-            onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          
+
           <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">
-              {otherUser.username.charAt(0).toUpperCase()}
-            </span>
+            <span className="text-white font-bold text-sm">{otherUser.username.charAt(0).toUpperCase()}</span>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-gray-900">{otherUser.username}</h3>
             <p className="text-sm text-green-600">✓ Matched</p>
           </div>
         </div>
-        
+
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <MoreVertical className="w-5 h-5" />
         </button>
@@ -80,7 +66,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
         <div className="flex items-center justify-center space-x-4">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-lg mb-2 overflow-hidden">
-              {currentUserItem.image_url && currentUserItem.image_url.trim() !== '' ? (
+              {currentUserItem.image_url && currentUserItem.image_url.trim() !== "" ? (
                 <img
                   src={currentUserItem.image_url}
                   alt={currentUserItem.title}
@@ -93,17 +79,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
             <p className="text-xs font-medium text-gray-900">{currentUserItem.title}</p>
             <p className="text-xs text-gray-600">Your item</p>
           </div>
-          
+
           <div className="text-2xl">💝</div>
-          
+
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-200 rounded-lg mb-2 overflow-hidden">
-              {otherUserItem.image_url && otherUserItem.image_url.trim() !== '' ? (
-                <img
-                  src={otherUserItem.image_url}
-                  alt={otherUserItem.title}
-                  className="w-full h-full object-cover"
-                />
+              {otherUserItem.image_url && otherUserItem.image_url.trim() !== "" ? (
+                <img src={otherUserItem.image_url} alt={otherUserItem.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gray-200" />
               )}
@@ -112,11 +94,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
             <p className="text-xs text-gray-600">Their item</p>
           </div>
         </div>
-        
+
         {/* Simple Trade Description */}
         <div className="mt-4 p-3 bg-gray-50 rounded-lg text-center">
           <p className="text-sm text-gray-600">
-            Trading <span className="font-medium">{currentUserItem.title}</span> for{' '}
+            Trading <span className="font-medium">{currentUserItem.title}</span> for{" "}
             <span className="font-medium">{otherUserItem.title}</span>
           </p>
         </div>
@@ -138,24 +120,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${message.sender_id === user?.id ? "justify-end" : "justify-start"}`}
             >
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                  message.sender_id === user?.id
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-900'
-                } ${
-                  message.message_type === 'template' ? 'border-2 border-dashed border-gray-300' : ''
-                }`}
+                  message.sender_id === user?.id ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
+                } ${message.message_type === "template" ? "border-2 border-dashed border-gray-300" : ""}`}
               >
                 <p className="text-sm">{message.content}</p>
-                <p className={`text-xs mt-1 ${
-                  message.sender_id === user?.id ? 'text-blue-100' : 'text-gray-500'
-                }`}>
-                  {new Date(message.created_at).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                <p className={`text-xs mt-1 ${message.sender_id === user?.id ? "text-blue-100" : "text-gray-500"}`}>
+                  {new Date(message.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </p>
               </div>
@@ -195,27 +171,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ match, onBack }) =
           <button
             onClick={() => setShowQuickResponses(!showQuickResponses)}
             className={`p-2 rounded-lg transition-colors ${
-              showQuickResponses ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'
+              showQuickResponses ? "bg-blue-100 text-blue-600" : "hover:bg-gray-100"
             }`}
           >
             <Smile className="w-5 h-5" />
           </button>
-          
+
           <div className="flex-1 relative">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(newMessage)}
+              onKeyPress={(e) => e.key === "Enter" && handleSendMessage(newMessage)}
               placeholder="Type a message..."
               className="w-full px-4 py-2 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
-          
+
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <Image className="w-5 h-5" />
           </button>
-          
+
           <button
             onClick={() => handleSendMessage(newMessage)}
             disabled={!newMessage.trim()}

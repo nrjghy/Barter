@@ -1,38 +1,62 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
-import { ItemService } from "../services";
+import { ItemService, ItemWithUser } from "../services/itemService";
+import { ServiceResult, ItemData } from "../services/types";
 
 export const useItems = (options?: {
-  page?: number;
   limit?: number;
   categories?: string[];
   conditions?: string[];
   excludeUserId?: string;
-  includeDemoUsers?: boolean;
-  role?: string;
+  // Advanced filter options
+  radius?: number;
+  minValue?: string;
+  maxValue?: string;
+  maxAge?: number;
+  minRating?: number;
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { page = 1, limit = 10, categories, conditions, excludeUserId, includeDemoUsers = false, role } = options || {};
-
-  // Get items for browsing (with pagination and filters)
   const {
-    data: itemsData,
-    isLoading: itemsLoading,
-    error: itemsError,
-    isFetching,
-  } = useQuery({
-    queryKey: ["items", { page, limit, categories, conditions, excludeUserId, includeDemoUsers, role }],
-    queryFn: () =>
+    limit = 20,
+    categories,
+    conditions,
+    excludeUserId,
+    radius,
+    minValue,
+    maxValue,
+    maxAge,
+    minRating,
+  } = options || {};
+
+  // Get items for browsing with infinite pagination
+  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
+    queryKey: [
+      "items",
+      { limit, categories, conditions, excludeUserId, radius, minValue, maxValue, maxAge, minRating },
+    ],
+    queryFn: ({ pageParam = 0 }) =>
       ItemService.getItems({
-        page,
+        page: pageParam as number,
         limit,
         categories,
         conditions,
         excludeUserId,
-        includeDemoUsers,
-        role,
+        radius,
+        minValue,
+        maxValue,
+        maxAge,
+        minRating,
       }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage: ServiceResult<ItemWithUser[]>, allPages) => {
+      // If we got a full page of results, there might be more
+      if (lastPage.data && lastPage.data.length === limit) {
+        return allPages.length;
+      }
+      // No more pages
+      return undefined;
+    },
     enabled: !!user,
   });
 
@@ -88,12 +112,19 @@ export const useItems = (options?: {
     },
   });
 
+  // Flatten all pages into a single array of items
+  const items = data?.pages.flatMap((page) => page.data || []) ?? [];
+
   return {
-    // Browse items
-    items: itemsData?.data || [],
-    itemsLoading,
-    itemsError: itemsError?.message,
-    isFetching,
+    // Browse items with infinite pagination
+    items,
+    loading: isLoading,
+    error: error?.message,
+    isFetching: isFetchingNextPage,
+    hasMore: hasNextPage,
+    loadMoreItems: fetchNextPage,
+    loadingMore: isFetchingNextPage,
+    refetch,
 
     // User's own items
     userItems: userItemsData?.data || [],
