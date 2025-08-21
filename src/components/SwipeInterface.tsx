@@ -10,15 +10,16 @@ interface SwipeInterfaceProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
+  onSwipe: (direction: "left" | "right" | "super") => void;
 }
 
 export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
-  ({ currentItem, hasMore, loadingMore, onLoadMore }) => {
+  ({ currentItem, hasMore, loadingMore, onLoadMore, onSwipe }) => {
     return (
       <div className="relative h-[600px] mb-6">
         <AnimatePresence mode="wait">
           {currentItem ? (
-            <SwipeCard key={currentItem.id} item={currentItem} onSwipe={() => {}} />
+            <SwipeCard key={currentItem.id} item={currentItem} onSwipe={onSwipe} />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">

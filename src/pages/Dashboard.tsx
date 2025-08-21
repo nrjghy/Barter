@@ -84,6 +84,10 @@ export const Dashboard: React.FC = () => {
     try {
       await recordSwipe({ itemId: currentItem.id, direction });
       setSwipedItems((prev) => new Set(prev).add(currentItem.id));
+
+      // Reset to first available item since the array is being reindexed
+      setCurrentIndex(0);
+
       if (direction === "super") {
         toast.success("Super Like sent! ⚡");
       } else if (direction === "right") {
@@ -182,6 +186,7 @@ export const Dashboard: React.FC = () => {
         hasMore={hasMore}
         loadingMore={loadingMore}
         onLoadMore={handleLoadMore}
+        onSwipe={handleSwipe}
       />
 
       <SwipeControls
