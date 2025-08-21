@@ -29,9 +29,12 @@ export interface ItemData {
   tags?: string[];
   userId: string;
   isActive: boolean;
-  price?: number;
+  // Update fields to match database schema:
+  estimatedValue?: number | null;
+  valueCurrency?: string;
   sourceUrl?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserData {

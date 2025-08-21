@@ -1,35 +1,36 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Upload, X, Plus, Camera } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useItems } from '../hooks/useItems';
-import { ITEM_CATEGORIES, ITEM_CONDITIONS } from '../types';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Upload, X, Plus, Camera } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useItems } from "../hooks/useItems";
+import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import toast from "react-hot-toast";
 
 export const AddToy: React.FC = () => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [condition, setCondition] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [condition, setCondition] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [estimatedValue, setEstimatedValue] = useState('');
+  const [estimatedValue, setEstimatedValue] = useState("");
   const [loading, setLoading] = useState(false);
-  
-  const { addItem } = useItems();
+
+  const { createItem } = useItems(); // ✅ Use the correct function from the new architecture
   const navigate = useNavigate();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        toast.error('Image must be less than 5MB');
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
+        toast.error("Image must be less than 5MB");
         return;
       }
-      
+
       setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -41,13 +42,13 @@ export const AddToy: React.FC = () => {
 
   const handleAddTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags(prev => [...prev, tagInput.trim()]);
-      setTagInput('');
+      setTags((prev) => [...prev, tagInput.trim()]);
+      setTagInput("");
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(prev => prev.filter(tag => tag !== tagToRemove));
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,26 +56,29 @@ export const AddToy: React.FC = () => {
     setLoading(true);
 
     try {
-      const { error } = await addItem({
+      const { error } = await createItem({
         title,
         description,
         category,
         condition,
         tags,
-        image_url: imagePreview, // In a real app, you'd upload to storage first
-        is_active: true,
-        estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
-        value_currency: 'USD',
+        imageUrl: imagePreview, // ✅ Use correct field name from ItemData interface
+        isActive: true, // ✅ Use correct field name from ItemData interface
+        // Remove mismatched fields and use correct database schema fields:
+        estimatedValue: estimatedValue ? parseFloat(estimatedValue) : null,
+        valueCurrency: 'USD',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       if (error) {
         toast.error(error.message);
       } else {
-        toast.success('Item added successfully!');
-        navigate('/profile');
+        toast.success("Item added successfully!");
+        navigate("/profile");
       }
     } catch (error) {
-      toast.error('Failed to add item');
+      toast.error("Failed to add item");
     } finally {
       setLoading(false);
     }
@@ -90,17 +94,11 @@ export const AddToy: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Image Upload */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Photo
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
           <div className="relative">
             {imagePreview ? (
               <div className="relative">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
+                <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
                 <button
                   type="button"
                   onClick={() => {
@@ -121,12 +119,7 @@ export const AddToy: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
                 </div>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                />
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
               </label>
             )}
           </div>
@@ -176,8 +169,10 @@ export const AddToy: React.FC = () => {
             required
           >
             <option value="">Select a category</option>
-            {ITEM_CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {ITEM_CATEGORIES.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
@@ -195,8 +190,10 @@ export const AddToy: React.FC = () => {
             required
           >
             <option value="">Select condition</option>
-            {ITEM_CONDITIONS.map(cond => (
-              <option key={cond} value={cond}>{cond}</option>
+            {ITEM_CONDITIONS.map((cond) => (
+              <option key={cond} value={cond}>
+                {cond}
+              </option>
             ))}
           </select>
         </div>
@@ -219,21 +216,17 @@ export const AddToy: React.FC = () => {
               step="0.01"
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Help others understand your item's value for fair trades
-          </p>
+          <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades</p>
         </div>
         {/* Tags */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tags
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
           <div className="flex space-x-2 mb-2">
             <input
               type="text"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+              onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="Add a tag"
             />
@@ -246,7 +239,7 @@ export const AddToy: React.FC = () => {
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {tags.map(tag => (
+            {tags.map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700"
@@ -269,7 +262,7 @@ export const AddToy: React.FC = () => {
           disabled={loading}
           className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? <LoadingSpinner /> : 'Add Item'}
+          {loading ? <LoadingSpinner /> : "Add Item"}
         </button>
       </form>
     </div>
