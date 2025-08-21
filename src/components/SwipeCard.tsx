@@ -19,7 +19,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
   // Transform for swipe indicators
   const leftIndicatorOpacity = useTransform(x, [-150, -50], [1, 0]);
-  const rightIndicatorOpacity = useTransform(x, [50, 150], [1, 0]);
+  const rightIndicatorOpacity = useTransform(x, [50, 150], [0, 1]); // Changed from [1, 0] to [0, 1]
   const superIndicatorOpacity = useTransform(x, [-50, 50], [0, 0]);
 
   const cardRef = useRef<HTMLDivElement>(null);
