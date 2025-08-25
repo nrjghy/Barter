@@ -440,9 +440,7 @@ export const ItemDetail: React.FC = () => {
                     <span className="text-2xl font-bold text-green-700">${item.estimatedValue}</span>
                     <span className="text-sm text-green-600">Estimated Value</span>
                   </div>
-                  <p className="text-xs text-green-600 mt-1">
-                    This is the owner's estimated value for trade reference
-                  </p>
+                  <p className="text-xs text-green-600 mt-1">This is the owner's estimated value for trade reference</p>
                 </div>
               </div>
             )}
