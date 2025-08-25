@@ -2,7 +2,7 @@ import React, { useState, memo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X, Star, Eye, Share2, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ItemWithUser } from "../hooks/useItems";
+import { ItemWithUser } from "../services/itemService";
 import { ReportDialog } from "./ReportDialog";
 
 interface EnhancedItemCardProps {
@@ -21,11 +21,11 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
     const [imageLoaded, setImageLoaded] = useState(false);
 
     const formattedDate = React.useMemo(() => {
-      return new Date(item.created_at).toLocaleDateString("en-US", {
+      return new Date(item.createdAt).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
       });
-    }, [item.created_at]);
+    }, [item.createdAt]);
 
     const handleMenuClick = useCallback(
       (e: React.MouseEvent) => {
@@ -77,7 +77,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
     );
 
     const handleDragEnd = useCallback(
-      (_, info) => {
+      (_: any, info: any) => {
         if (!onSwipe) return;
 
         if (info.offset.x > 100) {
@@ -134,28 +134,39 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                 variant === "compact" ? "aspect-[3/2]" : "aspect-[4/3]"
               } bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center relative overflow-hidden`}
             >
-              {item.image_url && item.image_url.trim() !== "" ? (
-                <>
-                  {!imageLoaded && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
-                  )}
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${
-                      imageLoaded ? "opacity-100" : "opacity-0"
-                    }`}
-                    loading="lazy"
-                    onLoad={() => setImageLoaded(true)}
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      setImageLoaded(true);
-                    }}
-                  />
-                </>
-              ) : (
-                <div className="w-full h-full bg-gray-100" />
-              )}
+              {(() => {
+                console.log("EnhancedItemCard - item.imageUrls:", item.imageUrls); // Debug logging
+                return item.imageUrls && item.imageUrls.length > 0 ? (
+                  <>
+                    {!imageLoaded && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+                    )}
+                    {/* Show first image as main, with indicator for multiple images */}
+                    <img
+                      src={item.imageUrls[0]}
+                      alt={item.title}
+                      className={`w-full h-full object-cover transition-opacity duration-300 ${
+                        imageLoaded ? "opacity-100" : "opacity-0"
+                      }`}
+                      loading="lazy"
+                      onLoad={() => setImageLoaded(true)}
+                      onError={(e) => {
+                        console.error("Image load error:", e); // Debug logging
+                        e.currentTarget.style.display = "none";
+                        setImageLoaded(true);
+                      }}
+                    />
+                    {/* Multiple images indicator */}
+                    {item.imageUrls.length > 1 && (
+                      <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium">
+                        +{item.imageUrls.length - 1} more
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gray-100" />
+                );
+              })()}
 
               {/* Gradient overlay for better text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
@@ -171,10 +182,10 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                 >
                   {item.condition}
                 </div>
-                {(item.price || item.estimated_value) && (
+                {item.estimatedValue && (
                   <div className="bg-green-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-bold">
-                    ${item.price || item.estimated_value}
-                    {item.estimated_value && !item.price && <span className="text-xs opacity-75 ml-1">est.</span>}
+                    ${item.estimatedValue}
+                    <span className="text-xs opacity-75 ml-1">est.</span>
                   </div>
                 )}
               </div>

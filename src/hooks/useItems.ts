@@ -132,7 +132,7 @@ export const useItems = (options?: {
     userItemsError: userItemsError?.message,
 
     // Actions
-    createItem: createItem.mutate,
+    createItem: createItem.mutateAsync,
     createItemLoading: createItem.isPending,
     createItemError: createItem.error?.message,
 

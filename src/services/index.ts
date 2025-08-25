@@ -10,6 +10,7 @@ export * from "./reviewService";
 export * from "./reportService";
 export * from "./notificationService";
 export * from "./messageService";
+export * from "./storageService";
 
 // Re-export commonly used types and constants
 export { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./config";

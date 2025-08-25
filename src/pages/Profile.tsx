@@ -344,38 +344,22 @@ export const Profile: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {userItems.map((item) => (
-                <div key={item.id} className="relative">
-                  <EnhancedItemCard
-                    item={{
-                      ...item,
-                      users: {
-                        id: user!.id,
-                        username: user!.username,
-                        location: user?.location || null,
-                        avatar_url: user?.avatar_url || null,
-                        rating: 4.8,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        role: user?.role || "user",
-                        total_ratings: 0,
-                        rating_sum: 0,
-                        wishlist_categories: [],
-                        notification_preferences: {},
-                      },
-                    }}
-                    variant="compact"
-                  />
-                  <div className="absolute top-4 right-4">
-                    <button
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-lg"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+              {userItems.map((item) => {
+                console.log("Item data:", item); // Debug logging
+                return (
+                  <div key={item.id} className="relative">
+                    <EnhancedItemCard item={item} variant="compact" />
+                    <div className="absolute top-4 right-4">
+                      <button
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors shadow-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

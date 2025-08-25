@@ -25,7 +25,7 @@ export interface ItemData {
   description: string;
   category: string;
   condition: string;
-  imageUrl?: string;
+  imageUrls?: string[]; // ✅ Changed from single imageUrl to array of imageUrls
   tags?: string[];
   userId: string;
   isActive: boolean;

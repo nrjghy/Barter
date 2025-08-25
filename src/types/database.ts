@@ -53,7 +53,7 @@ export interface Database {
           description: string | null;
           category: string;
           condition: string;
-          image_url: string | null;
+          image_urls: string[]; // ✅ Changed from single image_url to array of image_urls
           tags: string[];
           is_active: boolean;
           created_at: string;
@@ -69,13 +69,13 @@ export interface Database {
           description?: string | null;
           category: string;
           condition: string;
-          image_url?: string | null;
+          image_urls?: string[]; // ✅ Changed from single image_url to array of image_urls
           tags?: string[];
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
           estimated_value?: number | null;
-          value_currency?: string;
+          value_currency: string;
           source_url?: string | null;
         };
         Update: {
@@ -85,7 +85,7 @@ export interface Database {
           description?: string | null;
           category?: string;
           condition?: string;
-          image_url?: string | null;
+          image_urls?: string[]; // ✅ Changed from single image_url to array of image_urls
           tags?: string[];
           is_active?: boolean;
           created_at?: string;

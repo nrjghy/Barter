@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { ItemData, UserData, ServiceResult, ServiceError, PaginationOptions, FilterOptions } from "./types";
 import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
+import { storageService } from "./storageService";
 
 export interface ItemWithUser extends ItemData {
   user: UserData;
@@ -30,7 +31,7 @@ export class ItemService {
           description,
           category,
           condition,
-          image_url,
+          image_urls,
           tags,
           created_at,
           updated_at,
@@ -115,7 +116,7 @@ export class ItemService {
         description: item.description,
         category: item.category,
         condition: item.condition,
-        imageUrl: item.image_url,
+        imageUrls: item.image_urls, // ✅ Updated to use imageUrls array
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
@@ -152,7 +153,7 @@ export class ItemService {
   /**
    * Get items owned by a specific user
    */
-  static async getUserItems(userId: string): Promise<ServiceResult<ItemData[]>> {
+  static async getUserItems(userId: string): Promise<ServiceResult<ItemWithUser[]>> {
     try {
       const uuidError = ValidationService.validateUUID(userId);
       if (uuidError) {
@@ -161,7 +162,18 @@ export class ItemService {
 
       const { data, error } = await supabase
         .from(TABLES.ITEMS)
-        .select("*")
+        .select(
+          `
+          *,
+          users!inner (
+            id,
+            username,
+            location,
+            avatar_url,
+            rating
+          )
+        `
+        )
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -176,13 +188,13 @@ export class ItemService {
       }
 
       // Transform data to match our interface
-      const transformedData: ItemData[] = data.map((item: any) => ({
+      const transformedData: ItemWithUser[] = data.map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
         category: item.category,
         condition: item.condition,
-        imageUrl: item.image_url,
+        imageUrls: item.image_urls, // ✅ Updated to use imageUrls array
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
@@ -192,6 +204,16 @@ export class ItemService {
         sourceUrl: item.source_url,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
+        user: {
+          id: item.users.id,
+          username: item.users.username,
+          email: "", // Not included in select
+          location: item.users.location,
+          avatarUrl: item.users.avatar_url,
+          role: "", // Not included in select
+          rating: item.users.rating,
+          totalRatings: 0, // Not included in select
+        },
       }));
 
       return { data: transformedData };
@@ -257,7 +279,7 @@ export class ItemService {
         description: data.description,
         category: data.category,
         condition: data.condition,
-        imageUrl: data.image_url,
+        imageUrls: data.image_urls, // ✅ Updated to use imageUrls array
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
@@ -292,21 +314,14 @@ export class ItemService {
   }
 
   /**
-   * Create a new item
+   * Create a new item with image uploads
+   * @param itemData - Item data including images
+   * @param userId - User ID creating the item
+   * @returns Promise<ServiceResult<ItemData>>
    */
-  static async createItem(itemData: Omit<ItemData, "id">, userId: string): Promise<ServiceResult<ItemData>> {
+  static async createItem(itemData: ItemData, userId: string): Promise<ServiceResult<ItemData>> {
     try {
-      // Validate input
-      const validationError = this.validateItemData(itemData);
-      if (validationError) {
-        return { error: validationError };
-      }
-
-      const uuidError = ValidationService.validateUUID(userId);
-      if (uuidError) {
-        return { error: uuidError };
-      }
-
+      // First, create the item without images to get the ID
       const { data, error } = await supabase
         .from(TABLES.ITEMS)
         .insert([
@@ -315,7 +330,7 @@ export class ItemService {
             description: itemData.description,
             category: itemData.category,
             condition: itemData.condition,
-            image_url: itemData.imageUrl,
+            image_urls: [], // Start with empty array
             tags: itemData.tags,
             user_id: userId,
             is_active: itemData.isActive,
@@ -331,26 +346,46 @@ export class ItemService {
         .single();
 
       if (error) {
-        return {
-          error: {
-            code: ERROR_CODES.NETWORK_ERROR,
-            message: "Failed to create item",
-            details: error,
-          },
-        };
+        console.error("Failed to create item:", error);
+        return { error: { message: error.message, code: error.code } };
       }
 
+      // If there are images to upload, handle them now
+      if (itemData.imageUrls && itemData.imageUrls.length > 0) {
+        try {
+          // Convert base64 previews back to files for upload
+          const imageFiles = await ItemService.convertBase64ToFiles(itemData.imageUrls);
+
+          // Upload images to storage
+          const uploadedUrls = await storageService.uploadImages(imageFiles, userId, data.id);
+
+          // Update the item with the uploaded image URLs
+          const { error: updateError } = await supabase
+            .from(TABLES.ITEMS)
+            .update({ image_urls: uploadedUrls })
+            .eq("id", data.id);
+
+          if (updateError) {
+            console.error("Failed to update item with image URLs:", updateError);
+            // Continue anyway, item was created successfully
+          }
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          // Continue anyway, item was created successfully
+        }
+      }
+
+      // Transform the created data
       const transformedData: ItemData = {
         id: data.id,
         title: data.title,
         description: data.description,
         category: data.category,
         condition: data.condition,
-        imageUrl: data.image_url,
+        imageUrls: data.image_urls,
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
-        // Update to use correct fields:
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
@@ -360,13 +395,8 @@ export class ItemService {
 
       return { data: transformedData };
     } catch (error) {
-      return {
-        error: {
-          code: ERROR_CODES.UNKNOWN_ERROR,
-          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
-          details: error,
-        },
-      };
+      console.error("Unexpected error in createItem:", error);
+      return { error: { message: "Failed to create item", code: "UNKNOWN_ERROR" } };
     }
   }
 
@@ -398,7 +428,7 @@ export class ItemService {
           description: updates.description,
           category: updates.category,
           condition: updates.condition,
-          image_url: updates.imageUrl,
+          image_urls: updates.imageUrls, // ✅ Updated to use imageUrls array
           tags: updates.tags,
           is_active: updates.isActive,
           // Update to use correct fields:
@@ -427,7 +457,7 @@ export class ItemService {
         description: data.description,
         category: data.category,
         condition: data.condition,
-        imageUrl: data.image_url,
+        imageUrls: data.image_urls, // ✅ Updated to use imageUrls array
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
@@ -502,5 +532,69 @@ export class ItemService {
     if (conditionError) return conditionError;
 
     return null;
+  }
+
+  /**
+   * Convert base64 image strings back to File objects for upload
+   * @param base64Images - Array of base64 image strings
+   * @returns Promise<File[]> - Array of File objects
+   */
+  private static async convertBase64ToFiles(base64Images: string[]): Promise<File[]> {
+    return Promise.all(
+      base64Images.map(async (base64) => {
+        // Remove data URL prefix if present
+        const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
+
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+
+        // Determine MIME type from base64 data
+        const mimeType = ItemService.detectMimeType(base64);
+        const extension = ItemService.getExtensionFromMimeType(mimeType);
+
+        const blob = new Blob([byteArray], { type: mimeType });
+        const fileName = `item_${Date.now()}_${Math.random().toString(36).substring(2)}.${extension}`;
+
+        return new File([blob], fileName, { type: mimeType });
+      })
+    );
+  }
+
+  /**
+   * Detect MIME type from base64 data URL
+   * @param base64Data - Base64 data URL
+   * @returns string - MIME type
+   */
+  private static detectMimeType(base64Data: string): string {
+    if (base64Data.startsWith("data:image/jpeg")) return "image/jpeg";
+    if (base64Data.startsWith("data:image/jpg")) return "image/jpeg";
+    if (base64Data.startsWith("data:image/png")) return "image/png";
+    if (base64Data.startsWith("data:image/gif")) return "image/gif";
+    if (base64Data.startsWith("data:image/webp")) return "image/webp";
+    return "image/jpeg"; // Default fallback
+  }
+
+  /**
+   * Get file extension from MIME type
+   * @param mimeType - MIME type
+   * @returns string - File extension
+   */
+  private static getExtensionFromMimeType(mimeType: string): string {
+    switch (mimeType) {
+      case "image/jpeg":
+        return "jpg";
+      case "image/png":
+        return "png";
+      case "image/gif":
+        return "gif";
+      case "image/webp":
+        return "webp";
+      default:
+        return "jpg";
+    }
   }
 }
