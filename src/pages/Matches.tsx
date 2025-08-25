@@ -29,7 +29,7 @@ export const Matches: React.FC = () => {
 
   const handleReviewClick = (match: any) => {
     const isCurrentUserRequest = match.user_id_1 === user?.id;
-    const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
+    const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
     setSelectedReview({
       matchId: match.id,
       revieweeId: otherUser.id,
@@ -78,7 +78,7 @@ export const Matches: React.FC = () => {
           <div className="space-y-4">
             {pendingMatches.map((match) => {
               const isCurrentUserRequest = match.user_id_1 === user?.id;
-              const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
+              const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
               const currentUserItem = isCurrentUserRequest ? match.item1 : match.item2;
               const otherUserItem = isCurrentUserRequest ? match.item2 : match.item1;
 
@@ -185,7 +185,7 @@ export const Matches: React.FC = () => {
           <div className="space-y-4">
             {acceptedMatches.map((match) => {
               const isCurrentUserRequest = match.user_id_1 === user?.id;
-              const otherUser = isCurrentUserRequest ? match.user2 : match.user1;
+              const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
 
               return (
                 <motion.div
