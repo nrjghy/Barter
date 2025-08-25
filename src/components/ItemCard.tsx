@@ -77,9 +77,9 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
       >
         <div className="relative">
           <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            {item.image_url && item.image_url.trim() !== "" ? (
+            {item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]?.trim() !== "" ? (
               <img
-                src={item.image_url}
+                src={item.imageUrls[0]}
                 alt={item.title}
                 className="w-full h-full object-cover"
                 loading="lazy" // Add lazy loading

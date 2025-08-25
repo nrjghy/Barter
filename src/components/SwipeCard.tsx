@@ -24,7 +24,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: any, info: PanInfo) => {
     const threshold = 100;
     const velocity = info.velocity.x;
     const movement = info.offset.x;
@@ -101,16 +101,19 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
 
         {/* Image */}
         <div className="h-2/3 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-          {item.imageUrl && item.imageUrl.trim() !== "" ? (
-            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" draggable={false} />
+          {item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]?.trim() !== "" ? (
+            <img src={item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
 
           {/* Price Badge */}
-          {item.price && (
+          {item.estimatedValue && (
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-              <span className="text-lg font-bold text-green-600">${item.price}</span>
+              <span className="text-lg font-bold text-green-600">
+                {item.valueCurrency || "$"}
+                {item.estimatedValue}
+              </span>
             </div>
           )}
 
