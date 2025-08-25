@@ -28,13 +28,42 @@ export const useSwipes = () => {
   const recordSwipe = useMutation({
     mutationFn: ({ itemId, direction }: { itemId: string; direction: "left" | "right" | "super" }) =>
       SwipeService.recordSwipe({ userId: user!.id, itemId, direction }),
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       if (result.data) {
-        // Invalidate related queries
-        queryClient.invalidateQueries({ queryKey: ["swipedItems", user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["swipeLimit", user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
+        // Update swiped items cache surgically
+        queryClient.setQueryData(["swipedItems", user?.id], (oldData: any) => {
+          if (oldData?.data) {
+            return {
+              ...oldData,
+              data: [...oldData.data, variables.itemId]
+            };
+          }
+          return { data: [variables.itemId] };
+        });
+
+        // Update swipe limit data with returned values
+        queryClient.setQueryData(["swipeLimit", user?.id], (oldData: any) => {
+          return {
+            data: {
+              canSwipe: result.data.canSwipe,
+              dailySwipeCount: result.data.dailySwipeCount,
+            }
+          };
+        });
+
+        // Only invalidate matches if this was a right swipe that might create matches
+        if ((variables.direction === "right" || variables.direction === "super") && result.data.matchCheckNeeded) {
+          // Invalidate matches after a short delay to allow background match creation
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
+          }, 1000);
+        }
       }
+    },
+    onError: (error, variables) => {
+      // On error, we might need to revert optimistic updates
+      // This is handled in the Dashboard component now
+      console.error("Swipe recording failed:", error);
     },
   });
 

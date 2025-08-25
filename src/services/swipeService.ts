@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
-import { SwipeData, SwipeLimitData, MatchData, ServiceResult, ServiceError } from "./types";
-import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
+import { SwipeData, SwipeLimitData, SwipeResult, MatchData, ServiceResult, ServiceError } from "./types";
+import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
 export class SwipeService {
@@ -65,9 +65,9 @@ export class SwipeService {
   }
 
   /**
-   * Record a swipe and handle match creation
+   * Record a swipe with optimized performance
    */
-  static async recordSwipe(swipeData: SwipeData): Promise<ServiceResult<boolean>> {
+  static async recordSwipe(swipeData: SwipeData): Promise<ServiceResult<SwipeResult>> {
     try {
       // Validate input
       const validationError = this.validateSwipeData(swipeData);
@@ -75,6 +75,81 @@ export class SwipeService {
         return { error: validationError };
       }
 
+      // Try optimized RPC function first, fallback to old method if not available
+      const { data: result, error: rpcError } = await supabase.rpc("record_swipe_optimized", {
+        user_uuid: swipeData.userId,
+        target_item_id: swipeData.itemId,
+        swipe_direction: swipeData.direction,
+      });
+
+      if (rpcError) {
+        // If the new RPC function doesn't exist, fall back to the old method
+        if (rpcError.message?.includes("function record_swipe_optimized") || rpcError.code === "42883") {
+          console.log("Falling back to legacy swipe recording method");
+          return await this.recordSwipeLegacy(swipeData);
+        }
+
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to record swipe",
+            details: rpcError,
+          },
+        };
+      }
+
+      // Handle errors returned by the RPC function
+      if (result?.error) {
+        if (result.error.includes("Daily swipe limit reached")) {
+          return {
+            error: {
+              code: ERROR_CODES.SWIPE_LIMIT_EXCEEDED,
+              message: ERROR_MESSAGES[ERROR_CODES.SWIPE_LIMIT_EXCEEDED],
+            },
+          };
+        }
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      // Handle match checking in background if needed
+      if (result?.matchCheckNeeded && result?.targetItemUserId) {
+        // Don't await this - let it run in background
+        this.handleBackgroundMatchCheck(swipeData.userId, swipeData.itemId, swipeData.direction === "super").catch(
+          (error) => {
+            console.error("Background match creation failed:", error);
+          }
+        );
+      }
+
+      return {
+        data: {
+          success: true,
+          dailySwipeCount: result?.dailySwipeCount || 0,
+          canSwipe: result?.canSwipe || false,
+          matchCheckNeeded: result?.matchCheckNeeded || false,
+        },
+      };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Legacy swipe recording method (fallback)
+   */
+  private static async recordSwipeLegacy(swipeData: SwipeData): Promise<ServiceResult<SwipeResult>> {
+    try {
       // Check swipe limit first
       const limitResult = await this.checkSwipeLimit(swipeData.userId);
       if (limitResult.error) {
@@ -112,21 +187,29 @@ export class SwipeService {
       // Increment swipe count
       await supabase.rpc("increment_swipe_count", { user_uuid: swipeData.userId });
 
-      // If it's a right swipe or super like, check for matches
+      // Handle match checking in background for right swipes
       if (swipeData.direction === "right" || swipeData.direction === "super") {
-        const matchResult = await this.checkForMatch(
+        this.handleBackgroundMatchCheckLegacy(
           swipeData.userId,
           swipeData.itemId,
           swipeData.direction === "super"
-        );
-
-        if (matchResult.error) {
-          // Log the error but don't fail the swipe
-          console.error("Match creation failed:", matchResult.error);
-        }
+        ).catch((error) => {
+          console.error("Background match creation failed:", error);
+        });
       }
 
-      return { data: true };
+      // Get updated swipe count
+      const updatedLimitResult = await this.checkSwipeLimit(swipeData.userId);
+      const dailySwipeCount = updatedLimitResult.data?.dailySwipeCount || 0;
+
+      return {
+        data: {
+          success: true,
+          dailySwipeCount,
+          canSwipe: dailySwipeCount < 50,
+          matchCheckNeeded: swipeData.direction === "right" || swipeData.direction === "super",
+        },
+      };
     } catch (error) {
       return {
         error: {
@@ -135,6 +218,53 @@ export class SwipeService {
           details: error,
         },
       };
+    }
+  }
+
+  /**
+   * Handle match checking in background
+   */
+  private static async handleBackgroundMatchCheck(
+    userId: string,
+    itemId: string,
+    isSuperLike: boolean = false
+  ): Promise<void> {
+    try {
+      const { data: result, error } = await supabase.rpc("check_and_create_match", {
+        swiper_user_id: userId,
+        target_item_id: itemId,
+        is_super_like: isSuperLike,
+      });
+
+      if (error) {
+        console.error("Match check RPC error:", error);
+        return;
+      }
+
+      if (result?.matchCreated) {
+        console.log("Match created successfully:", result.matchId);
+        // You could emit an event or update a global state here for real-time updates
+      }
+    } catch (error) {
+      console.error("Background match check failed:", error);
+    }
+  }
+
+  /**
+   * Legacy background match checking
+   */
+  private static async handleBackgroundMatchCheckLegacy(
+    userId: string,
+    itemId: string,
+    isSuperLike: boolean = false
+  ): Promise<void> {
+    try {
+      const matchResult = await this.checkForMatch(userId, itemId, isSuperLike);
+      if (matchResult.data) {
+        console.log("Legacy match created successfully");
+      }
+    } catch (error) {
+      console.error("Legacy background match check failed:", error);
     }
   }
 

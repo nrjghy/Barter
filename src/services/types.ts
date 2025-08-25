@@ -11,6 +11,13 @@ export interface SwipeLimitData {
   dailySwipeCount: number;
 }
 
+export interface SwipeResult {
+  success: boolean;
+  dailySwipeCount: number;
+  canSwipe: boolean;
+  matchCheckNeeded: boolean;
+}
+
 export interface MatchData {
   itemId1: string;
   itemId2: string;

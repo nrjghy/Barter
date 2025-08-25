@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-import { CategoryFilter } from "../components/CategoryFilter";
+// import { CategoryFilter } from "../components/CategoryFilter";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { SwipeCounter } from "../components/SwipeCounter";
 import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
 import { useItems } from "../hooks/useItems";
-import { ItemWithUser } from "../services/itemService";
 import { useSwipes } from "../hooks/useSwipes";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
@@ -18,15 +17,15 @@ export const Dashboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
+  const [selectedCategories] = useState<string[]>([]);
+  const [selectedConditions] = useState<string[]>([]);
 
   // Advanced filter states
-  const [radius, setRadius] = useState(50);
-  const [minValue, setMinValue] = useState("");
-  const [maxValue, setMaxValue] = useState("");
-  const [maxAge, setMaxAge] = useState(30);
-  const [minRating, setMinRating] = useState(3.0);
+  const [radius] = useState(50);
+  const [minValue] = useState("");
+  const [maxValue] = useState("");
+  const [maxAge] = useState(30);
+  const [minRating] = useState(3.0);
 
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
@@ -51,14 +50,29 @@ export const Dashboard: React.FC = () => {
     }
   }, [user]); // Remove getSwipedItems from dependencies
 
-  // Filter items based on selected categories and conditions
-  const filteredItems = React.useMemo(() => {
-    let filtered = items.filter((item) => !swipedItems.has(item.id));
-    return filtered;
+  // Filter items based on swiped items - use more efficient filtering
+  const availableItems = React.useMemo(() => {
+    // Early return if no items to filter
+    if (items.length === 0) {
+      return [];
+    }
+    // Pre-compute swipedItems size to avoid unnecessary filtering when empty
+    if (swipedItems.size === 0) {
+      return items;
+    }
+    return items.filter((item) => !swipedItems.has(item.id));
   }, [items, swipedItems]);
 
-  const availableItems = filteredItems;
-  const currentItem = availableItems[currentIndex];
+  // Ensure currentIndex is within bounds
+  const safeCurrentIndex = Math.min(currentIndex, Math.max(0, availableItems.length - 1));
+  const currentItem = availableItems[safeCurrentIndex];
+
+  // Auto-adjust currentIndex if it's out of bounds
+  React.useEffect(() => {
+    if (currentIndex !== safeCurrentIndex) {
+      setCurrentIndex(safeCurrentIndex);
+    }
+  }, [currentIndex, safeCurrentIndex]);
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -81,19 +95,43 @@ export const Dashboard: React.FC = () => {
 
   const handleSwipe = async (direction: "left" | "right" | "super") => {
     if (!currentItem || !user) return;
-    try {
-      await recordSwipe({ itemId: currentItem.id, direction });
-      setSwipedItems((prev) => new Set(prev).add(currentItem.id));
 
-      // Reset to first available item since the array is being reindexed
-      setCurrentIndex(0);
+    const swipedItemId = currentItem.id;
 
-      if (direction === "super") {
-        toast.success("Super Like sent! ⚡");
-      } else if (direction === "right") {
-        toast.success("Right swipe!");
+    // Optimistic UI update - update immediately
+    setSwipedItems((prev) => new Set(prev).add(swipedItemId));
+
+    // Move to next item (increment instead of reset to 0)
+    setCurrentIndex((prev) => {
+      const nextIndex = prev + 1;
+      // If we've reached the end of available items, try to load more
+      if (nextIndex >= availableItems.length - 1 && hasMore && !loadingMore) {
+        loadMoreItems();
       }
+      return nextIndex < availableItems.length ? nextIndex : prev;
+    });
+
+    // Show immediate feedback
+    if (direction === "super") {
+      toast.success("Super Like sent! ⚡");
+    } else if (direction === "right") {
+      toast.success("Right swipe!");
+    }
+
+    // Record swipe in background
+    try {
+      await recordSwipe({ itemId: swipedItemId, direction });
     } catch (error: any) {
+      // Rollback optimistic update on error
+      setSwipedItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(swipedItemId);
+        return newSet;
+      });
+
+      // Rollback currentIndex
+      setCurrentIndex((prev) => Math.max(0, prev - 1));
+
       if (error.message && error.message.includes("Daily swipe limit reached")) {
         return; // Toast already shown in useSwipes
       }
@@ -200,23 +238,18 @@ export const Dashboard: React.FC = () => {
 
       <AnimatePresence>
         {showFilter && (
-          <CategoryFilter
-            selectedCategories={selectedCategories}
-            selectedConditions={selectedConditions}
-            onCategoriesChange={setSelectedCategories}
-            onConditionsChange={setSelectedConditions}
-            onClose={() => setShowFilter(false)}
-            radius={radius}
-            minValue={minValue}
-            maxValue={maxValue}
-            maxAge={maxAge}
-            minRating={minRating}
-            onRadiusChange={setRadius}
-            onMinValueChange={setMinValue}
-            onMaxValueChange={setMaxValue}
-            onMaxAgeChange={setMaxAge}
-            onMinRatingChange={setMinRating}
-          />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Filters</h3>
+              <p className="text-gray-600">Filter functionality temporarily disabled for performance optimization.</p>
+              <button
+                onClick={() => setShowFilter(false)}
+                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </div>
