@@ -282,3 +282,105 @@ To test the optimizations:
 ## 🎉 Result
 
 Users will experience **near-instantaneous swipe feedback** instead of noticeable lag, creating a much more fluid and responsive swiping experience similar to modern dating apps.
+
+## 🔧 **Complete Fix Implementation**
+
+### **Primary Issue**: Missing `excludeUserId` Parameter
+
+**File**: `src/pages/Dashboard.tsx`
+**Lines**: 30-38
+
+**Current Code**:
+
+```typescript
+const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
+  categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+  conditions: selectedConditions.length > 0 ? selectedConditions : undefined,
+  radius: radius !== 50 ? radius : undefined,
+  minValue: minValue !== "" ? minValue : undefined,
+  maxValue: maxValue !== "" ? maxValue : undefined,
+  maxAge: maxAge !== 30 ? maxAge : undefined,
+  minRating: minRating !== 3.0 ? minRating : undefined,
+});
+```
+
+**Fixed Code**:
+
+```typescript
+const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
+  categories: selectedCategories.length > 0 ? selectedCategories : undefined,
+  conditions: selectedConditions.length > 0 ? selectedConditions : undefined,
+  radius: radius !== 50 ? radius : undefined,
+  minValue: minValue !== "" ? minValue : undefined,
+  maxValue: maxValue !== "" ? maxValue : undefined,
+  maxAge: maxAge !== 30 ? maxAge : undefined,
+  minRating: minRating !== 3.0 ? minRating : undefined,
+  excludeUserId: user?.id, // ✅ FIX: Exclude current user's own items
+});
+```
+
+### **Secondary Issue**: Add Safety Filter
+
+**File**: `src/pages/Dashboard.tsx`
+**Lines**: 54-64
+
+**Current Code**:
+
+```typescript
+const availableItems = React.useMemo(() => {
+  // Early return if no items to filter
+  if (items.length === 0) {
+    return [];
+  }
+  // Pre-compute swipedItems size to avoid unnecessary filtering when empty
+  if (swipedItems.size === 0) {
+    return items;
+  }
+  return items.filter((item) => !swipedItems.has(item.id));
+}, [items, swipedItems]);
+```
+
+**Fixed Code**:
+
+```typescript
+const availableItems = React.useMemo(() => {
+  // Early return if no items to filter
+  if (items.length === 0) {
+    return [];
+  }
+
+  // Filter out user's own items and already swiped items
+  let filtered = items.filter((item) => {
+    // ✅ FIX: Safety check to exclude user's own items (in case API filter fails)
+    if (user && item.userId === user.id) {
+      return false;
+    }
+    // Filter out already swiped items
+    return !swipedItems.has(item.id);
+  });
+
+  return filtered;
+}, [items, swipedItems, user?.id]); // ✅ FIX: Add user.id to dependencies
+```
+
+### **Impact Analysis**
+
+1. **Root Cause**: The Dashboard component was not passing `excludeUserId: user?.id` to the `useItems` hook
+2. **Backend Logic**: The `ItemService.getItems` method already supports filtering out user's own items (lines 56-58)
+3. **Database Query**: The query correctly uses `.neq("user_id", options.excludeUserId)` when the parameter is provided
+4. **Frontend Safety**: Added an additional client-side filter as a safety net
+
+### **Testing Scenarios**
+
+1. **Before Fix**: User sees their own items in swipe interface
+2. **After Fix**: User only sees other users' items
+3. **Edge Cases**:
+   - If API filter fails, client-side filter catches it
+   - If user ID is null/undefined, no filtering applied (safe)
+   - Already swiped items still filtered out correctly
+
+### **Cache Impact**
+
+The React Query cache key in `useItems` already includes `excludeUserId` in the dependency array (line 36), so adding this parameter will create a new cache entry specific to the current user, which is correct behavior.
+
+**Would you like me to create a pull request with these changes, or would you prefer to implement them manually?**

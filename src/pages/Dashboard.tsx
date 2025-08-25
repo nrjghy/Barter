@@ -35,6 +35,7 @@ export const Dashboard: React.FC = () => {
     maxValue: maxValue !== "" ? maxValue : undefined,
     maxAge: maxAge !== 30 ? maxAge : undefined,
     minRating: minRating !== 3.0 ? minRating : undefined,
+    excludeUserId: user?.id, // ✅ Exclude current user's own items
   });
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
 
