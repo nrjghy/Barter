@@ -25,7 +25,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useSwipes } from "../hooks/useSwipes";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ReportDialog } from "../components/ReportDialog";
-import { ItemWithUser } from "../hooks/useItems";
+import { ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
 
 export const ItemDetail: React.FC = () => {
@@ -43,8 +43,8 @@ export const ItemDetail: React.FC = () => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
-  // Mock additional images (in real app, these would come from database)
-  const mockImages = item?.image_url && item.image_url.trim() !== "" ? [item.image_url] : [];
+  // Get images from the item data
+  const itemImages = item?.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : [];
 
   useEffect(() => {
     if (id) {
@@ -80,7 +80,30 @@ export const ItemDetail: React.FC = () => {
 
       if (error) throw error;
 
-      setItem(data as ItemWithUser);
+      // Transform the data to match ItemWithUser interface
+      const transformedItem: ItemWithUser = {
+        ...data,
+        imageUrls: data.image_urls || [],
+        userId: data.user_id,
+        isActive: data.is_active,
+        estimatedValue: data.estimated_value,
+        valueCurrency: data.value_currency,
+        sourceUrl: data.source_url,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        user: {
+          id: data.users.id,
+          username: data.users.username,
+          email: "", // Not provided in the query
+          location: data.users.location,
+          avatarUrl: data.users.avatar_url,
+          role: "user", // Default role
+          rating: data.users.rating,
+          totalRatings: null,
+        },
+      };
+
+      setItem(transformedItem);
     } catch (error) {
       console.error("Error fetching item:", error);
       setError("Failed to load item details");
@@ -146,11 +169,11 @@ export const ItemDetail: React.FC = () => {
   };
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev === mockImages.length - 1 ? 0 : prev + 1));
+    setCurrentImageIndex((prev) => (prev === itemImages.length - 1 ? 0 : prev + 1));
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev === 0 ? mockImages.length - 1 : prev - 1));
+    setCurrentImageIndex((prev) => (prev === 0 ? itemImages.length - 1 : prev - 1));
   };
 
   const formatDate = (dateString: string) => {
@@ -286,10 +309,10 @@ export const ItemDetail: React.FC = () => {
           >
             {/* Main Image */}
             <div className="relative aspect-square bg-gray-200 rounded-2xl overflow-hidden">
-              {mockImages.length > 0 && mockImages[0] && mockImages[0].trim() !== "" ? (
+              {itemImages.length > 0 ? (
                 <>
                   <img
-                    src={mockImages[currentImageIndex]}
+                    src={itemImages[currentImageIndex]}
                     alt={item.title}
                     className={`w-full h-full object-cover transition-opacity duration-300 ${
                       imageLoading ? "opacity-0" : "opacity-100"
@@ -304,7 +327,7 @@ export const ItemDetail: React.FC = () => {
                   )}
 
                   {/* Navigation Arrows */}
-                  {mockImages.length > 1 && (
+                  {itemImages.length > 1 && (
                     <>
                       <button
                         onClick={prevImage}
@@ -322,14 +345,16 @@ export const ItemDetail: React.FC = () => {
                   )}
 
                   {/* Image Counter */}
-                  {mockImages.length > 1 && (
+                  {itemImages.length > 1 && (
                     <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm">
-                      {currentImageIndex + 1} / {mockImages.length}
+                      {currentImageIndex + 1} / {itemImages.length}
                     </div>
                   )}
                 </>
               ) : (
-                <div className="w-full h-full bg-gray-200" />
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <Package className="w-16 h-16 text-gray-400" />
+                </div>
               )}
 
               {/* Badges */}
@@ -341,9 +366,9 @@ export const ItemDetail: React.FC = () => {
                 >
                   {item.condition}
                 </div>
-                {item.price && (
+                {item.estimatedValue && (
                   <div className="bg-green-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-bold">
-                    ${item.price}
+                    ${item.estimatedValue}
                   </div>
                 )}
               </div>
@@ -358,9 +383,9 @@ export const ItemDetail: React.FC = () => {
             </div>
 
             {/* Thumbnail Gallery */}
-            {mockImages.length > 1 && (
+            {itemImages.length > 1 && (
               <div className="flex space-x-2 overflow-x-auto pb-2">
-                {mockImages.map((image, index) => (
+                {itemImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
@@ -393,7 +418,7 @@ export const ItemDetail: React.FC = () => {
                 </span>
                 <div className="flex items-center text-gray-500 text-sm">
                   <Clock className="w-4 h-4 mr-1" />
-                  Listed {formatDate(item.created_at)}
+                  Listed {formatDate(item.createdAt)}
                 </div>
               </div>
             </div>
@@ -407,22 +432,21 @@ export const ItemDetail: React.FC = () => {
             )}
 
             {/* Value Information */}
-            {(item.price || item.estimated_value) && (
+            {item.estimatedValue && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Value Information</h3>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl font-bold text-green-700">${item.price || item.estimated_value}</span>
-                    <span className="text-sm text-green-600">{item.price ? "Listed Price" : "Estimated Value"}</span>
+                    <span className="text-2xl font-bold text-green-700">${item.estimatedValue}</span>
+                    <span className="text-sm text-green-600">Estimated Value</span>
                   </div>
-                  {item.estimated_value && !item.price && (
-                    <p className="text-xs text-green-600 mt-1">
-                      This is the owner's estimated value for trade reference
-                    </p>
-                  )}
+                  <p className="text-xs text-green-600 mt-1">
+                    This is the owner's estimated value for trade reference
+                  </p>
                 </div>
               </div>
             )}
+
             {/* Tags */}
             {item.tags && item.tags.length > 0 && (
               <div>
@@ -478,14 +502,14 @@ export const ItemDetail: React.FC = () => {
 
                   <div className="flex items-center space-x-1 text-gray-500 text-sm mt-1">
                     <Calendar className="w-4 h-4" />
-                    <span>Member since {formatDate(item.user.createdAt)}</span>
+                    <span>Member since {formatDate(item.user.createdAt || item.createdAt)}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Source URL Section */}
-            {item.source_url && (
+            {item.sourceUrl && (
               <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Original Listing</h3>
                 <div className="flex items-center justify-between">
@@ -494,7 +518,7 @@ export const ItemDetail: React.FC = () => {
                     <p className="text-xs text-gray-500">Click to view the original listing for more details</p>
                   </div>
                   <a
-                    href={item.source_url}
+                    href={item.sourceUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
@@ -504,12 +528,13 @@ export const ItemDetail: React.FC = () => {
                   </a>
                 </div>
                 <div className="mt-3 pt-3 border-t border-blue-200">
-                  <p className="text-xs text-blue-600 font-mono break-all">{item.source_url}</p>
+                  <p className="text-xs text-blue-600 font-mono break-all">{item.sourceUrl}</p>
                 </div>
               </div>
             )}
+
             {/* Action Buttons */}
-            {user && user.id !== item.user_id && (
+            {user && user.id !== item.userId && (
               <div className="space-y-3">
                 <button
                   onClick={handleContact}
