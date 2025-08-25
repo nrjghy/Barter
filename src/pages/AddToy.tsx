@@ -13,8 +13,6 @@ export const AddToy: React.FC = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [condition, setCondition] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState("");
   const [images, setImages] = useState<File[]>([]); // ✅ Changed from single image to array
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // ✅ Changed from single preview to array
   const [estimatedValue, setEstimatedValue] = useState("");
@@ -67,17 +65,6 @@ export const AddToy: React.FC = () => {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags((prev) => [...prev, tagInput.trim()]);
-      setTagInput("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -95,7 +82,6 @@ export const AddToy: React.FC = () => {
         description,
         category,
         condition,
-        tags,
         imageUrls: imagePreviews, // Pass base64 previews - service will convert to files
         isActive: true,
         estimatedValue: isFreeItem ? null : parseFloat(estimatedValue),
@@ -236,10 +222,8 @@ export const AddToy: React.FC = () => {
 
         {/* Item Value Section */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            Item Value
-          </label>
-          
+          <label className="block text-sm font-medium text-gray-700 mb-3">Item Value</label>
+
           {/* Free Item Toggle */}
           <div className="flex items-center space-x-3 mb-4">
             <label className="flex items-center cursor-pointer">
@@ -250,18 +234,16 @@ export const AddToy: React.FC = () => {
                 onChange={() => setIsFreeItem(true)}
                 className="sr-only"
               />
-              <div className={`w-5 h-5 border-2 rounded-full mr-2 flex items-center justify-center ${
-                isFreeItem 
-                  ? 'border-purple-500 bg-purple-500' 
-                  : 'border-gray-300'
-              }`}>
+              <div
+                className={`w-5 h-5 border-2 rounded-full mr-2 flex items-center justify-center ${
+                  isFreeItem ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                }`}
+              >
                 {isFreeItem && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </div>
-              <span className={`font-medium ${isFreeItem ? 'text-purple-700' : 'text-gray-700'}`}>
-                Free Item
-              </span>
+              <span className={`font-medium ${isFreeItem ? "text-purple-700" : "text-gray-700"}`}>Free Item</span>
             </label>
-            
+
             <label className="flex items-center cursor-pointer">
               <input
                 type="radio"
@@ -270,16 +252,14 @@ export const AddToy: React.FC = () => {
                 onChange={() => setIsFreeItem(false)}
                 className="sr-only"
               />
-              <div className={`w-5 h-5 border-2 rounded-full mr-2 flex items-center justify-center ${
-                !isFreeItem 
-                  ? 'border-purple-500 bg-purple-500' 
-                  : 'border-gray-300'
-              }`}>
+              <div
+                className={`w-5 h-5 border-2 rounded-full mr-2 flex items-center justify-center ${
+                  !isFreeItem ? "border-purple-500 bg-purple-500" : "border-gray-300"
+                }`}
+              >
                 {!isFreeItem && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </div>
-              <span className={`font-medium ${!isFreeItem ? 'text-purple-700' : 'text-gray-700'}`}>
-                Set Value
-              </span>
+              <span className={`font-medium ${!isFreeItem ? "text-purple-700" : "text-gray-700"}`}>Set Value</span>
             </label>
           </div>
 
@@ -318,45 +298,6 @@ export const AddToy: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
-          <div className="flex space-x-2 mb-2">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTag())}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Add a tag"
-            />
-            <button
-              type="button"
-              onClick={handleAddTag}
-              className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-700"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(tag)}
-                  className="ml-2 text-purple-500 hover:text-purple-700"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
         </div>
 
         <button
