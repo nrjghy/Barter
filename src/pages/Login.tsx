@@ -1,54 +1,56 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, AlertCircle, Chrome, Facebook, Github } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { OAuthProviderButton } from '../components/OAuthProviderButton';
-import toast from 'react-hot-toast';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Chrome, Facebook, Github } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { OAuthProviderButton } from "../components/OAuthProviderButton";
+import toast from "react-hot-toast";
 
 export const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const { signIn, signInWithOAuth, resendVerification } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
       const { error } = await signIn(email, password);
       if (error) {
         // Check if it's an authentication error
-        if (error.message.includes('Invalid login credentials') || 
-            error.message.includes('Email not confirmed') ||
-            error.message.includes('Invalid email or password')) {
-          setError('Invalid username or password. Please check your credentials and try again.');
-        } else if (error.message.includes('Email not confirmed')) {
-          setError('Please verify your email address before signing in. Check your inbox for a verification link.');
+        if (
+          error.message.includes("Invalid login credentials") ||
+          error.message.includes("Email not confirmed") ||
+          error.message.includes("Invalid email or password")
+        ) {
+          setError("Invalid username or password. Please check your credentials and try again.");
+        } else if (error.message.includes("Email not confirmed")) {
+          setError("Please verify your email address before signing in. Check your inbox for a verification link.");
         } else {
           setError(error.message);
         }
       } else {
-        toast.success('Welcome back!');
-        navigate('/');
+        toast.success("Welcome back!");
+        navigate("/");
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
+  const handleSocialLogin = async (provider: "google" | "facebook" | "github") => {
     setSocialLoading(provider);
-    setError('');
+    setError("");
 
     try {
       const { error } = await signInWithOAuth(provider);
@@ -56,7 +58,7 @@ export const Login: React.FC = () => {
         setError(`Failed to sign in with ${provider}. Please try again.`);
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setSocialLoading(null);
     }
@@ -64,31 +66,27 @@ export const Login: React.FC = () => {
 
   const handleResendVerification = async () => {
     if (!email) {
-      setError('Please enter your email address first.');
+      setError("Please enter your email address first.");
       return;
     }
 
     try {
       const { error } = await resendVerification(email);
       if (error) {
-        setError('Failed to resend verification email. Please try again.');
+        setError("Failed to resend verification email. Please try again.");
       } else {
-        toast.success('Verification email sent! Check your inbox.');
+        toast.success("Verification email sent! Check your inbox.");
       }
     } catch (error) {
-      setError('An unexpected error occurred. Please try again.');
+      setError("An unexpected error occurred. Please try again.");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
-          <motion.div 
+          <motion.div
             className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
@@ -111,22 +109,22 @@ export const Login: React.FC = () => {
           <div className="space-y-3 mb-6">
             <OAuthProviderButton
               provider="google"
-              onClick={() => handleSocialLogin('google')}
-              loading={socialLoading === 'google'}
+              onClick={() => handleSocialLogin("google")}
+              loading={socialLoading === "google"}
               disabled={socialLoading !== null}
             />
-            
+
             <OAuthProviderButton
               provider="facebook"
-              onClick={() => handleSocialLogin('facebook')}
-              loading={socialLoading === 'facebook'}
+              onClick={() => handleSocialLogin("facebook")}
+              loading={socialLoading === "facebook"}
               disabled={socialLoading !== null}
             />
-            
+
             <OAuthProviderButton
               provider="github"
-              onClick={() => handleSocialLogin('github')}
-              loading={socialLoading === 'github'}
+              onClick={() => handleSocialLogin("github")}
+              loading={socialLoading === "github"}
               disabled={socialLoading !== null}
             />
           </div>
@@ -167,7 +165,7 @@ export const Login: React.FC = () => {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
@@ -192,10 +190,13 @@ export const Login: React.FC = () => {
               >
                 <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium" style={{ color: '#FF0000', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                  <p
+                    className="text-sm font-medium"
+                    style={{ color: "#FF0000", fontFamily: "system-ui, -apple-system, sans-serif" }}
+                  >
                     {error}
                   </p>
-                  {error.includes('verify your email') && (
+                  {error.includes("verify your email") && (
                     <button
                       type="button"
                       onClick={handleResendVerification}
@@ -215,13 +216,13 @@ export const Login: React.FC = () => {
               whileHover={{ scale: loading || socialLoading !== null ? 1 : 1.02 }}
               whileTap={{ scale: loading || socialLoading !== null ? 1 : 0.98 }}
             >
-              {loading ? <LoadingSpinner /> : 'Sign In'}
+              {loading ? <LoadingSpinner /> : "Sign In"}
             </motion.button>
           </form>
 
           <div className="mt-6 text-center">
-            <Link 
-              to="/register" 
+            <Link
+              to="/forgot-password"
               className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline"
             >
               Forgot your password?
@@ -231,8 +232,11 @@ export const Login: React.FC = () => {
 
         <div className="mt-8 text-center">
           <p className="text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline"
+            >
               Sign up
             </Link>
           </p>

@@ -10,6 +10,8 @@ interface AuthContextType {
   signInWithOAuth: (provider: "google" | "facebook" | "github") => Promise<{ data: any; error: any }>;
   signUp: (email: string, password: string, username: string, location?: string) => Promise<{ error: any }>;
   resendVerification: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
   updateProfile: (updates: Partial<AuthUser>) => Promise<{ error: any }>;
 }
@@ -159,6 +161,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error };
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    return { error };
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     return { error };
@@ -226,6 +242,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signInWithOAuth,
         signUp,
         resendVerification,
+        resetPassword,
+        updatePassword,
         signOut,
         updateProfile,
       }}

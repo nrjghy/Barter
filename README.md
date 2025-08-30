@@ -44,11 +44,13 @@ supabase/
 - `AdminDashboard.tsx`: Admin-only listings view via Edge Function `functions/v1/admin-listings`
 - `AuthCallback.tsx`: Handles OAuth callback
 - `Dashboard.tsx`: Main browse/swipe experience; uses `useItems` with `excludeUserId: user?.id` and optimized swipe controls
+- `ForgotPassword.tsx`: Password reset request form with email validation
 - `ItemDetail.tsx`: Shows item details, images, and "Original Listing" link (from `sourceUrl`)
-- `Login.tsx`, `Register.tsx`: Auth flows
+- `Login.tsx`, `Register.tsx`: Complete authentication flows with OAuth support
 - `Matches.tsx`: Match list and actions
 - `Messages.tsx`: Chat between matched users
-- `Profile.tsx`: User profile and stats
+- `Profile.tsx`: User profile, stats, and password management
+- `ResetPassword.tsx`: Password reset confirmation and new password setup
 
 ### Components (selected)
 
@@ -77,6 +79,32 @@ supabase/
 - `swipeService.ts`: Optimized `record_swipe_optimized` with legacy fallback; background match via `check_and_create_match`
 - `matchService.ts`, `messageService.ts`, `notificationService.ts`, `reviewService.ts`, `reportService.ts`, `userService.ts`: Domain services with consistent error handling and types
 - `storageService.ts`: Multi-image upload/delete to Supabase Storage; validates size/types; bucket via `VITE_SUPABASE_STORAGE_BUCKET` or default
+
+## Authentication System
+
+### Complete Auth Features
+
+- **User Registration**: Email/password signup with username and optional location
+- **User Login**: Email/password authentication with OAuth providers (Google, Facebook, GitHub)
+- **Email Verification**: Required email verification for new accounts with resend functionality
+- **Password Reset**: Complete password reset flow via email
+- **Password Change**: In-profile password updates for logged-in users
+- **Session Management**: Persistent authentication with proper route protection
+- **OAuth Integration**: Social login with proper callback handling
+- **Profile Management**: User profile updates and avatar support
+
+### Password Reset Flow
+
+1. **Forgot Password** (`/forgot-password`): Users enter email to request reset
+2. **Email Delivery**: Supabase sends secure reset link to user's email
+3. **Reset Password** (`/reset-password`): Users set new password via email link
+4. **Success**: Automatic redirect to login with new credentials
+
+### OAuth Providers
+
+- Google, Facebook, and GitHub authentication
+- Proper redirect handling and session management
+- Seamless integration with existing auth system
 
 ## Setup
 
@@ -107,3 +135,6 @@ Follow `OAUTH_SETUP_GUIDE.md` to configure Google, Facebook, and GitHub provider
 - Re-enable `CategoryFilter` in `Dashboard` (was commented out due to TS import issues)
 - Standardize `ItemDetail` to use the service layer instead of direct Supabase querying
 - Ensure optimized swipe RPCs (`record_swipe_optimized`, `check_and_create_match`) and indexes are deployed to unlock full performance
+- Consider adding two-factor authentication for enhanced security
+- Implement account deletion functionality with data cleanup
+- Add login history tracking and suspicious activity detection
