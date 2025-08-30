@@ -1,58 +1,109 @@
-# Barter App - Carousell Integration
+# Barter App
 
-## New Features
-## Overview
-### Carousell Integration
-- **Automated Import**: Import free item listings from Carousell Singapore
-- **Source Tracking**: Each imported item retains its original Carousell URL
-- **Duplicate Prevention**: Prevents importing the same listing multiple times
-- **Rate Limiting**: Respects Carousell's servers with appropriate delays
-Barter is a modern item exchange platform that allows users to discover, match, and trade items with others. The app now includes integration with Carousell Singapore to import free item listings.
-### Enhanced Item Details
-- **Source URL Display**: Items imported from external sources show their original listing URL
-- **External Link**: Direct access to original Carousell listings
-- **Visual Indicators**: Clear labeling of imported vs. native items
-## Technical Implementation
-### Database Changes
-- Added `source_url` field to items table
-- Indexed for efficient lookups
-- URL format validation constraints
-### Scraping Service
-- `CarousellScraper` class for data extraction
-- Error handling and retry mechanisms
-- Mock data generator for demonstration
-### Import Process
-1. Fetch category page from Carousell
-2. Extract individual listing URLs
-3. Scrape detailed information from each listing
-4. Import to database with duplicate checking
-5. Create demo user for imported listings
-## Usage
-### Importing Carousell Listings
-1. Navigate to the Import page in the app
-2. Click "Import Listings" button
-3. System will fetch and import up to 10 free items
-4. View import results and statistics
-### Viewing Imported Items
-- Imported items appear in the main discovery feed
-- Item detail pages show "Original Listing" section
-- Click "View Source" to visit the original Carousell listing
-## Development Notes
-### CORS Considerations
-The current implementation uses mock data for demonstration due to CORS restrictions. In production:
-- Use a server-side scraping service
-- Implement a CORS proxy
-- Consider using Carousell's API if available
-### Rate Limiting
-- 2-second delay between requests
-- Exponential backoff for failed requests
-- Respects robots.txt guidelines
-### Data Validation
-- URL format validation
-- Required field checking
-- Duplicate prevention by source URL
-## Future Enhancements
-- Real-time import scheduling
-- Multiple source platform support
-- Advanced filtering and categorization
-- Seller verification for imported listings
+## Project Overview
+
+Barter is a modern item exchange platform built with React, TypeScript, and Supabase. Users can create items with multiple images, browse and swipe on items, form matches, chat, leave reviews, send reports, and receive notifications. The app uses a service-oriented architecture and React Query for scalable, typed, and testable data access.
+
+Notes on legacy documentation: older docs mention a Carousell scraper/importer. The current codebase does not include an active scraper. Items do support a `sourceUrl` field, and the UI displays an "Original Listing" link when present.
+
+## Architecture
+
+- Frontend: React + TypeScript, Vite, React Router, React Query, Tailwind CSS, Framer Motion
+- Backend: Supabase (Auth, Postgres, Storage, Edge Functions)
+- Service layer: stateless TypeScript services in `src/services` with validation, typed results, and consistent error handling
+- Auth state: centralized `AuthContext` with initialization gating to avoid race conditions and duplicate fetches
+- Swipe performance: optimized RPCs (`record_swipe_optimized`, `check_and_create_match`) with automatic legacy fallback
+- Storage: Supabase Storage for multi-image uploads; bucket from `VITE_SUPABASE_STORAGE_BUCKET` (defaults to `barter_user_item_media`)
+
+Project structure (high level):
+
+```
+src/
+├─ components/             # Presentational and composite UI
+├─ contexts/               # Auth provider and context
+├─ hooks/                  # React Query hooks that wrap services
+├─ lib/                    # Supabase client
+├─ pages/                  # Route-level views
+├─ services/               # Business logic (SOA) used by hooks/components
+├─ types/                  # Generated/handwritten types
+supabase/
+├─ functions/admin-listings/  # Edge function for admin listings
+├─ migrations/               # SQL migrations
+```
+
+### Data model highlights
+
+- Items include: `image_urls` (TEXT[]), `source_url`, `is_active`, `estimated_value`, `value_currency`, timestamps, and `user_id`
+- UI exposes `sourceUrl` on `ItemDetail` when present
+
+## Frontend
+
+### Pages
+
+- `AddToy.tsx`: Create items with validation and multi-image upload via `StorageService` and `ItemService`
+- `AdminDashboard.tsx`: Admin-only listings view via Edge Function `functions/v1/admin-listings`
+- `AuthCallback.tsx`: Handles OAuth callback
+- `Dashboard.tsx`: Main browse/swipe experience; uses `useItems` with `excludeUserId: user?.id` and optimized swipe controls
+- `ItemDetail.tsx`: Shows item details, images, and "Original Listing" link (from `sourceUrl`)
+- `Login.tsx`, `Register.tsx`: Auth flows
+- `Matches.tsx`: Match list and actions
+- `Messages.tsx`: Chat between matched users
+- `Profile.tsx`: User profile and stats
+
+### Components (selected)
+
+- Layout/UI: `Header`, `DashboardHeader`, `BottomNavigation`, `LoadingSpinner`, `StatsCard`
+- Items/swipe: `EnhancedItemCard`, `ItemCard`, `SwipeCard`, `SwipeControls`, `SwipeCounter`, `ItemStatus`
+- Modals/dialogs: `TradeOfferSelectionModal`, `ReportDialog`, `ReviewDialog`, `NotificationCenter`
+- Auth: `OAuthProviderButton`
+- Filters: `CategoryFilter` exists but is commented out in `Dashboard`
+
+### Context
+
+- `contexts/AuthContext.tsx` provides a shared auth state with an `initialized` gate to ensure children render only after context setup. `hooks/useAuth.ts` re-exports the hook for backward compatibility.
+
+### Hooks (selected)
+
+- `useItems.ts`: Infinite scrolling via React Query with filters (`categories`, `conditions`, `excludeUserId`, etc.)
+- `useSwipes.ts`: Records swipes via `SwipeService`, manages swiped items and counters
+- `useMatches.ts`, `useMessages.ts`, `useNotifications.ts`, `useReports.ts`, `useReviews.ts`, `useUserBlocks.ts`: Feature-specific data hooks backed by services
+
+### Services
+
+- `config.ts`: Business rules, tables, channels, error codes/messages
+- `types.ts`: Shared service types (`ServiceResult<T>`, `SwipeResult`, `ItemWithUser`, etc.)
+- `validation.ts`: Input validation utilities (UUID, swipe direction, etc.)
+- `itemService.ts`: Item CRUD, filtering, pagination, and field transformations
+- `swipeService.ts`: Optimized `record_swipe_optimized` with legacy fallback; background match via `check_and_create_match`
+- `matchService.ts`, `messageService.ts`, `notificationService.ts`, `reviewService.ts`, `reportService.ts`, `userService.ts`: Domain services with consistent error handling and types
+- `storageService.ts`: Multi-image upload/delete to Supabase Storage; validates size/types; bucket via `VITE_SUPABASE_STORAGE_BUCKET` or default
+
+## Setup
+
+### Environment variables
+
+Create a `.env` file with:
+
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_SUPABASE_STORAGE_BUCKET=barter_user_item_media
+```
+
+### Database migrations
+
+Migrations are located under `supabase/migrations`. Apply them using Supabase CLI or the dashboard SQL editor as needed. For swipe performance, ensure the RPCs and indexes described in the swipe optimization guide are applied.
+
+### Supabase Storage
+
+Follow `SUPABASE_STORAGE_SETUP.md` to create and secure the bucket specified by `VITE_SUPABASE_STORAGE_BUCKET` (default `barter_user_item_media`).
+
+### OAuth
+
+Follow `OAUTH_SETUP_GUIDE.md` to configure Google, Facebook, and GitHub providers in Supabase.
+
+## Pending Tasks
+
+- Re-enable `CategoryFilter` in `Dashboard` (was commented out due to TS import issues)
+- Standardize `ItemDetail` to use the service layer instead of direct Supabase querying
+- Ensure optimized swipe RPCs (`record_swipe_optimized`, `check_and_create_match`) and indexes are deployed to unlock full performance
