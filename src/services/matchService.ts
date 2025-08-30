@@ -64,7 +64,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -75,7 +75,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -113,7 +113,7 @@ export class MatchService {
           id: match.item1.id,
           title: match.item1.title,
           description: match.item1.description,
-          imageUrl: match.item1.image_url,
+          imageUrl: match.item1.image_urls && match.item1.image_urls.length > 0 ? match.item1.image_urls[0] : undefined,
           user: {
             id: match.item1.users.id,
             username: match.item1.users.username,
@@ -124,7 +124,7 @@ export class MatchService {
           id: match.item2.id,
           title: match.item2.title,
           description: match.item2.description,
-          imageUrl: match.item2.image_url,
+          imageUrl: match.item2.image_urls && match.item2.image_urls.length > 0 ? match.item2.image_urls[0] : undefined,
           user: {
             id: match.item2.users.id,
             username: match.item2.users.username,
@@ -164,7 +164,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -175,7 +175,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -221,7 +221,7 @@ export class MatchService {
           id: data.item1.id,
           title: data.item1.title,
           description: data.item1.description,
-          imageUrl: data.item1.image_url,
+          imageUrl: data.item1.image_urls && data.item1.image_urls.length > 0 ? data.item1.image_urls[0] : undefined,
           user: {
             id: data.item1.users.id,
             username: data.item1.users.username,
@@ -232,7 +232,7 @@ export class MatchService {
           id: data.item2.id,
           title: data.item2.title,
           description: data.item2.description,
-          imageUrl: data.item2.image_url,
+          imageUrl: data.item2.image_urls && data.item2.image_urls.length > 0 ? data.item2.image_urls[0] : undefined,
           user: {
             id: data.item2.users.id,
             username: data.item2.users.username,
@@ -345,7 +345,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -356,7 +356,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -395,7 +395,7 @@ export class MatchService {
           id: match.item1.id,
           title: match.item1.title,
           description: match.item1.description,
-          imageUrl: match.item1.image_url,
+          imageUrl: match.item1.image_urls && match.item1.image_urls.length > 0 ? match.item1.image_urls[0] : undefined,
           user: {
             id: match.item1.users.id,
             username: match.item1.users.username,
@@ -406,7 +406,7 @@ export class MatchService {
           id: match.item2.id,
           title: match.item2.title,
           description: match.item2.description,
-          imageUrl: match.item2.image_url,
+          imageUrl: match.item2.image_urls && match.item2.image_urls.length > 0 ? match.item2.image_urls[0] : undefined,
           user: {
             id: match.item2.users.id,
             username: match.item2.users.username,
@@ -446,7 +446,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -457,7 +457,7 @@ export class MatchService {
             id,
             title,
             description,
-            image_url,
+            image_urls,
             users (
               id,
               username,
@@ -496,7 +496,7 @@ export class MatchService {
           id: match.item1.id,
           title: match.item1.title,
           description: match.item1.description,
-          imageUrl: match.item1.image_url,
+          imageUrl: match.item1.image_urls && match.item1.image_urls.length > 0 ? match.item1.image_urls[0] : undefined,
           user: {
             id: match.item1.users.id,
             username: match.item1.users.username,
@@ -507,7 +507,7 @@ export class MatchService {
           id: match.item2.id,
           title: match.item2.title,
           description: match.item2.description,
-          imageUrl: match.item2.image_url,
+          imageUrl: match.item2.image_urls && match.item2.image_urls.length > 0 ? match.item2.image_urls[0] : undefined,
           user: {
             id: match.item2.users.id,
             username: match.item2.users.username,

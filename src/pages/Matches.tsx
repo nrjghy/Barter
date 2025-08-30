@@ -1,7 +1,7 @@
 import React from "react";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Heart, MessageCircle, X, Check, Package } from "lucide-react";
+import { Heart, MessageCircle, X, Check } from "lucide-react";
 import { useMatches } from "../hooks/useMatches";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -12,7 +12,7 @@ import { useReviews } from "../hooks/useReviews";
 export const Matches: React.FC = () => {
   const { matches, loading, updateMatch } = useMatches();
   const { user } = useAuth();
-  const { createReview, checkCanReview } = useReviews();
+  useReviews(); // Keep hook for potential future use
   const [selectedReview, setSelectedReview] = useState<{
     matchId: string;
     revieweeId: string;
@@ -28,7 +28,7 @@ export const Matches: React.FC = () => {
   }, [user, matches]);
 
   const handleReviewClick = (match: any) => {
-    const isCurrentUserRequest = match.user_id_1 === user?.id;
+    const isCurrentUserRequest = match.userId1 === user?.id;
     const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
     setSelectedReview({
       matchId: match.id,
@@ -77,7 +77,7 @@ export const Matches: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Pending Requests</h2>
           <div className="space-y-4">
             {pendingMatches.map((match) => {
-              const isCurrentUserRequest = match.user_id_1 === user?.id;
+              const isCurrentUserRequest = match.userId1 === user?.id;
               const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
               const currentUserItem = isCurrentUserRequest ? match.item1 : match.item2;
               const otherUserItem = isCurrentUserRequest ? match.item2 : match.item1;
@@ -103,15 +103,15 @@ export const Matches: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500">{new Date(match.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500">{new Date(match.createdAt).toLocaleDateString()}</div>
                   </div>
 
                   <div className="flex items-center space-x-4 mb-4">
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {currentUserItem.image_url && currentUserItem.image_url.trim() !== "" ? (
+                        {currentUserItem.imageUrl && currentUserItem.imageUrl.trim() !== "" ? (
                           <img
-                            src={currentUserItem.image_url}
+                            src={currentUserItem.imageUrl}
                             alt={currentUserItem.title}
                             className="w-full h-full object-cover"
                           />
@@ -129,9 +129,9 @@ export const Matches: React.FC = () => {
 
                     <div className="flex-1 text-center">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-2 overflow-hidden">
-                        {otherUserItem.image_url && otherUserItem.image_url.trim() !== "" ? (
+                        {otherUserItem.imageUrl && otherUserItem.imageUrl.trim() !== "" ? (
                           <img
-                            src={otherUserItem.image_url}
+                            src={otherUserItem.imageUrl}
                             alt={otherUserItem.title}
                             className="w-full h-full object-cover"
                           />
@@ -184,7 +184,7 @@ export const Matches: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Active Matches</h2>
           <div className="space-y-4">
             {acceptedMatches.map((match) => {
-              const isCurrentUserRequest = match.user_id_1 === user?.id;
+              const isCurrentUserRequest = match.userId1 === user?.id;
               const otherUser = isCurrentUserRequest ? match.item2.user : match.item1.user;
 
               return (
@@ -213,7 +213,7 @@ export const Matches: React.FC = () => {
                   </div>
 
                   {/* Review Button for Completed Trades */}
-                  {match.completed_at && (
+                  {match.completedAt && (
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       <button
                         onClick={() => handleReviewClick(match)}
