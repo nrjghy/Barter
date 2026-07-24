@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: oklch(96% 0.014 92); font-family: 'Manrope', sans-serif; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:36px;background:oklch(96% 0.014 92)">
+
+  <div style="max-width:640px;text-align:center;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:28px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.5px">Navigation shell</div>
+    <div style="font-size:15px;color:oklch(45% 0.02 95);line-height:1.5">Persistent header and bottom navigation wrapping Discover, My Stuff, and Chat. Tap any tab in any phone below to try it live — each one starts frozen on a different tab for side-by-side comparison.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Chat list:</div>
+      <div onClick="{{setListConnections}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{listConnectionsBg}};color:{{listConnectionsColor}};border:1px solid {{listConnectionsBorder}}">With new connections</div>
+      <div onClick="{{setListEmpty}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{listEmptyBg}};color:{{listEmptyColor}};border:1px solid {{listEmptyBorder}}">Empty state</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Chat thread:</div>
+      <div onClick="{{setThreadText}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{threadTextBg}};color:{{threadTextColor}};border:1px solid {{threadTextBorder}}">Text messages</div>
+      <div onClick="{{setThreadPhoto}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{threadPhotoBg}};color:{{threadPhotoColor}};border:1px solid {{threadPhotoBorder}}">Photo message</div>
+      <div onClick="{{setThreadLocation}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{threadLocationBg}};color:{{threadLocationColor}};border:1px solid {{threadLocationBorder}}">Location-share message</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Mark trade complete:</div>
+      <div onClick="{{togglePreviewSelect}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewSelectBg}};color:{{previewSelectColor}};border:1px solid {{previewSelectBorder}}">Item selection</div>
+      <div onClick="{{togglePreviewConfirm}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewConfirmBg2}};color:{{previewConfirmColor2}};border:1px solid {{previewConfirmBorder2}}">Confirmation</div>
+      <div onClick="{{togglePreviewCompleted}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewCompletedBg}};color:{{previewCompletedColor}};border:1px solid {{previewCompletedBorder}}">Completed (in thread)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Block / Report:</div>
+      <div onClick="{{togglePreviewBlock}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewBlockBg}};color:{{previewBlockColor}};border:1px solid {{previewBlockBorder}}">Block confirmation</div>
+      <div onClick="{{togglePreviewReport}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewReportBg}};color:{{previewReportColor}};border:1px solid {{previewReportBorder}}">Report reasons</div>
+      <div onClick="{{togglePreviewAfterBlock}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAfterBlockBg}};color:{{previewAfterBlockColor}};border:1px solid {{previewAfterBlockBorder}}">After block</div>
+      <div onClick="{{togglePreviewAfterReport}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAfterReportBg}};color:{{previewAfterReportColor}};border:1px solid {{previewAfterReportBorder}}">After report submitted</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Profile menu:</div>
+      <div onClick="{{setRoleRegular}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{roleRegularBg}};color:{{roleRegularColor}};border:1px solid {{roleRegularBorder}}">Regular user menu</div>
+      <div onClick="{{setRoleAdmin}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{roleAdminBg}};color:{{roleAdminColor}};border:1px solid {{roleAdminBorder}}">Admin user menu</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Review screen:</div>
+      <div onClick="{{togglePreviewRatingOnly}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewRatingOnlyBg}};color:{{previewRatingOnlyColor}};border:1px solid {{previewRatingOnlyBorder}}">Rating only</div>
+      <div onClick="{{togglePreviewRatingComment}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewRatingCommentBg}};color:{{previewRatingCommentColor}};border:1px solid {{previewRatingCommentBorder}}">Rating + comment</div>
+      <div onClick="{{togglePreviewAfterSubmitReview}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAfterSubmitReviewBg}};color:{{previewAfterSubmitReviewColor}};border:1px solid {{previewAfterSubmitReviewBorder}}">After submit (in thread)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Account screen:</div>
+      <div onClick="{{togglePreviewAccPassword}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAccPwBg}};color:{{previewAccPwColor}};border:1px solid {{previewAccPwBorder}}">Password change</div>
+      <div onClick="{{togglePreviewAccDelete}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAccDeleteBg}};color:{{previewAccDeleteColor}};border:1px solid {{previewAccDeleteBorder}}">Delete confirmation</div>
+      <div onClick="{{togglePreviewAccSaved}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAccSavedBg}};color:{{previewAccSavedColor}};border:1px solid {{previewAccSavedBorder}}">After password saved</div>
+      <div onClick="{{togglePreviewAccDeleted}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{previewAccDeletedBg}};color:{{previewAccDeletedColor}};border:1px solid {{previewAccDeletedBorder}}">After account deleted</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Notifications:</div>
+      <div onClick="{{setNotifUnread}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{notifUnreadBg}};color:{{notifUnreadColor}};border:1px solid {{notifUnreadBorder}}">With unread notifications</div>
+      <div onClick="{{setNotifEmpty}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{notifEmptyBg}};color:{{notifEmptyColor}};border:1px solid {{notifEmptyBorder}}">Empty state</div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;justify-content:center">
+    <sc-for list="{{frames}}" as="frame" hint-placeholder-count="3">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+
+        <div style="font-size:13px;font-weight:700;color:oklch(45% 0.02 95);padding:5px 14px;border-radius:999px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90)">{{ frame.label }}</div>
+
+        <div style="width:390px;height:812px;background:oklch(99% 0.006 95);border-radius:44px;border:1px solid oklch(88% 0.015 90);box-shadow:0 24px 48px -12px oklch(30% 0.02 100 / 0.25);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+          <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px 4px">
+            <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">9:41</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:flex-end;gap:2px">
+                <div style="width:3px;height:4px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+                <div style="width:3px;height:6px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+                <div style="width:3px;height:8px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+              </div>
+              <div style="width:20px;height:11px;border:1.5px solid oklch(22% 0.02 100);border-radius:2px;padding:1px;display:flex">
+                <div style="flex:1;background:oklch(22% 0.02 100);border-radius:1px"></div>
+              </div>
+            </div>
+          </div>
+
+          <sc-if value="{{frame.mainOpen}}">
+          <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:15px;height:15px;background:oklch(42% 0.1 148);transform:rotate(45deg);border-radius:3px"></div>
+              <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.3px">barter</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div onClick="{{frame.openNotifications}}" style="width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;color:oklch(30% 0.03 120);cursor:pointer">
+                <div style="width:13px;height:12px;border:2px solid currentColor;border-bottom:none;border-radius:7px 7px 2px 2px"></div>
+                <div style="width:15px;height:2px;background:currentColor;position:absolute;bottom:7px;border-radius:1px"></div>
+                <div style="width:4px;height:4px;background:currentColor;border-radius:50%;position:absolute;bottom:3px"></div>
+                <sc-if value="{{showNotificationDot}}" hint-placeholder-val="{{true}}">
+                  <div style="position:absolute;top:0px;right:0px;width:8px;height:8px;border-radius:50%;background:oklch(60% 0.1 55);border:2px solid oklch(99% 0.006 95)"></div>
+                </sc-if>
+              </div>
+              <div onClick="{{frame.openProfile}}" style="width:32px;height:32px;border-radius:50%;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer">MK</div>
+              <div style="width:24px;height:24px;border-radius:50%;border:1.5px solid oklch(30% 0.03 120);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:oklch(30% 0.03 120)">?</div>
+            </div>
+          </div>
+
+          <div style="flex:1;overflow:hidden;padding:20px;background:oklch(96% 0.014 92);position:relative">
+
+            <sc-if value="{{frame.discoverActive}}" hint-placeholder-val="{{true}}">
+              <div style="height:100%;display:flex;flex-direction:column">
+
+                <sc-if value="{{frame.showSubSwitch}}">
+                  <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;flex-shrink:0">
+                    <sc-if value="{{frame.subBrowsing}}"><div onClick="{{frame.setSubBrowsing}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">Browsing</div></sc-if>
+                    <sc-if value="{{frame.notBrowsing}}"><div onClick="{{frame.setSubBrowsing}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">Browsing</div></sc-if>
+                    <sc-if value="{{frame.subFilter}}"><div onClick="{{frame.setSubFilter}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">Filters</div></sc-if>
+                    <sc-if value="{{frame.notFilter}}"><div onClick="{{frame.setSubFilter}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">Filters</div></sc-if>
+                    <sc-if value="{{frame.subEmpty}}"><div onClick="{{frame.setSubEmpty}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">Empty state</div></sc-if>
+                    <sc-if value="{{frame.notEmpty}}"><div onClick="{{frame.setSubEmpty}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">Empty state</div></sc-if>
+                    <sc-if value="{{frame.subError}}"><div onClick="{{frame.setSubError}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">No connection</div></sc-if>
+                    <sc-if value="{{frame.notError}}"><div onClick="{{frame.setSubError}}" style="flex-shrink:0;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">No connection</div></sc-if>
+                  </div>
+                </sc-if>
+
+                <div style="flex:1;position:relative;min-height:0">
+
+                  <sc-if value="{{frame.subEmpty}}">
+                    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:0 20px">
+                      <div style="width:64px;height:64px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center">
+                        <div style="width:22px;height:22px;background:oklch(42% 0.1 148);transform:rotate(45deg);border-radius:4px"></div>
+                      </div>
+                      <div style="font-size:17px;font-weight:700;color:oklch(22% 0.02 100)">You've seen everything nearby</div>
+                      <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:240px">New items get listed all the time. Try widening your distance, or check back soon.</div>
+                      <div onClick="{{frame.setSubBrowsing}}" style="margin-top:6px;padding:10px 20px;border-radius:14px;border:1.5px solid oklch(42% 0.1 148);color:oklch(34% 0.09 148);font-size:13px;font-weight:700;cursor:pointer">Adjust filters</div>
+                    </div>
+                  </sc-if>
+
+                  <sc-if value="{{frame.subDeckVisible}}">
+                    <div style="position:absolute;inset:0">
+                      <div style="position:absolute;inset:0;top:20px;transform:scale(0.94);border-radius:24px;border:1px solid oklch(88% 0.015 90);background:oklch(94% 0.015 90);opacity:0.6"></div>
+                      <div style="position:absolute;inset:0;top:10px;transform:scale(0.97);border-radius:24px;border:1px solid oklch(88% 0.015 90);background:oklch(97% 0.01 92);opacity:0.85"></div>
+                      <div onClick="{{frame.openDetail}}" style="position:absolute;inset:0;border-radius:24px;overflow:hidden;cursor:pointer;box-shadow:0 8px 20px -8px oklch(30% 0.02 100 / 0.2);background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 10px, oklch(94% 0.015 90) 10px, oklch(94% 0.015 90) 20px)">
+
+                        <div onClick="{{openShareBookshelf}}" style="position:absolute;top:12px;right:52px;width:32px;height:32px;border-radius:50%;background:oklch(20% 0.02 100 / 0.45);display:flex;align-items:center;justify-content:center;color:white;cursor:pointer;z-index:2">
+                          {{ shareIconSmall }}
+                        </div>
+
+                        <div onClick="{{frame.setSubFilter}}" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;background:oklch(20% 0.02 100 / 0.45);display:flex;align-items:center;justify-content:center;color:white;cursor:pointer;z-index:2">
+                          <div style="width:14px;height:14px;display:flex;flex-direction:column;align-items:center;gap:2px">
+                            <div style="width:12px;height:2px;background:currentColor;border-radius:1px"></div>
+                            <div style="width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid currentColor"></div>
+                            <div style="width:2px;height:3px;background:currentColor"></div>
+                          </div>
+                          <sc-if value="{{hasActiveFilter}}">
+                            <div style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:oklch(60% 0.1 55);border:2px solid white"></div>
+                          </sc-if>
+                        </div>
+
+                        <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 16px 18px;background:linear-gradient(to top, oklch(15% 0.02 100 / 0.8), oklch(15% 0.02 100 / 0.4) 55%, transparent)">
+                          <div style="font-size:20px;font-weight:700;color:white;margin-bottom:9px">Wooden bookshelf</div>
+                          <div style="display:flex;align-items:center;gap:16px">
+                            <div style="display:flex;align-items:center;gap:6px;color:white">{{ currentCategoryIcon }}<div style="font-size:13px;font-weight:600">Home &amp; Garden</div></div>
+                            <div style="display:flex;align-items:center;gap:6px;color:white">{{ currentConditionGauge }}<div style="font-size:13px;font-weight:600">Good</div></div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </div>
+                  </sc-if>
+
+                </div>
+
+                <sc-if value="{{frame.subDeckVisible}}">
+                  <div style="flex-shrink:0;padding-top:12px">
+                    <sc-if value="{{frame.subError}}">
+                      <div style="padding:11px;border-radius:12px;background:oklch(93% 0.05 55);color:oklch(38% 0.09 50);font-size:13px;font-weight:700;text-align:center;margin-bottom:12px">No connection, please try again.</div>
+                    </sc-if>
+                    <div style="display:flex;gap:10px">
+                      <div style="flex:1;padding:12px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95);font-size:14px;font-weight:600;text-align:center">Not for me</div>
+                      <div style="flex:1;padding:12px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center">Like</div>
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+
+              <sc-if value="{{frame.subFilter}}">
+                <div style="position:absolute;left:0;right:0;top:0;bottom:0;background:oklch(20% 0.02 100 / 0.4);display:flex;align-items:flex-end;z-index:10">
+                  <div style="width:100%;height:420px;background:oklch(99% 0.006 95);border-radius:20px 20px 0 0;padding:18px 0 0;display:flex;flex-direction:column">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;margin-bottom:14px;flex-shrink:0">
+                      <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Filters</div>
+                      <div onClick="{{frame.setSubBrowsing}}" style="font-size:14px;font-weight:700;color:oklch(45% 0.02 95);cursor:pointer">✕</div>
+                    </div>
+
+                    <div style="flex:1;display:flex;min-height:0;border-top:1px solid oklch(90% 0.012 90)">
+                      <div style="width:96px;flex-shrink:0;border-right:1px solid oklch(90% 0.012 90);padding:10px 0;overflow-y:auto">
+                        <sc-if value="{{secRadius}}"><div onClick="{{setSecRadius}}" style="padding:12px 14px;font-size:13px;font-weight:700;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);cursor:pointer">Radius</div></sc-if>
+                        <sc-if value="{{secRadiusInactive}}"><div onClick="{{setSecRadius}}" style="padding:12px 14px;font-size:13px;font-weight:600;color:oklch(45% 0.02 95);cursor:pointer">Radius</div></sc-if>
+                        <sc-if value="{{secCondition}}"><div onClick="{{setSecCondition}}" style="padding:12px 14px;font-size:13px;font-weight:700;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);cursor:pointer">Condition</div></sc-if>
+                        <sc-if value="{{secConditionInactive}}"><div onClick="{{setSecCondition}}" style="padding:12px 14px;font-size:13px;font-weight:600;color:oklch(45% 0.02 95);cursor:pointer">Condition</div></sc-if>
+                        <sc-if value="{{secCategory}}"><div onClick="{{setSecCategory}}" style="padding:12px 14px;font-size:13px;font-weight:700;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);cursor:pointer">Category</div></sc-if>
+                        <sc-if value="{{secCategoryInactive}}"><div onClick="{{setSecCategory}}" style="padding:12px 14px;font-size:13px;font-weight:600;color:oklch(45% 0.02 95);cursor:pointer">Category</div></sc-if>
+                      </div>
+
+                      <div style="flex:1;overflow-y:auto;padding:18px 16px">
+
+                        <sc-if value="{{secRadius}}" hint-placeholder-val="{{true}}">
+                          <div style="text-align:center;margin-bottom:18px">
+                            <div style="font-size:28px;font-weight:800;color:oklch(34% 0.09 148)">{{ radiusKm }} km</div>
+                            <div style="font-size:12px;color:oklch(45% 0.02 95);margin-top:2px">Search distance</div>
+                          </div>
+                          <input type="range" min="5" max="100" step="5" value="{{ radiusKm }}" onChange="{{ onRadiusChange }}" style="width:100%;accent-color:oklch(42% 0.1 148)" />
+                          <div style="display:flex;justify-content:space-between;font-size:11px;color:oklch(50% 0.02 90);margin-top:6px">
+                            <div>5 km</div>
+                            <div>100 km</div>
+                          </div>
+                        </sc-if>
+
+                        <sc-if value="{{secCondition}}">
+                          <sc-for list="{{conditions}}" as="cond" hint-placeholder-count="4">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid oklch(92% 0.012 90);cursor:pointer">
+                              <div style="display:flex;align-items:center;gap:10px">{{ cond.gauge }}<div style="font-size:13px;font-weight:600;color:oklch(22% 0.02 100)">{{ cond.name }}</div></div>
+                              <sc-if value="{{cond.selected}}"><div style="width:16px;height:16px;border-radius:50%;background:oklch(42% 0.1 148);color:white;font-size:10px;display:flex;align-items:center;justify-content:center">✓</div></sc-if>
+                            </div>
+                          </sc-for>
+                        </sc-if>
+
+                        <sc-if value="{{secCategory}}">
+                          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px">
+                            <sc-for list="{{categories}}" as="cat" hint-placeholder-count="13">
+                              <sc-if value="{{cat.selected}}">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;border-radius:12px;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">{{ cat.icon }}<div style="font-size:10.5px;font-weight:700;text-align:center;line-height:1.2">{{ cat.name }}</div></div>
+                              </sc-if>
+                              <sc-if value="{{cat.notSelected}}">
+                                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;border-radius:12px;cursor:pointer;color:oklch(45% 0.02 95)">{{ cat.icon }}<div style="font-size:10.5px;font-weight:600;text-align:center;line-height:1.2">{{ cat.name }}</div></div>
+                              </sc-if>
+                            </sc-for>
+                          </div>
+                        </sc-if>
+
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{frame.mystuffActive}}">
+              <div style="padding:14px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:12px">+ Add a listing</div>
+              <div onClick="{{frame.openDetail}}" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid oklch(88% 0.015 90);cursor:pointer">
+                <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">Bike helmet</div>
+                  <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+                </div>
+                <div onClick="{{openShareHelmet}}" style="color:oklch(45% 0.02 95);cursor:pointer">{{ shareIconRow }}</div>
+                <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+              </div>
+              <div onClick="{{frame.openDetail}}" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid oklch(88% 0.015 90);cursor:pointer">
+                <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">Board game set</div>
+                  <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+                </div>
+                <div onClick="{{openShareGames}}" style="color:oklch(45% 0.02 95);cursor:pointer">{{ shareIconRow }}</div>
+                <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+              </div>
+              <div onClick="{{frame.openDetail}}" style="display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer">
+                <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">Winter jacket</div>
+                  <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+                </div>
+                <div onClick="{{openShareJacket}}" style="color:oklch(45% 0.02 95);cursor:pointer">{{ shareIconRow }}</div>
+                <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{frame.chatActive}}">
+              <sc-if value="{{chatListEmpty}}">
+                <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:0 20px">
+                  <div style="width:64px;height:64px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">{{ chatEmptyIcon }}</div>
+                  <div style="font-size:17px;font-weight:700;color:oklch(22% 0.02 100)">No connections yet</div>
+                  <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:240px">When you and someone else both like the same item, you'll match here and can start chatting.</div>
+                </div>
+              </sc-if>
+              <sc-if value="{{chatListConnections}}">
+                <sc-if value="{{shareVisible}}"><div style="height:60px;flex-shrink:0"></div></sc-if>
+                <sc-for list="{{connections}}" as="conn" hint-placeholder-count="4">
+                  <div onClick="{{conn.openThread}}" style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid oklch(88% 0.015 90);cursor:pointer">
+                    <div style="width:48px;height:48px;border-radius:50%;flex-shrink:0;background:{{conn.avatarBg}};color:{{conn.avatarColor}};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">{{ conn.initials }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">{{ conn.name }}</div>
+                      <div style="display:flex;align-items:center;gap:5px;margin:3px 0">
+                        <div style="width:16px;height:16px;border-radius:4px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 4px, oklch(92% 0.015 90) 4px, oklch(92% 0.015 90) 8px)"></div>
+                        <div style="font-size:11px;font-weight:600;color:oklch(50% 0.02 90);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ conn.itemLabel }}</div>
+                      </div>
+                      <div style="font-size:12px;color:oklch(45% 0.02 95);font-style:{{conn.previewStyle}};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ conn.previewText }}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+                      <div style="font-size:11px;color:oklch(50% 0.02 90)">{{ conn.time }}</div>
+                      <sc-if value="{{conn.showNewPill}}">
+                        <div style="padding:2px 7px;border-radius:999px;background:oklch(60% 0.1 55);color:white;font-size:10px;font-weight:700">New</div>
+                      </sc-if>
+                      <sc-if value="{{conn.showNewDot}}">
+                        <div style="width:8px;height:8px;border-radius:50%;background:oklch(60% 0.1 55)"></div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </sc-if>
+            </sc-if>
+
+          </div>
+
+          <div style="flex-shrink:0;display:flex;padding:8px 12px 22px;border-top:1px solid oklch(88% 0.015 90);background:oklch(99% 0.006 95)">
+
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer" onClick="{{frame.setDiscover}}">
+              <sc-if value="{{frame.discoverActive}}" hint-placeholder-val="{{true}}">
+                <div style="width:56px;height:32px;border-radius:16px;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+                  <div style="width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:currentColor;transform:rotate(45deg);border-radius:1px"></div></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:700;color:oklch(34% 0.09 148)">Discover</div></sc-if>
+              </sc-if>
+              <sc-if value="{{frame.discoverInactive}}">
+                <div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">
+                  <div style="width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:currentColor;transform:rotate(45deg);border-radius:1px"></div></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:600;color:oklch(52% 0.02 85)">Discover</div></sc-if>
+              </sc-if>
+            </div>
+
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer" onClick="{{frame.setMystuff}}">
+              <sc-if value="{{frame.mystuffActive}}">
+                <div style="width:56px;height:32px;border-radius:16px;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+                  <div style="width:20px;height:18px;border:2px solid currentColor;border-radius:4px;position:relative"><div style="position:absolute;top:4px;left:0;right:0;height:2px;background:currentColor"></div></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:700;color:oklch(34% 0.09 148)">My Stuff</div></sc-if>
+              </sc-if>
+              <sc-if value="{{frame.mystuffInactive}}">
+                <div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">
+                  <div style="width:20px;height:18px;border:2px solid currentColor;border-radius:4px;position:relative"><div style="position:absolute;top:4px;left:0;right:0;height:2px;background:currentColor"></div></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:600;color:oklch(52% 0.02 85)">My Stuff</div></sc-if>
+              </sc-if>
+            </div>
+
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;cursor:pointer" onClick="{{frame.setChat}}">
+              <sc-if value="{{frame.chatActive}}">
+                <div style="width:56px;height:32px;border-radius:16px;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+                  <div style="width:22px;height:18px;border:2px solid currentColor;border-radius:6px 6px 6px 2px"></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:700;color:oklch(34% 0.09 148)">Chat</div></sc-if>
+              </sc-if>
+              <sc-if value="{{frame.chatInactive}}">
+                <div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">
+                  <div style="width:22px;height:18px;border:2px solid currentColor;border-radius:6px 6px 6px 2px"></div>
+                </div>
+                <sc-if value="{{showLabels}}"><div style="font-size:11px;font-weight:600;color:oklch(52% 0.02 85)">Chat</div></sc-if>
+              </sc-if>
+            </div>
+
+          </div>
+
+          </sc-if>
+
+          <sc-if value="{{frame.detailOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+
+              <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div onClick="{{closeDetail}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                  <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Item details</div>
+                </div>
+                <div onClick="{{openShareBookshelf}}" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:oklch(30% 0.03 120);cursor:pointer">{{ shareIconMedium }}</div>
+              </div>
+
+              <div style="flex:1;overflow-y:auto">
+
+                <div style="position:relative;height:280px;overflow:hidden;background:oklch(88% 0.015 90)">
+                  <div style="display:flex;height:100%;transition:transform 0.3s ease;transform:{{galleryTransform}}">
+                    <sc-for list="{{galleryPhotos}}" as="photo" hint-placeholder-count="6">
+                      <div style="flex-shrink:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:12px;color:oklch(50% 0.02 90);background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 10px, oklch(94% 0.015 90) 10px, oklch(94% 0.015 90) 20px)">{{ photo.label }}</div>
+                    </sc-for>
+                  </div>
+                  <div onClick="{{galleryPrev}}" style="position:absolute;top:0;left:0;width:35%;height:100%;cursor:pointer"></div>
+                  <div onClick="{{galleryNext}}" style="position:absolute;top:0;right:0;width:35%;height:100%;cursor:pointer"></div>
+                  <div style="position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:6px">
+                    <sc-for list="{{galleryPhotos}}" as="photo" hint-placeholder-count="6">
+                      <sc-if value="{{photo.active}}"><div style="width:7px;height:7px;border-radius:50%;background:white"></div></sc-if>
+                      <sc-if value="{{photo.notActive}}"><div style="width:6px;height:6px;border-radius:50%;background:oklch(100% 0 0 / 0.5)"></div></sc-if>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="padding:18px 20px 24px">
+
+                  <div style="display:flex;gap:8px;margin-bottom:16px">
+                    <sc-if value="{{detailHasDescription}}"><div onClick="{{toggleDescription}}" style="padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">Description: shown</div></sc-if>
+                    <sc-if value="{{detailNoDescription}}"><div onClick="{{toggleDescription}}" style="padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">Description: hidden</div></sc-if>
+                    <sc-if value="{{detailHasValue}}"><div onClick="{{toggleValue}}" style="padding:5px 12px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148)">Value: shown</div></sc-if>
+                    <sc-if value="{{detailNoValue}}"><div onClick="{{toggleValue}}" style="padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95)">Value: hidden</div></sc-if>
+                  </div>
+
+                  <div style="font-size:20px;font-weight:700;color:oklch(22% 0.02 100);margin-bottom:10px">Wooden bookshelf</div>
+
+                  <div style="display:flex;align-items:center;gap:18px;margin-bottom:16px;color:oklch(22% 0.02 100)">
+                    <div style="display:flex;align-items:center;gap:6px">{{ detailCategoryIcon }}<div style="font-size:13px;font-weight:600">Home &amp; Garden</div></div>
+                    <div style="display:flex;align-items:center;gap:8px">{{ detailConditionGauge }}<div style="font-size:13px;font-weight:600">Good</div></div>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;border:1px solid oklch(88% 0.015 90);margin-bottom:18px">
+                    <div style="width:36px;height:36px;border-radius:50%;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">MK</div>
+                    <div style="flex:1">
+                      <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">Marta K.</div>
+                      <div style="font-size:12px;color:oklch(45% 0.02 95)">★ 4.8 · 12 trades</div>
+                    </div>
+                  </div>
+
+                  <div style="margin-bottom:18px">
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:6px">DESCRIPTION</div>
+                    <sc-if value="{{detailHasDescription}}"><div style="font-size:14px;color:oklch(22% 0.02 100);line-height:1.6">Solid oak bookshelf, five shelves. Minor scuffs on the base but structurally sound — downsizing, so it needs a new home.</div></sc-if>
+                    <sc-if value="{{detailNoDescription}}"><div style="font-size:13px;color:oklch(45% 0.02 95);font-style:italic">No description provided.</div></sc-if>
+                  </div>
+
+                  <sc-if value="{{detailHasValue}}">
+                    <div style="margin-bottom:18px">
+                      <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:6px">ESTIMATED VALUE</div>
+                      <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">120 PLN</div>
+                    </div>
+                  </sc-if>
+
+                  <div>
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:6px">MORE INFO</div>
+                    <div style="font-size:14px;font-weight:600;color:oklch(34% 0.09 148);text-decoration:underline;cursor:pointer">More info ↗</div>
+                  </div>
+
+                </div>
+              </div>
+
+              <div style="flex-shrink:0;display:flex;gap:10px;padding:14px 20px 22px;border-top:1px solid oklch(88% 0.015 90);background:oklch(99% 0.006 95)">
+                <div onClick="{{closeDetail}}" style="flex:1;padding:12px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);color:oklch(45% 0.02 95);font-size:14px;font-weight:600;text-align:center;cursor:pointer">Not for me</div>
+                <div onClick="{{closeDetail}}" style="flex:1;padding:12px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer">Like</div>
+              </div>
+
+            </div>
+          </sc-if>
+
+          <sc-if value="{{frame.chatThreadOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
+
+              <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0">
+                  <div onClick="{{closeChatThread}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600;flex-shrink:0">‹</div>
+                  <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:{{threadAvatarBg}};color:{{threadAvatarColor}};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">{{ threadInitials }}</div>
+                  <div style="font-size:15px;font-weight:700;color:oklch(22% 0.02 100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ threadName }}</div>
+                </div>
+                <div onClick="{{toggleChatMenu}}" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:oklch(45% 0.02 95);flex-shrink:0">
+                  <div style="display:flex;gap:2.5px">
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                  </div>
+                </div>
+                <sc-if value="{{chatMenuOpen}}">
+                  <div onClick="{{toggleChatMenu}}" style="position:fixed;inset:0;z-index:30"></div>
+                  <div style="position:absolute;top:48px;right:16px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);border-radius:12px;box-shadow:0 10px 24px -8px oklch(30% 0.02 100 / 0.3);z-index:40;overflow:hidden;min-width:180px">
+                    <div onClick="{{openTradeMenuItem}}" style="padding:11px 14px;font-size:13px;font-weight:700;color:oklch(34% 0.09 148);cursor:pointer;border-bottom:1px solid oklch(88% 0.015 90)">Mark trade complete</div>
+                    <div onClick="{{openBlockConfirm}}" style="padding:11px 14px;font-size:13px;font-weight:700;color:oklch(50% 0.15 30);cursor:pointer;border-bottom:1px solid oklch(88% 0.015 90)">Block {{ threadName }}</div>
+                    <div onClick="{{openReport}}" style="padding:11px 14px;font-size:13px;font-weight:700;color:oklch(50% 0.15 30);cursor:pointer">Report</div>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="flex-shrink:0;padding:10px 20px;border-bottom:1px solid oklch(90% 0.012 90);display:flex;gap:8px;overflow-x:auto">
+                <sc-for list="{{threadItemChips}}" as="chip" hint-placeholder-count="1">
+                  <div style="flex-shrink:0;display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:999px;background:oklch(93% 0.012 90)">
+                    <div style="width:20px;height:20px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 4px, oklch(92% 0.015 90) 4px, oklch(92% 0.015 90) 8px)"></div>
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);white-space:nowrap">{{ chip.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:oklch(96% 0.014 92)">
+                <sc-if value="{{tradeCompleted}}">
+                  <div style="align-self:center;max-width:88%;padding:12px 16px;border-radius:14px;background:oklch(93% 0.035 145);color:oklch(28% 0.08 148);font-size:12.5px;font-weight:600;text-align:center;line-height:1.5">Trade marked complete. {{ threadName }} has until {{ disputeDate }} to dispute.</div>
+                </sc-if>
+                <sc-for list="{{threadMessages}}" as="msg" hint-placeholder-count="5">
+                  <div style="display:flex;justify-content:{{msg.justify}}">
+
+                    <sc-if value="{{msg.isText}}">
+                      <div style="max-width:76%;padding:10px 13px;border-radius:{{msg.radius}};background:{{msg.bg}};color:{{msg.color}};border:{{msg.border}};font-size:13.5px;line-height:1.45">{{ msg.text }}</div>
+                    </sc-if>
+
+                    <sc-if value="{{msg.isPhoto}}">
+                      <div style="max-width:76%;padding:6px;border-radius:{{msg.radius}};background:{{msg.bg}};border:{{msg.border}}">
+                        <div style="width:160px;height:118px;border-radius:10px;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 8px, oklch(92% 0.015 90) 8px, oklch(92% 0.015 90) 16px)"></div>
+                        <div style="font-size:12.5px;padding:6px 4px 2px;color:{{msg.color}}">{{ msg.text }}</div>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{msg.isLocation}}">
+                      <div style="max-width:76%;border-radius:{{msg.radius}};background:{{msg.bg}};border:{{msg.border}};overflow:hidden">
+                        <div style="width:200px;height:100px;position:relative;background:repeating-linear-gradient(0deg, oklch(90% 0.015 90), oklch(90% 0.015 90) 1px, oklch(94% 0.012 90) 1px, oklch(94% 0.012 90) 22px), repeating-linear-gradient(90deg, oklch(90% 0.015 90), oklch(90% 0.015 90) 1px, oklch(94% 0.012 90) 1px, oklch(94% 0.012 90) 22px)">
+                          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);color:oklch(50% 0.15 30)">{{ pinIconMedium }}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;padding:9px 12px">
+                          <div style="color:oklch(50% 0.15 30);flex-shrink:0">{{ pinIconSmall }}</div>
+                          <div style="min-width:0">
+                            <div style="font-size:12.5px;font-weight:700;color:{{msg.color}}">Location shared</div>
+                            <div style="font-size:11px;color:{{msg.subColor}};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ msg.text }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </sc-if>
+
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 14px 20px;border-top:1px solid oklch(88% 0.015 90);background:oklch(99% 0.006 95)">
+                <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:oklch(45% 0.02 95);flex-shrink:0">{{ cameraIcon }}</div>
+                <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:oklch(45% 0.02 95);flex-shrink:0">{{ pinIconSmall2 }}</div>
+                <div style="flex:1;padding:9px 14px;border-radius:999px;background:oklch(94% 0.012 90);color:oklch(52% 0.02 90);font-size:13px">Message…</div>
+                <div style="width:32px;height:32px;border-radius:50%;background:oklch(42% 0.1 148);display:flex;align-items:center;justify-content:center;color:white;flex-shrink:0">{{ sendIcon }}</div>
+              </div>
+
+              <sc-if value="{{tradeSelectOpen}}">
+                <div style="position:absolute;inset:0;background:oklch(99% 0.006 95);display:flex;flex-direction:column;z-index:20">
+                  <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                    <div onClick="{{closeTradeFlow}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                    <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Mark trade complete</div>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;padding:18px 20px 24px">
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:20px">Select the item(s) that were actually exchanged with {{ threadName }}.</div>
+
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:10px">YOUR ITEMS</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px">
+                      <sc-for list="{{mineChecklist}}" as="it" hint-placeholder-count="1">
+                        <div onClick="{{it.toggle}}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1.5px solid {{it.borderColor}};background:{{it.bg}};cursor:pointer">
+                          <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid {{it.checkBorder}};background:{{it.checkBg}};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                            <sc-if value="{{it.checked}}"><div style="width:10px;height:6px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translate(1px,-1px)"></div></sc-if>
+                          </div>
+                          <div style="width:22px;height:22px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 4px, oklch(92% 0.015 90) 4px, oklch(92% 0.015 90) 8px)"></div>
+                          <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">{{ it.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:10px">THEIR ITEMS</div>
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <sc-for list="{{theirsChecklist}}" as="it" hint-placeholder-count="1">
+                        <div onClick="{{it.toggle}}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1.5px solid {{it.borderColor}};background:{{it.bg}};cursor:pointer">
+                          <div style="width:20px;height:20px;border-radius:6px;border:1.5px solid {{it.checkBorder}};background:{{it.checkBg}};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                            <sc-if value="{{it.checked}}"><div style="width:10px;height:6px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translate(1px,-1px)"></div></sc-if>
+                          </div>
+                          <div style="width:22px;height:22px;border-radius:5px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 4px, oklch(92% 0.015 90) 4px, oklch(92% 0.015 90) 8px)"></div>
+                          <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">{{ it.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="flex-shrink:0;padding:14px 20px 22px;border-top:1px solid oklch(88% 0.015 90)">
+                    <div onClick="{{goToTradeConfirm}}" style="padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;opacity:{{selectOpacity}}">Continue</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{tradeConfirmOpen}}">
+                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;z-index:20">
+                  <div onClick="{{backToTradeSelect}}" style="position:absolute;inset:0;background:oklch(20% 0.02 100 / 0.4)"></div>
+                  <div style="position:relative;width:100%;background:oklch(99% 0.006 95);border-radius:20px 20px 0 0;padding:22px 22px 28px;display:flex;flex-direction:column;gap:6px">
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 100)">Confirm trade complete</div>
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:6px">Marking <strong>{{ selectedSummary }}</strong> as traded. These item(s) will be removed from Discover, and anyone else with an open connection about them will be notified. {{ threadName }} will have until {{ disputeDate }} to dispute this.</div>
+                    <div onClick="{{confirmTrade}}" style="padding:13px;border-radius:12px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;margin-top:8px;margin-bottom:8px">Confirm trade complete</div>
+                    <div onClick="{{backToTradeSelect}}" style="padding:13px;border-radius:12px;background:transparent;color:oklch(22% 0.02 100);font-size:14px;font-weight:700;text-align:center;cursor:pointer">Go back</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{blockConfirmOpen}}">
+                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;z-index:20">
+                  <div onClick="{{closeBlockConfirm}}" style="position:absolute;inset:0;background:oklch(20% 0.02 100 / 0.4)"></div>
+                  <div style="position:relative;width:100%;background:oklch(99% 0.006 95);border-radius:20px 20px 0 0;padding:22px 22px 28px;display:flex;flex-direction:column;gap:6px">
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 100)">Block {{ threadName }}?</div>
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:14px">You won't be able to message or match with {{ threadName }} again, and their listings will be hidden from your Discover feed.</div>
+                    <div onClick="{{closeBlockConfirm}}" style="padding:13px;border-radius:12px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;margin-bottom:8px">Keep chatting</div>
+                    <div onClick="{{confirmBlock}}" style="padding:13px;border-radius:12px;background:transparent;color:oklch(50% 0.15 30);font-size:14px;font-weight:700;text-align:center;cursor:pointer">Block {{ threadName }}</div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{reportOpen}}">
+                <div style="position:absolute;inset:0;background:oklch(99% 0.006 95);display:flex;flex-direction:column;z-index:20">
+                  <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                    <div onClick="{{closeReport}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                    <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Report {{ threadName }}</div>
+                  </div>
+                  <div style="flex:1;overflow-y:auto;padding:18px 20px 24px">
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:18px">What's the issue?</div>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+                      <sc-for list="{{reportChoices}}" as="r" hint-placeholder-count="6">
+                        <div onClick="{{r.select}}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1.5px solid {{r.dotBorder}};cursor:pointer">
+                          <div style="width:18px;height:18px;border-radius:50%;border:1.5px solid {{r.dotBorder}};flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                            <sc-if value="{{r.selected}}"><div style="width:9px;height:9px;border-radius:50%;background:{{r.dotBg}}"></div></sc-if>
+                          </div>
+                          <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">{{ r.label }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">ADDITIONAL CONTEXT (OPTIONAL)</div>
+                    <textarea value="{{reportText}}" onChange="{{setReportText}}" placeholder="Add any details that might help us review this…" style="width:100%;min-height:90px;padding:12px 14px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);font-size:13.5px;font-family:inherit;color:oklch(22% 0.02 100);resize:vertical;box-sizing:border-box"></textarea>
+                  </div>
+                  <div style="flex-shrink:0;padding:14px 20px 22px;border-top:1px solid oklch(88% 0.015 90)">
+                    <div onClick="{{submitReport}}" style="padding:13px;border-radius:14px;background:oklch(50% 0.15 30);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;opacity:{{reportSubmitOpacity}}">Submit report</div>
+                  </div>
+                </div>
+              </sc-if>
+
+            </div>
+          </sc-if>
+
+          <sc-if value="{{frame.notificationsOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                <div onClick="{{closeNotifications}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Notifications</div>
+              </div>
+
+              <div style="flex:1;overflow-y:auto">
+                <sc-if value="{{notificationsEmpty}}">
+                  <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:0 30px">
+                    <div style="width:60px;height:60px;border-radius:50%;background:oklch(93% 0.012 90);display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">{{ bellIconLarge }}</div>
+                    <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">No notifications yet</div>
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5">We'll let you know when something happens with your matches and listings.</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{notificationsHasList}}">
+                  <sc-for list="{{notificationRows}}" as="n" hint-placeholder-count="8">
+                    <div onClick="{{n.open}}" style="display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(90% 0.012 90);background:{{n.bg}};cursor:pointer">
+                      <div style="width:38px;height:38px;border-radius:50%;flex-shrink:0;background:{{n.iconBg}};color:{{n.iconColor}};display:flex;align-items:center;justify-content:center">{{ n.icon }}</div>
+                      <div style="flex:1;min-width:0">
+                        <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 100);line-height:1.4">{{ n.title }}</div>
+                        <div style="font-size:12.5px;color:oklch(45% 0.02 95);line-height:1.4;margin-top:2px">{{ n.body }}</div>
+                        <div style="font-size:11px;color:oklch(52% 0.02 90);margin-top:5px">{{ n.time }}</div>
+                      </div>
+                      <sc-if value="{{n.unread}}">
+                        <div style="width:9px;height:9px;border-radius:50%;background:oklch(60% 0.1 55);flex-shrink:0;margin-top:5px"></div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{frame.profileOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                <div style="display:flex;align-items:center;gap:12px">
+                  <div onClick="{{closeProfile}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                  <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Profile</div>
+                </div>
+                <div onClick="{{toggleProfileMenu}}" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:oklch(45% 0.02 95)">
+                  <div style="display:flex;gap:2.5px">
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                    <div style="width:3.5px;height:3.5px;border-radius:50%;background:currentColor"></div>
+                  </div>
+                </div>
+                <sc-if value="{{profileMenuOpen}}">
+                  <div onClick="{{toggleProfileMenu}}" style="position:fixed;inset:0;z-index:30"></div>
+                  <div style="position:absolute;top:48px;right:16px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);border-radius:12px;box-shadow:0 10px 24px -8px oklch(30% 0.02 100 / 0.3);z-index:40;overflow:hidden;min-width:160px">
+                    <div onClick="{{frame.openAccount}}" style="padding:11px 14px;font-size:13px;font-weight:700;color:oklch(22% 0.02 100);cursor:pointer;{{accountMenuBorder}}">Account</div>
+                    <sc-if value="{{isAdmin}}">
+                      <div onClick="{{toggleProfileMenu}}" style="padding:11px 14px;font-size:13px;font-weight:700;color:oklch(42% 0.1 148);cursor:pointer">Admin console</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </div>
+
+              <div style="flex:1;overflow-y:auto;padding:20px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:20px">
+                  <div style="width:72px;height:72px;border-radius:50%;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">MK</div>
+                  <div style="font-size:18px;font-weight:800;color:oklch(22% 0.02 100)">Maria K.</div>
+                  <sc-if value="{{isAdmin}}"><div style="padding:3px 10px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:10.5px;font-weight:700;letter-spacing:0.3px">ADMIN</div></sc-if>
+                </div>
+
+                <div style="display:flex;border-radius:16px;border:1px solid oklch(88% 0.015 90);margin-bottom:22px;overflow:hidden">
+                  <div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid oklch(88% 0.015 90)">
+                    <div style="font-size:18px;font-weight:800;color:oklch(22% 0.02 100)">{{ itemsCount }}</div>
+                    <div style="font-size:11px;color:oklch(45% 0.02 95);font-weight:600">Items</div>
+                  </div>
+                  <div style="flex:1;text-align:center;padding:14px 8px;border-right:1px solid oklch(88% 0.015 90)">
+                    <div style="font-size:18px;font-weight:800;color:oklch(22% 0.02 100)">{{ connectionsCount }}</div>
+                    <div style="font-size:11px;color:oklch(45% 0.02 95);font-weight:600">Connections</div>
+                  </div>
+                  <div style="flex:1;text-align:center;padding:14px 8px">
+                    <div style="font-size:18px;font-weight:800;color:oklch(22% 0.02 100)">4.8</div>
+                    <div style="font-size:11px;color:oklch(45% 0.02 95);font-weight:600">Avg rating</div>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                  <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px">YOUR LISTINGS</div>
+                  <div onClick="{{goToMyStuffFromProfile}}" style="font-size:12px;font-weight:700;color:oklch(34% 0.09 148);cursor:pointer">See all in My Stuff</div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+                  <sc-for list="{{myListingsSummary}}" as="l" hint-placeholder-count="3">
+                    <div onClick="{{goToMyStuffFromProfile}}" style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1px solid oklch(88% 0.015 90);cursor:pointer">
+                      <div style="width:38px;height:38px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(88% 0.02 90), oklch(88% 0.02 90) 4px, oklch(92% 0.015 90) 4px, oklch(92% 0.015 90) 8px)"></div>
+                      <div style="flex:1;font-size:13.5px;font-weight:600;color:oklch(22% 0.02 100)">{{ l.title }}</div>
+                      <div style="padding:3px 9px;border-radius:999px;font-size:10.5px;font-weight:700;background:{{l.badgeBg}};color:{{l.badgeColor}}">{{ l.statusLabel }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:10px">REVIEWS RECEIVED</div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{reviewRows}}" as="r" hint-placeholder-count="3">
+                    <div style="padding:12px 14px;border-radius:14px;border:1px solid oklch(88% 0.015 90)">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                        <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">{{ r.name }}</div>
+                        <div style="font-size:11px;color:oklch(52% 0.02 90)">{{ r.time }}</div>
+                      </div>
+                      <div style="font-size:13px;color:oklch(60% 0.1 55);letter-spacing:1px;margin-bottom:4px">{{ r.stars }}</div>
+                      <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5">{{ r.text }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{frame.reviewOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+              <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                <div onClick="{{skipReviewFn}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Write a review</div>
+              </div>
+
+              <div style="flex:1;overflow-y:auto;padding:24px 20px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:8px">
+                  <div style="width:64px;height:64px;border-radius:50%;background:{{reviewAvatarBg}};color:{{reviewAvatarColor}};display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">{{ reviewInitials }}</div>
+                  <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 100)">{{ reviewName }}</div>
+                  <div style="font-size:12.5px;color:oklch(45% 0.02 95)">Traded: {{ reviewItemLabel }}</div>
+                </div>
+
+                <div style="display:flex;justify-content:center;gap:10px;margin:26px 0 6px">
+                  <sc-for list="{{reviewStars}}" as="s" hint-placeholder-count="5">
+                    <div onClick="{{s.select}}" style="font-size:34px;line-height:1;cursor:pointer;color:{{s.color}}">{{ s.char }}</div>
+                  </sc-for>
+                </div>
+
+                <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin:22px 0 8px">COMMENT (OPTIONAL)</div>
+                <textarea value="{{reviewText}}" onChange="{{setReviewText}}" placeholder="Share more about the trade…" style="width:100%;min-height:100px;padding:12px 14px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);font-size:13.5px;font-family:inherit;color:oklch(22% 0.02 100);resize:vertical;box-sizing:border-box"></textarea>
+              </div>
+
+              <div style="flex-shrink:0;display:flex;flex-direction:column;gap:8px;padding:14px 20px 22px;border-top:1px solid oklch(88% 0.015 90)">
+                <div onClick="{{submitReviewFn}}" style="padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;opacity:{{reviewSubmitOpacity}}">Submit review</div>
+                <div onClick="{{skipReviewFn}}" style="padding:13px;border-radius:14px;background:transparent;color:oklch(45% 0.02 95);font-size:14px;font-weight:600;text-align:center;cursor:pointer">Skip for now</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{frame.accountOpen}}">
+            <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative">
+              <sc-if value="{{accountDeleted}}">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:0 30px">
+                  <div style="width:60px;height:60px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+                    <div style="width:14px;height:9px;border-left:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(-45deg) translate(2px,-2px)"></div>
+                  </div>
+                  <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 100)">Your account has been deleted</div>
+                  <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:260px">You've been logged out. Some trade and dispute records may be retained as required by law.</div>
+                  <div onClick="{{returnToLogin}}" style="margin-top:8px;padding:12px 28px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;cursor:pointer">Return to login</div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{accountNotDeleted}}">
+                <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+                  <div onClick="{{closeAccount}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+                  <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Account</div>
+                </div>
+
+                <div style="flex:1;overflow-y:auto;padding:20px">
+                  <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:12px">CHANGE PASSWORD</div>
+                  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px">
+                    <input type="password" value="{{currentPw}}" onChange="{{setCurrentPw}}" placeholder="Current password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+                    <input type="password" value="{{newPw}}" onChange="{{setNewPw}}" placeholder="New password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+                    <input type="password" value="{{confirmPw}}" onChange="{{setConfirmPw}}" placeholder="Confirm new password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+                    <div onClick="{{savePassword}}" style="margin-top:4px;padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer">Save password</div>
+                  </div>
+
+                  <div style="border-top:1px solid oklch(88% 0.015 90);padding-top:20px">
+                    <div style="font-size:11px;font-weight:700;color:oklch(50% 0.15 30);letter-spacing:0.4px;margin-bottom:10px">DANGER ZONE</div>
+                    <div style="padding:16px;border-radius:14px;background:oklch(97% 0.02 30);border:1px solid oklch(90% 0.05 30)">
+                      <div style="font-size:13.5px;font-weight:700;color:oklch(22% 0.02 100);margin-bottom:4px">Delete account</div>
+                      <div style="font-size:12.5px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:12px">Permanently deletes your profile, listings, and messages. This can't be undone.</div>
+                      <div onClick="{{openDeleteConfirm}}" style="padding:11px;border-radius:12px;background:oklch(50% 0.15 30);color:white;font-size:13.5px;font-weight:700;text-align:center;cursor:pointer">Delete account</div>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{deleteConfirmOpen}}">
+                <div style="position:absolute;inset:0;display:flex;align-items:flex-end;z-index:20">
+                  <div onClick="{{closeDeleteConfirm}}" style="position:absolute;inset:0;background:oklch(20% 0.02 100 / 0.4)"></div>
+                  <div style="position:relative;width:100%;background:oklch(99% 0.006 95);border-radius:20px 20px 0 0;padding:22px 22px 28px;display:flex;flex-direction:column;gap:6px">
+                    <div style="font-size:16px;font-weight:800;color:oklch(22% 0.02 100)">Delete your account?</div>
+                    <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:14px">This is permanent — your profile, listings, and messages will be removed. Some trade and dispute records may be retained as required by law.</div>
+                    <div onClick="{{closeDeleteConfirm}}" style="padding:13px;border-radius:12px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;margin-bottom:8px">Keep my account</div>
+                    <div onClick="{{confirmDeleteAccount}}" style="padding:13px;border-radius:12px;background:transparent;color:oklch(50% 0.15 30);font-size:14px;font-weight:700;text-align:center;cursor:pointer">Delete account</div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{shareVisible}}">
+            <div style="position:absolute;left:24px;right:24px;top:84px;padding:12px 16px;border-radius:999px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);display:flex;align-items:center;gap:10px;box-shadow:0 10px 24px -8px oklch(30% 0.02 100 / 0.25);z-index:50">
+              <div style="width:22px;height:22px;border-radius:50%;background:oklch(42% 0.1 148);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <div style="width:10px;height:6px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translate(1px,-1px)"></div>
+              </div>
+              <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">{{ shareMessage }}</div>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showNotificationDot&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Header&quot;},&quot;navLabelStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;labels&quot;,&quot;options&quot;:[&quot;labels&quot;,&quot;icons-only&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Bottom nav&quot;},&quot;newBadgeStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;pill&quot;,&quot;options&quot;:[&quot;pill&quot;,&quot;dot&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Chat&quot;}}">
+const CONNECTIONS = [
+  { id: 1, name: 'Marta K.', initials: 'MK', avatarBg: 'oklch(93% 0.035 145)', avatarColor: 'oklch(34% 0.09 148)', isNew: true, itemsMine: ['Bike helmet'], itemsTheirs: ['Wooden bookshelf'], lastMessage: 'See you at the market at 6?', time: '2m' },
+  { id: 4, name: 'Kasia N.', initials: 'KN', avatarBg: 'oklch(90% 0.03 300)', avatarColor: 'oklch(42% 0.09 300)', isNew: true, itemsMine: ['Table lamp'], itemsTheirs: ['Winter jacket', 'Board game set'], lastMessage: null, time: '3d' },
+  { id: 2, name: 'Tomasz W.', initials: 'TW', avatarBg: 'oklch(90% 0.02 70)', avatarColor: 'oklch(45% 0.06 60)', isNew: false, itemsMine: ['Wooden bookshelf'], itemsTheirs: ['Bike helmet'], lastMessage: 'Sounds good, thank you!', time: '1h' },
+  { id: 3, name: 'Ola P.', initials: 'OP', avatarBg: 'oklch(90% 0.025 145)', avatarColor: 'oklch(40% 0.07 148)', isNew: false, itemsMine: ['Board game set'], itemsTheirs: ['Table lamp'], lastMessage: 'Is the lamp still available?', time: '1d' },
+];
+
+const BASE_THREAD_MESSAGES = [
+  { mine: false, kind: 'text', text: 'Hey! Is the bookshelf still available?' },
+  { mine: true, kind: 'text', text: 'Yes, still have it!' },
+  { mine: false, kind: 'text', text: 'Great, could I pick it up this week?' },
+  { mine: true, kind: 'text', text: 'Sure — how about Thursday?' },
+];
+
+const NOTIFICATIONS = [
+  { type: 'match', unread: true, title: 'New connection with Kasia N.', body: "You matched over Winter jacket, Board game set. Say hello!", time: '5m ago' },
+  { type: 'message', unread: true, title: 'New message from Marta K.', body: 'See you at the market at 6?', time: '2m ago' },
+  { type: 'expiry', unread: true, title: 'Listing expiring soon', body: '"Table lamp" expires in 2 days — renew to keep it visible.', time: '1h ago' },
+  { type: 'trade', unread: false, title: 'Trade marked complete', body: 'Your trade of "Bike helmet" with Tomasz W. is now complete.', time: '3h ago' },
+  { type: 'dispute', unread: true, title: 'Trade dispute opened', body: 'Ola P. disputed the completed trade for "Table lamp".', time: '6h ago' },
+  { type: 'report', unread: false, title: 'Report reviewed', body: 'Your report on a listing was reviewed — the listing was removed.', time: '1d ago' },
+  { type: 'category', unread: false, title: 'Category request approved', body: 'Your suggested category "Musical Instruments" was added.', time: '2d ago' },
+  { type: 'cancelled', unread: false, title: 'Listing cancelled', body: '"Board game set" was cancelled and removed from Discover.', time: '3d ago' },
+  { type: 'review', unread: false, title: 'New review from Tomasz W.', body: '★★★★★ "Smooth trade, great communication!"', time: '4d ago' },
+  { type: 'system', unread: false, title: 'Welcome to Barter', body: "Here's how to get the most out of trading in your area.", time: '1w ago' },
+  { type: 'review_reminder', unread: true, title: 'Time to review Tomasz W.?', body: 'You traded Bike helmet 7 days ago — leave a quick review.', time: '2d ago' },
+];
+
+const MY_LISTINGS = [
+  { title: 'Wooden bookshelf', status: 'Active' },
+  { title: 'Bike helmet', status: 'Active' },
+  { title: 'Board game set', status: 'Traded' },
+];
+
+const REVIEWS_RECEIVED = [
+  { name: 'Tomasz W.', rating: 5, text: 'Smooth trade, great communication!', time: '4d ago' },
+  { name: 'Ola P.', rating: 5, text: 'Item was exactly as described. Would trade again.', time: '2w ago' },
+  { name: 'Kasia N.', rating: 4, text: 'Good trade overall, pickup took a bit of coordinating.', time: '1mo ago' },
+];
+
+const THREAD_TYPE_TAIL = {
+  text: [{ mine: false, kind: 'text', text: 'See you at the market at 6?' }],
+  photo: [{ mine: true, kind: 'photo', text: "Here's a better shot of the shelf" }],
+  location: [{ mine: true, kind: 'location', text: 'Central Market, Stall 12' }],
+};
+
+class Component extends DCLogic {
+  state = {
+    tabs: ['discover', 'mystuff', 'chat'], discoverSub: 'browsing', filterSection: 'radius', radiusKm: 50,
+    itemDetailFrame: null, galleryIndex: 0, detailHasDescription: true, detailHasValue: true, shareMessage: null,
+    chatListMode: 'connections', chatThreadFrame: null, chatThreadConnId: null, chatThreadType: 'text', chatMenuOpen: false,
+    tradeFlowStep: null, tradeCompleted: false, selectedMine: new Set(), selectedTheirs: new Set(),
+    blockConfirmOpen: false, reportOpen: false, reportReason: null, reportText: '',
+    notificationsFrame: null, notifMode: 'unread',
+    blockedConnIds: new Set(),
+    profileFrame: null, profileMenuOpen: false, profileIsAdmin: false,
+    reviewFrame: null, reviewConnId: null, reviewRating: 0, reviewText: '',
+    accountFrame: null, currentPw: '', newPw: '', confirmPw: '', deleteConfirmOpen: false, accountDeleted: false,
+  };
+
+  openShare(e, label) {
+    if (e) e.stopPropagation();
+    clearTimeout(this._shareTimer);
+    this.setState({ shareMessage: `Share sheet opened for "${label}"` });
+    this._shareTimer = setTimeout(() => this.setState({ shareMessage: null }), 2200);
+  }
+
+  setTab(idx, tab) {
+    this.setState(s => {
+      const tabs = [...s.tabs];
+      tabs[idx] = tab;
+      return { tabs };
+    });
+  }
+
+  setDiscoverSub(sub) {
+    this.setState({ discoverSub: sub });
+  }
+
+  setFilterSection(sec) {
+    this.setState({ filterSection: sec });
+  }
+
+  onRadiusChange(e) {
+    this.setState({ radiusKm: Number(e.target.value) });
+  }
+
+  openDetail(idx) {
+    this.setState({ itemDetailFrame: idx, galleryIndex: 0 });
+  }
+
+  closeDetail() {
+    this.setState({ itemDetailFrame: null });
+  }
+
+  galleryGo(delta) {
+    this.setState(s => ({ galleryIndex: Math.max(0, Math.min(5, s.galleryIndex + delta)) }));
+  }
+
+  toggleDescription() {
+    this.setState(s => ({ detailHasDescription: !s.detailHasDescription }));
+  }
+
+  toggleValue() {
+    this.setState(s => ({ detailHasValue: !s.detailHasValue }));
+  }
+
+  pillStyle(active) {
+    return active
+      ? { bg: 'oklch(93% 0.035 145)', color: 'oklch(34% 0.09 148)', border: 'oklch(93% 0.035 145)' }
+      : { bg: 'transparent', color: 'oklch(45% 0.02 95)', border: 'oklch(88% 0.015 90)' };
+  }
+
+  setChatListMode(mode) {
+    this.setState({ chatListMode: mode });
+  }
+
+  openThread(idx, connId) {
+    this.setState({ chatThreadFrame: idx, chatThreadConnId: connId, chatMenuOpen: false });
+  }
+
+  closeChatThread() {
+    this.setState({ chatThreadFrame: null, chatMenuOpen: false });
+  }
+
+  toggleChatMenu(e) {
+    if (e) e.stopPropagation();
+    this.setState(s => ({ chatMenuOpen: !s.chatMenuOpen }));
+  }
+
+  setThreadType(type) {
+    this.setState({ chatThreadType: type, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false });
+  }
+
+  openTradeFlow() {
+    this.setState({ tradeFlowStep: 'select', chatMenuOpen: false, selectedMine: new Set(), selectedTheirs: new Set() });
+  }
+
+  closeTradeFlow() {
+    this.setState({ tradeFlowStep: null });
+  }
+
+  toggleSelect(side, i) {
+    this.setState((s) => {
+      const set = new Set(s['selected' + side]);
+      set.has(i) ? set.delete(i) : set.add(i);
+      return { ['selected' + side]: set };
+    });
+  }
+
+  goToTradeConfirm() {
+    this.setState({ tradeFlowStep: 'confirm' });
+  }
+
+  confirmTrade() {
+    this.setState({ tradeFlowStep: null, tradeCompleted: true });
+  }
+
+  openBlockConfirm() {
+    this.setState({ blockConfirmOpen: true, chatMenuOpen: false });
+  }
+
+  closeBlockConfirm() {
+    this.setState({ blockConfirmOpen: false });
+  }
+
+  confirmBlock() {
+    clearTimeout(this._toastTimer);
+    this.setState((s) => {
+      const blocked = new Set(s.blockedConnIds);
+      blocked.add(s.chatThreadConnId);
+      return { blockConfirmOpen: false, chatThreadFrame: null, blockedConnIds: blocked, shareMessage: `${this.threadNameFor(s.chatThreadConnId)} blocked` };
+    });
+    this._toastTimer = setTimeout(() => this.setState({ shareMessage: null }), 2400);
+  }
+
+  threadNameFor(connId) {
+    const c = CONNECTIONS.find((x) => x.id === connId);
+    return c ? c.name : '';
+  }
+
+  openReport() {
+    this.setState({ reportOpen: true, chatMenuOpen: false, reportReason: null, reportText: '' });
+  }
+
+  closeReport() {
+    this.setState({ reportOpen: false });
+  }
+
+  setReportReason(r) {
+    this.setState({ reportReason: r });
+  }
+
+  setReportText(v) {
+    this.setState({ reportText: v });
+  }
+
+  submitReport() {
+    clearTimeout(this._toastTimer);
+    this.setState({ reportOpen: false, reportReason: null, reportText: '', shareMessage: "Report submitted — we'll review this shortly" });
+    this._toastTimer = setTimeout(() => this.setState({ shareMessage: null }), 2400);
+  }
+
+  openAccount(idx) {
+    this.setState({ accountFrame: idx, profileFrame: null, profileMenuOpen: false, currentPw: '', newPw: '', confirmPw: '', deleteConfirmOpen: false, accountDeleted: false });
+  }
+
+  closeAccount() {
+    this.setState({ accountFrame: null });
+  }
+
+  setCurrentPw(v) { this.setState({ currentPw: v }); }
+  setNewPw(v) { this.setState({ newPw: v }); }
+  setConfirmPw(v) { this.setState({ confirmPw: v }); }
+
+  savePassword() {
+    clearTimeout(this._toastTimer);
+    this.setState({ currentPw: '', newPw: '', confirmPw: '', shareMessage: 'Password updated' });
+    this._toastTimer = setTimeout(() => this.setState({ shareMessage: null }), 2400);
+  }
+
+  openDeleteConfirm() { this.setState({ deleteConfirmOpen: true }); }
+  closeDeleteConfirm() { this.setState({ deleteConfirmOpen: false }); }
+
+  confirmDeleteAccount() {
+    this.setState({ deleteConfirmOpen: false, accountDeleted: true });
+  }
+
+  returnToLogin() {
+    this.setState({ accountFrame: null, accountDeleted: false });
+  }
+
+  togglePreviewAccount(mode) {
+    const base = { accountFrame: 2, profileFrame: null, chatThreadFrame: null, reviewFrame: null, notificationsFrame: null, shareMessage: null, deleteConfirmOpen: false, accountDeleted: false };
+    if (mode === 'password') {
+      this.setState((s) => s.accountFrame === 2 && !s.deleteConfirmOpen && !s.accountDeleted && s.shareMessage !== 'Password updated'
+        ? { accountFrame: null } : base);
+    } else if (mode === 'delete') {
+      this.setState((s) => s.accountFrame === 2 && s.deleteConfirmOpen
+        ? { accountFrame: null, deleteConfirmOpen: false } : { ...base, deleteConfirmOpen: true });
+    } else if (mode === 'saved') {
+      this.setState((s) => s.accountFrame === 2 && s.shareMessage === 'Password updated'
+        ? { accountFrame: null, shareMessage: null } : { ...base, shareMessage: 'Password updated' });
+    } else if (mode === 'deleted') {
+      this.setState((s) => s.accountFrame === 2 && s.accountDeleted
+        ? { accountFrame: null, accountDeleted: false } : { ...base, accountDeleted: true });
+    }
+  }
+
+  openProfile(idx) {
+    this.setState({ profileFrame: idx, chatMenuOpen: false });
+  }
+
+  closeProfile() {
+    this.setState({ profileFrame: null, profileMenuOpen: false });
+  }
+
+  toggleProfileMenu(e) {
+    if (e) e.stopPropagation();
+    this.setState((s) => ({ profileMenuOpen: !s.profileMenuOpen }));
+  }
+
+  setProfileRole(isAdmin, idx) {
+    this.setState({ profileIsAdmin: isAdmin, profileFrame: idx, profileMenuOpen: true });
+  }
+
+  goToMyStuffFromProfile(idx) {
+    this.setState((s) => ({ profileFrame: null, tabs: s.tabs.map((t, i) => i === idx ? 'mystuff' : t) }));
+  }
+
+  openNotifications(idx) {
+    this.setState({ notificationsFrame: idx, chatMenuOpen: false });
+  }
+
+  closeNotifications() {
+    this.setState({ notificationsFrame: null });
+  }
+
+  setNotifMode(mode) {
+    this.setState({ notifMode: mode });
+  }
+
+  openNotifTarget(n) {
+    if (n.type === 'review_reminder') {
+      this.setState({ notificationsFrame: null, reviewFrame: this.state.notificationsFrame, reviewConnId: 2, reviewRating: 0, reviewText: '' });
+    } else if (n.type === 'match' || n.type === 'message' || n.type === 'dispute') {
+      this.setState({ notificationsFrame: null, chatThreadFrame: this.state.notificationsFrame, chatThreadConnId: n.type === 'dispute' ? 3 : 4, tabs: this.state.tabs.map((t, i) => i === this.state.notificationsFrame ? 'chat' : t) });
+    } else {
+      this.setState({ notificationsFrame: null, tabs: this.state.tabs.map((t, i) => i === this.state.notificationsFrame ? 'mystuff' : t) });
+    }
+  }
+
+  setReviewRating(n) {
+    this.setState({ reviewRating: n });
+  }
+
+  setReviewText(v) {
+    this.setState({ reviewText: v });
+  }
+
+  closeReviewToThread(idx, connId, skip) {
+    if (skip) {
+      this.setState((s) => ({ reviewFrame: null, chatThreadFrame: idx, chatThreadConnId: connId, tabs: s.tabs.map((t, i) => i === idx ? 'chat' : t) }));
+      return;
+    }
+    clearTimeout(this._toastTimer);
+    this.setState((s) => ({ reviewFrame: null, chatThreadFrame: idx, chatThreadConnId: connId, tabs: s.tabs.map((t, i) => i === idx ? 'chat' : t), shareMessage: 'Review submitted' }));
+    this._toastTimer = setTimeout(() => this.setState({ shareMessage: null }), 2400);
+  }
+
+  togglePreviewReview(mode) {
+    if (mode === 'submitted') {
+      this.setState((s) => {
+        const isPreview = s.chatThreadFrame === 2 && s.shareMessage === 'Review submitted';
+        if (isPreview) return { shareMessage: null, chatThreadFrame: null };
+        return { reviewFrame: null, chatThreadFrame: 2, chatThreadConnId: 2, shareMessage: 'Review submitted' };
+      });
+      return;
+    }
+    const rating = mode === 'comment' ? 5 : 4;
+    const text = mode === 'comment' ? 'Great trade, super easy pickup!' : '';
+    this.setState((s) => {
+      const isPreview = s.reviewFrame === 2 && s.reviewRating === rating && s.reviewText === text;
+      if (isPreview) return { reviewFrame: null, reviewRating: 0, reviewText: '' };
+      return { reviewFrame: 2, reviewConnId: 2, reviewRating: rating, reviewText: text, chatThreadFrame: null, shareMessage: null };
+    });
+  }
+
+  togglePreviewBlock() {
+    this.setState((s) => ({ blockConfirmOpen: !s.blockConfirmOpen, reportOpen: false, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false, shareMessage: null }));
+  }
+
+  togglePreviewReport() {
+    this.setState((s) => ({ reportOpen: !s.reportOpen, blockConfirmOpen: false, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false, shareMessage: null }));
+  }
+
+  togglePreviewAfterBlock() {
+    this.setState((s) => {
+      const isPreview = s.chatThreadFrame === null && s.blockedConnIds.has(1) && s.shareMessage === 'Marta K. blocked';
+      if (isPreview) return { blockedConnIds: new Set(), shareMessage: null, chatThreadFrame: null };
+      const blocked = new Set(); blocked.add(1);
+      return { chatThreadFrame: null, blockedConnIds: blocked, shareMessage: 'Marta K. blocked', blockConfirmOpen: false, reportOpen: false };
+    });
+  }
+
+  togglePreviewAfterReport() {
+    this.setState((s) => {
+      const isPreview = s.shareMessage === "Report submitted — we'll review this shortly";
+      if (isPreview) return { shareMessage: null };
+      return { chatThreadFrame: 2, chatThreadConnId: 1, reportOpen: false, blockConfirmOpen: false, shareMessage: "Report submitted — we'll review this shortly" };
+    });
+  }
+
+  togglePreviewTrade(which) {
+    if (which === 'select') this.setState((s) => ({ tradeFlowStep: s.tradeFlowStep === 'select' ? null : 'select', tradeCompleted: false, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false }));
+    if (which === 'confirm') this.setState((s) => ({ tradeFlowStep: s.tradeFlowStep === 'confirm' ? null : 'confirm', tradeCompleted: false, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false, selectedMine: new Set([0]), selectedTheirs: new Set([0]) }));
+    if (which === 'completed') this.setState((s) => ({ tradeCompleted: !s.tradeCompleted, tradeFlowStep: null, chatThreadFrame: 2, chatThreadConnId: 1, chatMenuOpen: false }));
+  }
+
+  buildIcon(type, size) {
+    const s = size;
+    const D = (style, ...children) => React.createElement('div', { style: { position: 'relative', ...style } }, ...children);
+    const wrap = (...children) => D({ width: s, height: s, display: 'flex', alignItems: 'center', justifyContent: 'center' }, D({ width: s, height: s, position: 'relative' }, ...children));
+    const tri = (w, h, extra) => D({ width: 0, height: 0, borderLeft: `${w}px solid transparent`, borderRight: `${w}px solid transparent`, borderBottom: `${h}px solid currentColor`, position: 'absolute', ...extra });
+    switch (type) {
+      case 'books':
+        return wrap(D({ width: s * 0.62, height: s * 0.82, border: '2px solid currentColor', borderRadius: 2, top: s * 0.09, left: s * 0.19 },
+          D({ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1.5, background: 'currentColor' })));
+      case 'toys':
+        return wrap(D({ width: s * 0.7, height: s * 0.7, border: '2px solid currentColor', borderRadius: 4, top: s * 0.15, left: s * 0.15 },
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '16%', left: '16%' }),
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '44%', left: '44%' }),
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '72%', left: '72%' })));
+      case 'electronics':
+        return wrap(
+          D({ width: s * 0.5, height: s * 0.4, border: '2px solid currentColor', borderRadius: 3, position: 'absolute', bottom: s * 0.14, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: 2, height: s * 0.26, background: 'currentColor', position: 'absolute', top: s * 0.1, left: '38%' }),
+          D({ width: 2, height: s * 0.26, background: 'currentColor', position: 'absolute', top: s * 0.1, left: '58%' }));
+      case 'clothing':
+        return wrap(
+          D({ width: s * 0.16, height: s * 0.16, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          tri(s * 0.38, s * 0.3, { bottom: s * 0.1, left: '50%', transform: 'translateX(-50%)' }));
+      case 'home':
+        return wrap(
+          tri(s * 0.36, s * 0.3, { top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: s * 0.6, height: s * 0.42, border: '2px solid currentColor', position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }));
+      case 'sports':
+        return wrap(D({ width: s * 0.8, height: s * 0.8, border: '2px solid currentColor', borderRadius: '50%', overflow: 'hidden', position: 'absolute', top: '10%', left: '10%' },
+          D({ position: 'absolute', width: '100%', height: 2, background: 'currentColor', top: '50%', transform: 'translateY(-50%)' })));
+      case 'food':
+        return wrap(
+          D({ width: s * 0.8, height: s * 0.8, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '10%', left: '10%' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '1.5px solid currentColor', borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }));
+      case 'art':
+        return wrap(
+          D({ width: s * 0.76, height: s * 0.6, border: '2px solid currentColor', borderRadius: '50% 50% 50% 8%', position: 'absolute', top: '18%', left: '10%' }),
+          D({ width: s * 0.16, height: s * 0.16, border: '1.5px solid currentColor', borderRadius: '50%', position: 'absolute', bottom: '18%', right: '16%' }),
+          D({ width: s * 0.09, height: s * 0.09, borderRadius: '50%', background: 'currentColor', position: 'absolute', top: '28%', left: '24%' }),
+          D({ width: s * 0.09, height: s * 0.09, borderRadius: '50%', background: 'currentColor', position: 'absolute', top: '28%', left: '48%' }));
+      case 'music':
+        return wrap(
+          D({ width: s * 0.32, height: s * 0.26, background: 'currentColor', borderRadius: '50%', position: 'absolute', bottom: 0, left: s * 0.1, transform: 'rotate(-8deg)' }),
+          D({ width: 2, height: s * 0.62, background: 'currentColor', position: 'absolute', bottom: s * 0.12, left: s * 0.4 }),
+          tri(s * 0.14, s * 0.16, { top: 0, left: s * 0.4 }));
+      case 'tools':
+        return wrap(
+          D({ width: s * 0.78, height: s * 0.14, background: 'currentColor', borderRadius: 2, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(45deg)' }),
+          D({ width: s * 0.78, height: s * 0.14, background: 'currentColor', borderRadius: 2, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-45deg)' }));
+      case 'beauty':
+        return wrap(
+          tri(s * 0.22, s * 0.3, { top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: s * 0.56, height: s * 0.56, background: 'currentColor', borderRadius: '50%', position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }));
+      case 'collectibles':
+        return wrap(
+          D({ width: s * 0.5, height: s * 0.5, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          tri(s * 0.1, s * 0.22, { bottom: 0, left: '30%' }),
+          tri(s * 0.1, s * 0.22, { bottom: 0, left: '58%' }));
+      case 'share':
+        return wrap(
+          D({ width: s * 0.52, height: 2.2, background: 'currentColor', position: 'absolute', top: '50%', left: '24%', transform: 'translate(0,-50%) rotate(-32deg)', transformOrigin: 'left center' }),
+          D({ width: s * 0.52, height: 2.2, background: 'currentColor', position: 'absolute', top: '50%', left: '24%', transform: 'translate(0,-50%) rotate(32deg)', transformOrigin: 'left center' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '22%', left: '68%', transform: 'translate(-50%,-50%)' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '50%', left: '24%', transform: 'translate(-50%,-50%)' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '78%', left: '68%', transform: 'translate(-50%,-50%)' }));
+      case 'pin':
+        return wrap(
+          D({ width: s * 0.56, height: s * 0.56, background: 'currentColor', borderRadius: '50% 50% 50% 0', transform: 'rotate(45deg)', position: 'absolute', top: '8%', left: '50%', marginLeft: -s * 0.28 }),
+          D({ width: s * 0.2, height: s * 0.2, background: 'white', borderRadius: '50%', position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)' }));
+      case 'camera':
+        return wrap(
+          D({ width: s * 0.8, height: s * 0.56, border: '2px solid currentColor', borderRadius: 4, position: 'absolute', bottom: 0, left: '10%' }),
+          D({ width: s * 0.22, height: s * 0.14, borderLeft: '2px solid currentColor', borderRight: '2px solid currentColor', borderTop: '2px solid currentColor', borderRadius: '2px 2px 0 0', position: 'absolute', top: 0, left: '39%' }),
+          D({ width: s * 0.3, height: s * 0.3, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '58%', left: '50%', transform: 'translate(-50%,-50%)' }));
+      case 'send':
+        return wrap(D({ width: 0, height: 0, borderTop: `${s * 0.3}px solid transparent`, borderBottom: `${s * 0.3}px solid transparent`, borderLeft: `${s * 0.44}px solid currentColor`, position: 'absolute', top: '50%', left: '30%', transform: 'translateY(-50%)' }));
+      case 'bell':
+        return wrap(
+          D({ width: s * 0.55, height: s * 0.5, border: '2px solid currentColor', borderBottom: 'none', borderRadius: `${s * 0.28}px ${s * 0.28}px ${s * 0.06}px ${s * 0.06}px`, position: 'absolute', top: '18%', left: '22.5%' }),
+          D({ width: s * 0.62, height: 2, background: 'currentColor', position: 'absolute', bottom: '30%', left: '19%', borderRadius: 1 }),
+          D({ width: s * 0.16, height: s * 0.16, background: 'currentColor', borderRadius: '50%', position: 'absolute', bottom: '13%', left: '42%' }));
+      case 'match':
+        return wrap(
+          D({ width: s * 0.4, height: s * 0.4, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', left: '8%', top: '30%' }),
+          D({ width: s * 0.4, height: s * 0.4, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', right: '8%', top: '30%' }));
+      case 'message':
+        return wrap(D({ width: s * 0.8, height: s * 0.6, border: '2px solid currentColor', borderRadius: `${s * 0.16}px`, position: 'absolute', top: '18%', left: '10%' },
+          D({ width: 0, height: 0, borderTop: `${s * 0.14}px solid currentColor`, borderRight: `${s * 0.14}px solid transparent`, position: 'absolute', bottom: -s * 0.11, left: s * 0.14 })));
+      case 'trade':
+        return wrap(
+          D({ width: s * 0.65, height: s * 0.65, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '17%', left: '17%' }),
+          D({ width: s * 0.2, height: s * 0.12, borderLeft: '2px solid currentColor', borderBottom: '2px solid currentColor', position: 'absolute', top: '42%', left: '40%', transform: 'rotate(-45deg)' }));
+      case 'review':
+        return wrap(D({ width: 0, height: 0, position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
+          borderLeft: `${s * 0.5}px solid transparent`, borderRight: `${s * 0.5}px solid transparent`, borderBottom: `${s * 0.38}px solid currentColor` }));
+      case 'system':
+        return wrap(
+          D({ width: s * 0.7, height: s * 0.7, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', top: '15%', left: '15%' }),
+          D({ width: 2, height: s * 0.24, background: 'currentColor', position: 'absolute', top: '38%', left: '50%', marginLeft: -1 }),
+          D({ width: 3, height: 3, background: 'currentColor', borderRadius: '50%', position: 'absolute', top: '28%', left: '50%', marginLeft: -1.5 }));
+      case 'report':
+        return wrap(D({ width: s * 0.6, height: s * 0.7, border: '2px solid currentColor', borderRadius: 3, position: 'absolute', top: '15%', left: '20%' },
+          D({ width: '60%', height: 2, background: 'currentColor', position: 'absolute', top: '30%', left: '20%' }),
+          D({ width: '60%', height: 2, background: 'currentColor', position: 'absolute', top: '55%', left: '20%' })));
+      case 'expiry':
+        return wrap(
+          D({ width: s * 0.7, height: s * 0.7, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', top: '15%', left: '15%' }),
+          D({ width: 2, height: s * 0.2, background: 'currentColor', position: 'absolute', top: '32%', left: '50%', marginLeft: -1 }),
+          D({ width: s * 0.16, height: 2, background: 'currentColor', position: 'absolute', top: '48%', left: '50%' }));
+      case 'dispute':
+        return wrap(D({ width: 0, height: 0, position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
+          borderLeft: `${s * 0.42}px solid transparent`, borderRight: `${s * 0.42}px solid transparent`, borderBottom: `${s * 0.62}px solid currentColor` },
+          D({ width: 2, height: s * 0.18, background: 'white', position: 'absolute', bottom: s * 0.16, left: -1 }),
+          D({ width: 2, height: 2, background: 'white', borderRadius: '50%', position: 'absolute', bottom: s * 0.08, left: -1 })));
+      case 'category':
+        return wrap(
+          D({ width: s * 0.32, height: s * 0.32, background: 'currentColor', borderRadius: 3, position: 'absolute', top: '18%', left: '18%' }),
+          D({ width: s * 0.32, height: s * 0.32, background: 'currentColor', borderRadius: 3, position: 'absolute', top: '18%', right: '18%' }),
+          D({ width: s * 0.32, height: s * 0.32, background: 'currentColor', borderRadius: 3, position: 'absolute', bottom: '18%', left: '18%' }));
+      case 'cancelled':
+        return wrap(
+          D({ width: s * 0.7, height: s * 0.7, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', top: '15%', left: '15%' }),
+          D({ width: s * 0.42, height: 2, background: 'currentColor', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-45deg)' }));
+      case 'review_reminder':
+        return wrap(D({ width: 0, height: 0, position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
+          borderLeft: `${s * 0.5}px solid transparent`, borderRight: `${s * 0.5}px solid transparent`, borderBottom: `${s * 0.38}px solid currentColor` }));
+      case 'other':
+      default:
+        return wrap(D({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: s * 0.12, width: s, height: s },
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' }),
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' }),
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' })));
+    }
+  }
+
+  buildGauge(level, size, filled, empty) {
+    const squares = [0, 1, 2, 3].map(i => React.createElement('div', {
+      key: i,
+      style: { width: size * 0.72, height: size * 0.72, borderRadius: size * 0.16, background: i < level ? filled : empty },
+    }));
+    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: size * 0.22 } }, ...squares);
+  }
+
+  renderVals() {
+    const labels = ['Discover selected', 'My Stuff selected', 'Chat selected'];
+    const frames = this.state.tabs.map((t, idx) => ({
+      id: idx,
+      label: labels[idx],
+      discoverActive: t === 'discover',
+      discoverInactive: t !== 'discover',
+      mystuffActive: t === 'mystuff',
+      mystuffInactive: t !== 'mystuff',
+      chatActive: t === 'chat',
+      chatInactive: t !== 'chat',
+      setDiscover: () => this.setTab(idx, 'discover'),
+      setMystuff: () => this.setTab(idx, 'mystuff'),
+      setChat: () => this.setTab(idx, 'chat'),
+      showSubSwitch: idx === 0,
+      subBrowsing: this.state.discoverSub === 'browsing',
+      subFilter: this.state.discoverSub === 'filter',
+      subEmpty: this.state.discoverSub === 'empty',
+      subError: this.state.discoverSub === 'error',
+      notBrowsing: this.state.discoverSub !== 'browsing',
+      notFilter: this.state.discoverSub !== 'filter',
+      notEmpty: this.state.discoverSub !== 'empty',
+      notError: this.state.discoverSub !== 'error',
+      subDeckVisible: this.state.discoverSub === 'browsing' || this.state.discoverSub === 'error',
+      setSubBrowsing: () => this.setDiscoverSub('browsing'),
+      setSubFilter: (e) => { if (e) e.stopPropagation(); this.setDiscoverSub('filter'); },
+      setSubEmpty: () => this.setDiscoverSub('empty'),
+      setSubError: () => this.setDiscoverSub('error'),
+      detailOpen: this.state.itemDetailFrame === idx,
+      chatThreadOpen: this.state.chatThreadFrame === idx,
+      notificationsOpen: this.state.notificationsFrame === idx,
+      profileOpen: this.state.profileFrame === idx,
+      reviewOpen: this.state.reviewFrame === idx,
+      accountOpen: this.state.accountFrame === idx,
+      mainOpen: this.state.itemDetailFrame !== idx && this.state.chatThreadFrame !== idx && this.state.notificationsFrame !== idx && this.state.profileFrame !== idx && this.state.reviewFrame !== idx && this.state.accountFrame !== idx,
+      openNotifications: () => this.openNotifications(idx),
+      openProfile: () => this.openProfile(idx),
+      openAccount: () => this.openAccount(idx),
+      goToMyStuffFromProfile: () => this.goToMyStuffFromProfile(idx),
+      submitReviewFn: () => this.closeReviewToThread(idx, this.state.reviewConnId, false),
+      skipReviewFn: () => this.closeReviewToThread(idx, this.state.reviewConnId, true),
+      openDetail: () => this.openDetail(idx),
+    }));
+
+    const iconType = {
+      'Books': 'books', 'Toys & Games': 'toys', 'Electronics': 'electronics', 'Clothing': 'clothing',
+      'Home & Garden': 'home', 'Sports & Outdoors': 'sports', 'Food & Meals': 'food', 'Art & Crafts': 'art',
+      'Music & Instruments': 'music', 'Tools & Equipment': 'tools', 'Beauty & Health': 'beauty',
+      'Collectibles': 'collectibles', 'Other': 'other',
+    };
+    const categories = Object.keys(iconType).map(name => ({
+      name,
+      selected: name === 'Home & Garden',
+      notSelected: name !== 'Home & Garden',
+      icon: this.buildIcon(iconType[name], 22),
+    }));
+
+    const GREEN = 'oklch(42% 0.1 148)';
+    const BORDER = 'oklch(85% 0.015 90)';
+    const conditions = ['Like New', 'Good', 'Used', 'Worn'].map((name, i) => {
+      const level = 4 - i;
+      return { name, selected: name === 'Good', level, gauge: this.buildGauge(level, 16, GREEN, BORDER) };
+    });
+
+    const fs = this.state.filterSection;
+    const gi = this.state.galleryIndex;
+    const galleryPhotos = [1, 2, 3, 4, 5, 6].map((n, i) => ({
+      label: `Photo ${n}`, active: i === gi, notActive: i !== gi,
+    }));
+
+    const clm = this.state.chatListMode;
+    const listConnections = this.pillStyle(clm === 'connections'), listEmpty = this.pillStyle(clm === 'empty');
+    const ctt = this.state.chatThreadType;
+    const threadText = this.pillStyle(ctt === 'text' && this.state.chatThreadFrame === 2);
+    const threadPhoto = this.pillStyle(ctt === 'photo' && this.state.chatThreadFrame === 2);
+    const threadLocation = this.pillStyle(ctt === 'location' && this.state.chatThreadFrame === 2);
+
+    const connections = CONNECTIONS.filter((c) => !this.state.blockedConnIds.has(c.id)).map((c) => ({
+      id: c.id,
+      name: c.name,
+      initials: c.initials,
+      avatarBg: c.avatarBg,
+      avatarColor: c.avatarColor,
+      itemLabel: [...c.itemsMine, ...c.itemsTheirs].join(' · '),
+      previewText: c.lastMessage || 'Say hello!',
+      previewStyle: c.lastMessage ? 'normal' : 'italic',
+      time: c.time,
+      showNewPill: c.isNew && this.props.newBadgeStyle !== 'dot',
+      showNewDot: c.isNew && this.props.newBadgeStyle === 'dot',
+      openThread: () => this.openThread(2, c.id),
+    }));
+
+    const threadConn = CONNECTIONS.find((c) => c.id === this.state.chatThreadConnId) || CONNECTIONS[0];
+    const threadMessages = [...BASE_THREAD_MESSAGES, ...THREAD_TYPE_TAIL[this.state.chatThreadType]].map((m) => ({
+      justify: m.mine ? 'flex-end' : 'flex-start',
+      isText: m.kind === 'text',
+      isPhoto: m.kind === 'photo',
+      isLocation: m.kind === 'location',
+      text: m.text,
+      radius: m.mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+      bg: m.mine ? GREEN : 'oklch(99% 0.006 95)',
+      color: m.mine ? 'white' : 'oklch(22% 0.02 100)',
+      subColor: m.mine ? 'oklch(90% 0.02 145)' : 'oklch(45% 0.02 95)',
+      border: m.mine ? 'none' : '1px solid oklch(88% 0.015 90)',
+    }));
+    const threadItemChips = [...threadConn.itemsMine, ...threadConn.itemsTheirs].map((label) => ({ label }));
+
+    const tf = this.state.tradeFlowStep, tradeCompleted = this.state.tradeCompleted;
+    const selMine = this.state.selectedMine, selTheirs = this.state.selectedTheirs;
+    const checklistRow = (label, checked, toggle) => ({
+      label, checked, toggle,
+      borderColor: checked ? 'oklch(42% 0.1 148)' : 'oklch(88% 0.015 90)',
+      bg: checked ? 'oklch(97% 0.02 145)' : 'transparent',
+      checkBorder: checked ? 'oklch(42% 0.1 148)' : 'oklch(80% 0.015 90)',
+      checkBg: checked ? 'oklch(42% 0.1 148)' : 'transparent',
+    });
+    const mineChecklist = threadConn.itemsMine.map((label, i) => checklistRow(label, selMine.has(i), () => this.toggleSelect('Mine', i)));
+    const theirsChecklist = threadConn.itemsTheirs.map((label, i) => checklistRow(label, selTheirs.has(i), () => this.toggleSelect('Theirs', i)));
+    const anySelected = selMine.size > 0 || selTheirs.size > 0;
+    const selectedSummary = [
+      ...threadConn.itemsMine.filter((_, i) => selMine.has(i)),
+      ...threadConn.itemsTheirs.filter((_, i) => selTheirs.has(i)),
+    ].join(', ');
+    const disputeDate = 'July 29, 2026';
+
+    const previewSelect = this.pillStyle(tf === 'select'), previewConfirm2 = this.pillStyle(tf === 'confirm'), previewCompleted = this.pillStyle(tradeCompleted);
+
+    const REPORT_REASONS = ['Inappropriate content', 'Misleading description', 'Prohibited item', 'Spam', 'Fake listing', 'Offensive language'];
+    const reportReason = this.state.reportReason;
+    const reportChoices = REPORT_REASONS.map((label) => ({
+      label, selected: reportReason === label,
+      dotBorder: reportReason === label ? 'oklch(42% 0.1 148)' : 'oklch(80% 0.015 90)',
+      dotBg: reportReason === label ? 'oklch(42% 0.1 148)' : 'transparent',
+      select: () => this.setReportReason(label),
+    }));
+    const previewBlock = this.pillStyle(this.state.blockConfirmOpen), previewReport = this.pillStyle(this.state.reportOpen);
+    const previewAfterBlock = this.pillStyle(this.state.chatThreadFrame === null && this.state.blockedConnIds.has(1) && this.state.shareMessage === 'Marta K. blocked');
+    const previewAfterReport = this.pillStyle(this.state.shareMessage === "Report submitted — we'll review this shortly");
+
+    const NOTIF_STYLE = {
+      match: { bg: 'oklch(93% 0.035 145)', color: 'oklch(34% 0.09 148)' },
+      message: { bg: 'oklch(93% 0.035 145)', color: 'oklch(34% 0.09 148)' },
+      trade: { bg: 'oklch(90% 0.03 220)', color: 'oklch(42% 0.09 220)' },
+      review: { bg: 'oklch(93% 0.05 90)', color: 'oklch(50% 0.12 80)' },
+      system: { bg: 'oklch(92% 0.012 90)', color: 'oklch(45% 0.02 95)' },
+      report: { bg: 'oklch(92% 0.06 30)', color: 'oklch(50% 0.15 30)' },
+      expiry: { bg: 'oklch(93% 0.06 60)', color: 'oklch(50% 0.12 55)' },
+      dispute: { bg: 'oklch(92% 0.06 30)', color: 'oklch(50% 0.15 30)' },
+      category: { bg: 'oklch(90% 0.03 300)', color: 'oklch(42% 0.09 300)' },
+      cancelled: { bg: 'oklch(92% 0.012 90)', color: 'oklch(45% 0.02 95)' },
+      review_reminder: { bg: 'oklch(93% 0.05 90)', color: 'oklch(50% 0.12 80)' },
+    };
+    const notifMode = this.state.notifMode;
+    const notificationRows = NOTIFICATIONS.map((n) => ({
+      ...n, icon: this.buildIcon(n.type, 18),
+      iconBg: NOTIF_STYLE[n.type].bg, iconColor: NOTIF_STYLE[n.type].color,
+      bg: n.unread ? 'oklch(97.5% 0.012 145)' : 'transparent',
+      open: () => this.openNotifTarget(n),
+    }));
+    const notifUnread = this.pillStyle(notifMode === 'unread'), notifEmptyPill = this.pillStyle(notifMode === 'empty');
+
+    const isAdmin = this.state.profileIsAdmin;
+    const roleRegular = this.pillStyle(!isAdmin), roleAdmin = this.pillStyle(isAdmin);
+    const myListingsSummary = MY_LISTINGS.map((l) => ({
+      title: l.title,
+      statusLabel: l.status,
+      badgeBg: l.status === 'Active' ? 'oklch(93% 0.035 145)' : l.status === 'Traded' ? 'oklch(90% 0.03 220)' : 'oklch(92% 0.012 90)',
+      badgeColor: l.status === 'Active' ? 'oklch(34% 0.09 148)' : l.status === 'Traded' ? 'oklch(42% 0.09 220)' : 'oklch(45% 0.02 95)',
+    }));
+    const reviewRows = REVIEWS_RECEIVED.map((r) => ({ ...r, stars: '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) }));
+
+    const reviewConn = CONNECTIONS.find((c) => c.id === this.state.reviewConnId) || CONNECTIONS[2];
+    const reviewStars = [1, 2, 3, 4, 5].map((n) => ({
+      n, char: n <= this.state.reviewRating ? '★' : '☆',
+      color: n <= this.state.reviewRating ? 'oklch(60% 0.1 55)' : 'oklch(85% 0.015 90)',
+      select: () => this.setReviewRating(n),
+    }));
+    const previewRatingOnly = this.pillStyle(this.state.reviewFrame === 2 && this.state.reviewRating === 4 && this.state.reviewText === '');
+    const previewRatingComment = this.pillStyle(this.state.reviewFrame === 2 && this.state.reviewRating === 5 && this.state.reviewText !== '');
+    const previewAfterSubmit = this.pillStyle(this.state.chatThreadFrame === 2 && this.state.shareMessage === 'Review submitted');
+
+    const pwCanSave = this.state.currentPw && this.state.newPw && this.state.newPw === this.state.confirmPw;
+    const previewAccPw = this.pillStyle(this.state.accountFrame === 2 && !this.state.deleteConfirmOpen && !this.state.accountDeleted && this.state.shareMessage !== 'Password updated');
+    const previewAccDelete = this.pillStyle(this.state.accountFrame === 2 && this.state.deleteConfirmOpen);
+    const previewAccSaved = this.pillStyle(this.state.accountFrame === 2 && this.state.shareMessage === 'Password updated');
+    const previewAccDeleted = this.pillStyle(this.state.accountFrame === 2 && this.state.accountDeleted);
+
+    return {
+      chatListConnections: clm === 'connections', chatListEmpty: clm === 'empty',
+      setListConnections: () => this.setChatListMode('connections'), setListEmpty: () => this.setChatListMode('empty'),
+      listConnectionsBg: listConnections.bg, listConnectionsColor: listConnections.color, listConnectionsBorder: listConnections.border,
+      listEmptyBg: listEmpty.bg, listEmptyColor: listEmpty.color, listEmptyBorder: listEmpty.border,
+      setThreadText: () => this.setThreadType('text'), setThreadPhoto: () => this.setThreadType('photo'), setThreadLocation: () => this.setThreadType('location'),
+      threadTextBg: threadText.bg, threadTextColor: threadText.color, threadTextBorder: threadText.border,
+      threadPhotoBg: threadPhoto.bg, threadPhotoColor: threadPhoto.color, threadPhotoBorder: threadPhoto.border,
+      threadLocationBg: threadLocation.bg, threadLocationColor: threadLocation.color, threadLocationBorder: threadLocation.border,
+      chatEmptyIcon: this.buildIcon('other', 26),
+      connections,
+      closeChatThread: () => this.closeChatThread(),
+      toggleChatMenu: (e) => this.toggleChatMenu(e),
+      chatMenuOpen: this.state.chatMenuOpen,
+      threadName: threadConn.name, threadInitials: threadConn.initials,
+      threadAvatarBg: threadConn.avatarBg, threadAvatarColor: threadConn.avatarColor,
+      threadItemChips, threadMessages,
+      pinIconMedium: this.buildIcon('pin', 26),
+      pinIconSmall: this.buildIcon('pin', 14),
+      pinIconSmall2: this.buildIcon('pin', 18),
+      cameraIcon: this.buildIcon('camera', 18),
+      sendIcon: this.buildIcon('send', 14),
+      tradeCompleted, disputeDate,
+      openTradeMenuItem: () => this.openTradeFlow(),
+      tradeSelectOpen: tf === 'select', tradeConfirmOpen: tf === 'confirm',
+      mineChecklist, theirsChecklist, anySelected, selectedSummary,
+      selectOpacity: anySelected ? '1' : '0.5',
+      closeTradeFlow: () => this.closeTradeFlow(),
+      goToTradeConfirm: () => this.goToTradeConfirm(),
+      backToTradeSelect: () => this.setState({ tradeFlowStep: 'select' }),
+      confirmTrade: () => this.confirmTrade(),
+      togglePreviewSelect: () => this.togglePreviewTrade('select'),
+      togglePreviewConfirm: () => this.togglePreviewTrade('confirm'),
+      togglePreviewCompleted: () => this.togglePreviewTrade('completed'),
+      previewSelectBg: previewSelect.bg, previewSelectColor: previewSelect.color, previewSelectBorder: previewSelect.border,
+      previewConfirmBg2: previewConfirm2.bg, previewConfirmColor2: previewConfirm2.color, previewConfirmBorder2: previewConfirm2.border,
+      previewCompletedBg: previewCompleted.bg, previewCompletedColor: previewCompleted.color, previewCompletedBorder: previewCompleted.border,
+      blockConfirmOpen: this.state.blockConfirmOpen, reportOpen: this.state.reportOpen,
+      openBlockConfirm: () => this.openBlockConfirm(), closeBlockConfirm: () => this.closeBlockConfirm(), confirmBlock: () => this.confirmBlock(),
+      openReport: () => this.openReport(), closeReport: () => this.closeReport(), submitReport: () => this.submitReport(),
+      reportChoices, reportText: this.state.reportText, setReportText: (e) => this.setReportText(e.target.value),
+      reportCanSubmit: !!reportReason, reportSubmitOpacity: reportReason ? '1' : '0.5',
+      togglePreviewBlock: () => this.togglePreviewBlock(), togglePreviewReport: () => this.togglePreviewReport(),
+      previewBlockBg: previewBlock.bg, previewBlockColor: previewBlock.color, previewBlockBorder: previewBlock.border,
+      previewReportBg: previewReport.bg, previewReportColor: previewReport.color, previewReportBorder: previewReport.border,
+      togglePreviewAfterBlock: () => this.togglePreviewAfterBlock(), togglePreviewAfterReport: () => this.togglePreviewAfterReport(),
+      previewAfterBlockBg: previewAfterBlock.bg, previewAfterBlockColor: previewAfterBlock.color, previewAfterBlockBorder: previewAfterBlock.border,
+      previewAfterReportBg: previewAfterReport.bg, previewAfterReportColor: previewAfterReport.color, previewAfterReportBorder: previewAfterReport.border,
+      closeNotifications: () => this.closeNotifications(),
+      notificationsEmpty: notifMode === 'empty', notificationsHasList: notifMode !== 'empty',
+      notificationRows, bellIconLarge: this.buildIcon('bell', 28),
+      setNotifUnread: () => this.setNotifMode('unread'), setNotifEmpty: () => this.setNotifMode('empty'),
+      notifUnreadBg: notifUnread.bg, notifUnreadColor: notifUnread.color, notifUnreadBorder: notifUnread.border,
+      notifEmptyBg: notifEmptyPill.bg, notifEmptyColor: notifEmptyPill.color, notifEmptyBorder: notifEmptyPill.border,
+      closeProfile: () => this.closeProfile(),
+      toggleProfileMenu: (e) => this.toggleProfileMenu(e),
+      profileMenuOpen: this.state.profileMenuOpen,
+      isAdmin, myListingsSummary, reviewRows,
+      accountMenuBorder: isAdmin ? 'border-bottom:1px solid oklch(88% 0.015 90)' : '',
+      itemsCount: MY_LISTINGS.length, connectionsCount: CONNECTIONS.length,
+      setRoleRegular: () => this.setProfileRole(false, 2), setRoleAdmin: () => this.setProfileRole(true, 2),
+      roleRegularBg: roleRegular.bg, roleRegularColor: roleRegular.color, roleRegularBorder: roleRegular.border,
+      roleAdminBg: roleAdmin.bg, roleAdminColor: roleAdmin.color, roleAdminBorder: roleAdmin.border,
+      reviewName: reviewConn.name, reviewInitials: reviewConn.initials,
+      reviewAvatarBg: reviewConn.avatarBg, reviewAvatarColor: reviewConn.avatarColor,
+      reviewItemLabel: reviewConn.itemsMine.concat(reviewConn.itemsTheirs).join(' · '),
+      reviewStars, reviewText: this.state.reviewText, setReviewText: (e) => this.setReviewText(e.target.value),
+      reviewCanSubmit: this.state.reviewRating > 0, reviewSubmitOpacity: this.state.reviewRating > 0 ? '1' : '0.5',
+      togglePreviewRatingOnly: () => this.togglePreviewReview('rating'),
+      togglePreviewRatingComment: () => this.togglePreviewReview('comment'),
+      togglePreviewAfterSubmitReview: () => this.togglePreviewReview('submitted'),
+      previewRatingOnlyBg: previewRatingOnly.bg, previewRatingOnlyColor: previewRatingOnly.color, previewRatingOnlyBorder: previewRatingOnly.border,
+      previewRatingCommentBg: previewRatingComment.bg, previewRatingCommentColor: previewRatingComment.color, previewRatingCommentBorder: previewRatingComment.border,
+      previewAfterSubmitReviewBg: previewAfterSubmit.bg, previewAfterSubmitReviewColor: previewAfterSubmit.color, previewAfterSubmitReviewBorder: previewAfterSubmit.border,
+      closeAccount: () => this.closeAccount(),
+      currentPw: this.state.currentPw, newPw: this.state.newPw, confirmPw: this.state.confirmPw,
+      setCurrentPw: (e) => this.setCurrentPw(e.target.value), setNewPw: (e) => this.setNewPw(e.target.value), setConfirmPw: (e) => this.setConfirmPw(e.target.value),
+      savePassword: () => this.savePassword(), pwSaveOpacity: pwCanSave ? '1' : '0.5',
+      openDeleteConfirm: () => this.openDeleteConfirm(), closeDeleteConfirm: () => this.closeDeleteConfirm(), confirmDeleteAccount: () => this.confirmDeleteAccount(),
+      deleteConfirmOpen: this.state.deleteConfirmOpen, accountDeleted: this.state.accountDeleted, accountNotDeleted: !this.state.accountDeleted,
+      returnToLogin: () => this.returnToLogin(),
+      togglePreviewAccPassword: () => this.togglePreviewAccount('password'),
+      togglePreviewAccDelete: () => this.togglePreviewAccount('delete'),
+      togglePreviewAccSaved: () => this.togglePreviewAccount('saved'),
+      togglePreviewAccDeleted: () => this.togglePreviewAccount('deleted'),
+      previewAccPwBg: previewAccPw.bg, previewAccPwColor: previewAccPw.color, previewAccPwBorder: previewAccPw.border,
+      previewAccDeleteBg: previewAccDelete.bg, previewAccDeleteColor: previewAccDelete.color, previewAccDeleteBorder: previewAccDelete.border,
+      previewAccSavedBg: previewAccSaved.bg, previewAccSavedColor: previewAccSaved.color, previewAccSavedBorder: previewAccSaved.border,
+      previewAccDeletedBg: previewAccDeleted.bg, previewAccDeletedColor: previewAccDeleted.color, previewAccDeletedBorder: previewAccDeleted.border,
+      galleryPhotos,
+      galleryTransform: `translateX(-${gi * 100}%)`,
+      galleryPrev: () => this.galleryGo(-1),
+      galleryNext: () => this.galleryGo(1),
+      closeDetail: () => this.closeDetail(),
+      detailHasDescription: this.state.detailHasDescription,
+      detailNoDescription: !this.state.detailHasDescription,
+      detailHasValue: this.state.detailHasValue,
+      detailNoValue: !this.state.detailHasValue,
+      toggleDescription: () => this.toggleDescription(),
+      toggleValue: () => this.toggleValue(),
+      detailCategoryIcon: this.buildIcon('home', 20),
+      detailConditionGauge: this.buildGauge(3, 18, GREEN, BORDER),
+      shareIconSmall: this.buildIcon('share', 14),
+      shareIconMedium: this.buildIcon('share', 17),
+      shareIconRow: this.buildIcon('share', 15),
+      openShareBookshelf: (e) => this.openShare(e, 'Wooden bookshelf'),
+      openShareHelmet: (e) => this.openShare(e, 'Bike helmet'),
+      openShareGames: (e) => this.openShare(e, 'Board game set'),
+      openShareJacket: (e) => this.openShare(e, 'Winter jacket'),
+      shareMessage: this.state.shareMessage,
+      shareVisible: !!this.state.shareMessage,
+      frames,
+      categories,
+      conditions,
+      radiusKm: this.state.radiusKm,
+      onRadiusChange: (e) => this.onRadiusChange(e),
+      secRadius: fs === 'radius', secRadiusInactive: fs !== 'radius',
+      secCondition: fs === 'condition', secConditionInactive: fs !== 'condition',
+      secCategory: fs === 'category', secCategoryInactive: fs !== 'category',
+      setSecRadius: () => this.setFilterSection('radius'),
+      setSecCondition: () => this.setFilterSection('condition'),
+      setSecCategory: () => this.setFilterSection('category'),
+      currentCategoryIcon: this.buildIcon('home', 16),
+      currentConditionGauge: this.buildGauge(3, 14, 'white', 'oklch(100% 0 0 / 0.35)'),
+      hasActiveFilter: true,
+      showNotificationDot: this.props.showNotificationDot ?? true,
+      showLabels: (this.props.navLabelStyle ?? 'labels') === 'labels',
+      newBadgeIsPill: (this.props.newBadgeStyle ?? 'pill') === 'pill',
+      newBadgeIsDot: (this.props.newBadgeStyle ?? 'pill') === 'dot',
+    };
+  }
+}
+</script>
+</body>
+</html>

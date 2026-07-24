@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<template id="__bundler_thumbnail" data-bg-color="#f2f0e9">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="800" fill="#f2f0e9"/>
+    <rect x="500" y="300" width="56" height="56" rx="10" fill="#2e5c3e" transform="rotate(45 528 328)"/>
+    <text x="600" y="470" font-family="sans-serif" font-weight="800" font-size="72" fill="#26241f" text-anchor="middle">barter</text>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: oklch(96% 0.014 92); font-family: 'Manrope', sans-serif; }
+  a { color: oklch(34% 0.09 148); }
+  a:hover { color: oklch(28% 0.1 148); }
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:32px;background:oklch(96% 0.014 92)">
+
+  <div style="max-width:640px;text-align:center;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:28px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.5px">Auth flow</div>
+    <div style="font-size:15px;color:oklch(45% 0.02 95);line-height:1.5">Sign in / sign up, email verification, and password reset. Use the pills to jump between states, or interact with the phone directly.</div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:720px">
+    <div onClick="{{pillSignIn}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillSignInBg}};color:{{pillSignInColor}};border:1px solid {{pillSignInBorder}}">Sign in</div>
+    <div onClick="{{pillSignUp}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillSignUpBg}};color:{{pillSignUpColor}};border:1px solid {{pillSignUpBorder}}">Sign up</div>
+    <div onClick="{{pillVerify}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillVerifyBg}};color:{{pillVerifyColor}};border:1px solid {{pillVerifyBorder}}">Email verification</div>
+    <div onClick="{{pillVerified}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillVerifiedBg}};color:{{pillVerifiedColor}};border:1px solid {{pillVerifiedBorder}}">Email verified</div>
+    <div onClick="{{pillForgotReq}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillForgotReqBg}};color:{{pillForgotReqColor}};border:1px solid {{pillForgotReqBorder}}">Forgot password request</div>
+    <div onClick="{{pillForgotSent}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillForgotSentBg}};color:{{pillForgotSentColor}};border:1px solid {{pillForgotSentBorder}}">Forgot password sent</div>
+    <div onClick="{{pillReset}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillResetBg}};color:{{pillResetColor}};border:1px solid {{pillResetBorder}}">Reset password</div>
+    <div onClick="{{pillAfterReset}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{pillAfterResetBg}};color:{{pillAfterResetColor}};border:1px solid {{pillAfterResetBorder}}">After reset (toast)</div>
+  </div>
+
+  <div style="width:390px;height:812px;background:oklch(99% 0.006 95);border-radius:44px;border:1px solid oklch(88% 0.015 90);box-shadow:0 24px 48px -12px oklch(30% 0.02 100 / 0.25);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+    <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px 4px">
+      <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">9:41</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:flex-end;gap:2px">
+          <div style="width:3px;height:4px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+          <div style="width:3px;height:6px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+          <div style="width:3px;height:8px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+        </div>
+        <div style="width:20px;height:11px;border:1.5px solid oklch(22% 0.02 100);border-radius:2px;padding:1px;display:flex">
+          <div style="flex:1;background:oklch(22% 0.02 100);border-radius:1px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow:hidden;position:relative;background:oklch(96% 0.014 92)">
+
+      <sc-if value="{{isFormStep}}" hint-placeholder-val="{{true}}">
+        <div style="height:100%;overflow-y:auto;padding:28px 24px 32px;display:flex;flex-direction:column">
+
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:28px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:20px;height:20px;background:oklch(42% 0.1 148);transform:rotate(45deg);border-radius:4px"></div>
+              <div style="font-size:26px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.5px">barter</div>
+            </div>
+            <div style="font-size:14.5px;color:oklch(45% 0.02 95)">{{ formSubtitle }}</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);background:{{oauthBg}};cursor:pointer">
+              <div style="width:20px;height:20px;border-radius:50%;background:oklch(56% 0.19 29);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">G</div>
+              <div style="font-size:14px;font-weight:700;color:oklch(22% 0.02 100)">Continue with Google</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);background:{{oauthBg}};cursor:pointer">
+              <div style="width:20px;height:20px;border-radius:50%;background:oklch(48% 0.14 260);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">f</div>
+              <div style="font-size:14px;font-weight:700;color:oklch(22% 0.02 100)">Continue with Facebook</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border-radius:14px;border:1.5px solid oklch(88% 0.015 90);background:{{oauthBg}};cursor:pointer">
+              <div style="width:20px;height:20px;border-radius:50%;background:oklch(22% 0.02 100);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0">◐</div>
+              <div style="font-size:14px;font-weight:700;color:oklch(22% 0.02 100)">Continue with Apple</div>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+            <div style="flex:1;height:1px;background:oklch(88% 0.015 90)"></div>
+            <div style="font-size:12px;font-weight:700;color:oklch(50% 0.02 90)">OR</div>
+            <div style="flex:1;height:1px;background:oklch(88% 0.015 90)"></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
+            <input type="email" value="{{authEmail}}" onChange="{{setAuthEmail}}" placeholder="Email" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+            <input type="password" value="{{authPassword}}" onChange="{{setAuthPassword}}" placeholder="Password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+          </div>
+
+          <sc-if value="{{isSignIn}}">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:18px">
+              <div onClick="{{goForgotRequest}}" style="font-size:12.5px;font-weight:700;color:oklch(34% 0.09 148);cursor:pointer">Forgot password?</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{isSignUp}}">
+            <div style="margin-bottom:18px"></div>
+          </sc-if>
+
+          <div onClick="{{submitAuth}}" style="padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;margin-bottom:16px">{{ authSubmitLabel }}</div>
+
+          <div style="text-align:center;font-size:13px;color:oklch(45% 0.02 95)">
+            {{ authToggleLead }} <span onClick="{{toggleAuthMode}}" style="color:oklch(34% 0.09 148);font-weight:700;cursor:pointer">{{ authToggleAction }}</span>
+          </div>
+
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_verify}}">
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:0 30px">
+          <div style="width:64px;height:64px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+            <div style="width:26px;height:18px;border:2px solid currentColor;border-radius:3px;position:relative">
+              <div style="position:absolute;top:-1px;left:1px;right:1px;height:9px;border-left:2px solid currentColor;border-right:2px solid currentColor;transform:scaleX(1);clip-path:polygon(0 0,50% 60%,100% 0,100% 100%,0 100%)"></div>
+            </div>
+          </div>
+          <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 100)">Check your email</div>
+          <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:260px">We sent a verification link to <strong style="color:oklch(22% 0.02 100)">{{ authEmailOrPlaceholder }}</strong>. Click it to activate your account.</div>
+          <div onClick="{{verifyClicked}}" style="margin-top:8px;padding:12px 24px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;cursor:pointer">I've verified — continue</div>
+          <div onClick="{{resendVerification}}" style="font-size:12.5px;font-weight:700;color:oklch(34% 0.09 148);cursor:pointer">{{ resendLabel }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_verified}}">
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:0 30px">
+          <div style="width:64px;height:64px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+            <div style="width:24px;height:14px;border-left:3px solid currentColor;border-bottom:3px solid currentColor;transform:rotate(-45deg) translate(2px,-3px)"></div>
+          </div>
+          <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 100)">Email verified</div>
+          <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:240px">Your account is ready to go.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_forgotRequest}}">
+        <div style="height:100%;display:flex;flex-direction:column;padding:28px 24px 32px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px">
+            <div onClick="{{goSignIn}}" style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+            <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">Reset your password</div>
+          </div>
+          <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:20px">Enter the email on your account and we'll send you a link to reset your password.</div>
+          <input type="email" value="{{forgotEmail}}" onChange="{{setForgotEmail}}" placeholder="Email" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box;margin-bottom:16px" />
+          <div onClick="{{submitForgot}}" style="padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer">Send reset link</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_forgotSent}}">
+        <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:0 30px">
+          <div style="width:64px;height:64px;border-radius:50%;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+            <div style="width:26px;height:18px;border:2px solid currentColor;border-radius:3px"></div>
+          </div>
+          <div style="font-size:17px;font-weight:800;color:oklch(22% 0.02 100)">Check your email</div>
+          <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;max-width:260px">If an account exists for <strong style="color:oklch(22% 0.02 100)">{{ forgotEmailOrPlaceholder }}</strong>, a reset link is on its way.</div>
+          <div onClick="{{goSignIn}}" style="margin-top:8px;font-size:12.5px;font-weight:700;color:oklch(34% 0.09 148);cursor:pointer">Back to sign in</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_reset}}">
+        <div style="height:100%;display:flex;flex-direction:column;padding:28px 24px 32px">
+          <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100);margin-bottom:8px">Set a new password</div>
+          <div style="font-size:13px;color:oklch(45% 0.02 95);line-height:1.5;margin-bottom:20px">Choose a new password for your account.</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+            <input type="password" value="{{resetPw}}" onChange="{{setResetPw}}" placeholder="New password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+            <input type="password" value="{{resetConfirmPw}}" onChange="{{setResetConfirmPw}}" placeholder="Confirm new password" style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid oklch(88% 0.015 90);font-size:14px;font-family:inherit;color:oklch(22% 0.02 100);box-sizing:border-box" />
+          </div>
+          <div onClick="{{submitReset}}" style="padding:13px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:14px;font-weight:700;text-align:center;cursor:pointer;opacity:{{resetSubmitOpacity}}">Reset password</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{step_discover}}">
+        <div style="height:100%;display:flex;flex-direction:column">
+          <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:15px;height:15px;background:oklch(42% 0.1 148);transform:rotate(45deg);border-radius:3px"></div>
+              <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.3px">barter</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div style="width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;color:oklch(30% 0.03 120)">
+                <div style="width:13px;height:12px;border:2px solid currentColor;border-bottom:none;border-radius:7px 7px 2px 2px"></div>
+                <div style="width:15px;height:2px;background:currentColor;position:absolute;bottom:7px;border-radius:1px"></div>
+                <div style="width:4px;height:4px;background:currentColor;border-radius:50%;position:absolute;bottom:3px"></div>
+              </div>
+              <div style="width:32px;height:32px;border-radius:50%;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">MK</div>
+            </div>
+          </div>
+          <div style="flex:1;padding:20px;background:oklch(96% 0.014 92);display:flex;flex-direction:column;gap:14px">
+            <div style="font-size:13px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.3px">NEARBY</div>
+            <div style="flex:1;border-radius:24px;overflow:hidden;position:relative;box-shadow:0 8px 20px -8px oklch(30% 0.02 100 / 0.2);background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 10px, oklch(94% 0.015 90) 10px, oklch(94% 0.015 90) 20px)">
+              <div style="position:absolute;left:0;right:0;bottom:0;padding:22px 16px 18px;background:linear-gradient(to top, oklch(15% 0.02 100 / 0.8), transparent)">
+                <div style="font-size:20px;font-weight:700;color:white">Wooden bookshelf</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{shareVisible}}">
+        <div style="position:absolute;left:24px;right:24px;top:84px;padding:12px 16px;border-radius:999px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);display:flex;align-items:center;gap:10px;box-shadow:0 10px 24px -8px oklch(30% 0.02 100 / 0.25);z-index:50">
+          <div style="width:22px;height:22px;border-radius:50%;background:oklch(42% 0.1 148);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <div style="width:10px;height:6px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translate(1px,-1px)"></div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">{{ shareMessage }}</div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;requireEmailVerification&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Sign up&quot;},&quot;socialButtonStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;outline&quot;,&quot;options&quot;:[&quot;outline&quot;,&quot;filled&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;OAuth buttons&quot;}}">
+class Component extends DCLogic {
+  state = {
+    step: 'signin',
+    authEmail: '', authPassword: '',
+    forgotEmail: '', resetPw: '', resetConfirmPw: '',
+    resendMessage: null,
+    shareMessage: null,
+  };
+
+  setStep(step) {
+    clearTimeout(this._verifyTimer);
+    this.setState({ step, shareMessage: null });
+  }
+
+  toggleAuthMode() {
+    this.setState((s) => ({ step: s.step === 'signin' ? 'signup' : 'signin' }));
+  }
+
+  submitAuth() {
+    if (this.state.step === 'signup') {
+      if ((this.props.requireEmailVerification ?? true)) {
+        this.setState({ step: 'verify' });
+      } else {
+        this.setState({ step: 'discover' });
+      }
+    } else {
+      this.setState({ step: 'discover' });
+    }
+  }
+
+  resendVerification() {
+    clearTimeout(this._resendTimer);
+    this.setState({ resendMessage: 'Sent!' });
+    this._resendTimer = setTimeout(() => this.setState({ resendMessage: null }), 2000);
+  }
+
+  verifyClicked() {
+    clearTimeout(this._verifyTimer);
+    this.setState({ step: 'verified' });
+    this._verifyTimer = setTimeout(() => this.setState({ step: 'discover' }), 1700);
+  }
+
+  goForgotRequest() { this.setState({ step: 'forgotRequest' }); }
+  goSignIn() { this.setState({ step: 'signin' }); }
+
+  submitForgot() { this.setState({ step: 'forgotSent' }); }
+
+  submitReset() {
+    if (!(this.state.resetPw && this.state.resetPw === this.state.resetConfirmPw)) return;
+    clearTimeout(this._toastTimer);
+    this.setState({ step: 'discover', shareMessage: 'Password reset — you\u2019re signed in' });
+    this._toastTimer = setTimeout(() => this.setState({ shareMessage: null }), 2400);
+  }
+
+  pillStyle(active) {
+    return active
+      ? { bg: 'oklch(93% 0.035 145)', color: 'oklch(34% 0.09 148)', border: 'oklch(93% 0.035 145)' }
+      : { bg: 'oklch(99% 0.006 95)', color: 'oklch(45% 0.02 95)', border: 'oklch(88% 0.015 90)' };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const isSignIn = s.step === 'signin', isSignUp = s.step === 'signup';
+    const isFormStep = isSignIn || isSignUp;
+
+    const p = {
+      signin: this.pillStyle(isSignIn && !s.shareMessage),
+      signup: this.pillStyle(isSignUp),
+      verify: this.pillStyle(s.step === 'verify'),
+      verified: this.pillStyle(s.step === 'verified'),
+      forgotRequest: this.pillStyle(s.step === 'forgotRequest'),
+      forgotSent: this.pillStyle(s.step === 'forgotSent'),
+      reset: this.pillStyle(s.step === 'reset'),
+      afterReset: this.pillStyle(s.step === 'discover' && !!s.shareMessage),
+    };
+
+    return {
+      isFormStep, isSignIn, isSignUp,
+      step_verify: s.step === 'verify',
+      step_verified: s.step === 'verified',
+      step_forgotRequest: s.step === 'forgotRequest',
+      step_forgotSent: s.step === 'forgotSent',
+      step_reset: s.step === 'reset',
+      step_discover: s.step === 'discover',
+
+      formSubtitle: isSignUp ? 'Create your account' : 'Welcome back',
+      authEmail: s.authEmail, setAuthEmail: (e) => this.setState({ authEmail: e.target.value }),
+      authPassword: s.authPassword, setAuthPassword: (e) => this.setState({ authPassword: e.target.value }),
+      authSubmitLabel: isSignUp ? 'Create account' : 'Sign in',
+      authToggleLead: isSignUp ? 'Already have an account?' : "Don't have an account?",
+      authToggleAction: isSignUp ? 'Sign in' : 'Sign up',
+      toggleAuthMode: () => this.toggleAuthMode(),
+      submitAuth: () => this.submitAuth(),
+      goForgotRequest: () => this.goForgotRequest(),
+      oauthBg: (this.props.socialButtonStyle ?? 'outline') === 'filled' ? 'oklch(97% 0.01 92)' : 'oklch(99% 0.006 95)',
+
+      authEmailOrPlaceholder: s.authEmail || 'your email',
+      resendLabel: s.resendMessage || 'Resend verification email',
+      resendVerification: () => this.resendVerification(),
+      verifyClicked: () => this.verifyClicked(),
+
+      forgotEmail: s.forgotEmail, setForgotEmail: (e) => this.setState({ forgotEmail: e.target.value }),
+      forgotEmailOrPlaceholder: s.forgotEmail || 'that address',
+      submitForgot: () => this.submitForgot(),
+      goSignIn: () => this.goSignIn(),
+
+      resetPw: s.resetPw, setResetPw: (e) => this.setState({ resetPw: e.target.value }),
+      resetConfirmPw: s.resetConfirmPw, setResetConfirmPw: (e) => this.setState({ resetConfirmPw: e.target.value }),
+      resetSubmitOpacity: (s.resetConfirmPw && s.resetPw !== s.resetConfirmPw) ? 0.5 : 1,
+      submitReset: () => this.submitReset(),
+
+      shareVisible: !!s.shareMessage,
+      shareMessage: s.shareMessage,
+
+      pillSignIn: () => this.setStep('signin'), pillSignInBg: p.signin.bg, pillSignInColor: p.signin.color, pillSignInBorder: p.signin.border,
+      pillSignUp: () => this.setStep('signup'), pillSignUpBg: p.signup.bg, pillSignUpColor: p.signup.color, pillSignUpBorder: p.signup.border,
+      pillVerify: () => this.setStep('verify'), pillVerifyBg: p.verify.bg, pillVerifyColor: p.verify.color, pillVerifyBorder: p.verify.border,
+      pillVerified: () => this.setStep('verified'), pillVerifiedBg: p.verified.bg, pillVerifiedColor: p.verified.color, pillVerifiedBorder: p.verified.border,
+      pillForgotReq: () => this.setStep('forgotRequest'), pillForgotReqBg: p.forgotRequest.bg, pillForgotReqColor: p.forgotRequest.color, pillForgotReqBorder: p.forgotRequest.border,
+      pillForgotSent: () => this.setStep('forgotSent'), pillForgotSentBg: p.forgotSent.bg, pillForgotSentColor: p.forgotSent.color, pillForgotSentBorder: p.forgotSent.border,
+      pillReset: () => this.setStep('reset'), pillResetBg: p.reset.bg, pillResetColor: p.reset.color, pillResetBorder: p.reset.border,
+      pillAfterReset: () => {
+        clearTimeout(this._toastTimer);
+        this.setState({ step: 'discover', shareMessage: 'Password reset — you\u2019re signed in' });
+      },
+      pillAfterResetBg: p.afterReset.bg, pillAfterResetColor: p.afterReset.color, pillAfterResetBorder: p.afterReset.border,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: oklch(96% 0.014 92); font-family: 'Manrope', sans-serif; }
+  input::placeholder, textarea::placeholder { color: oklch(60% 0.015 90); }
+  input, textarea, select { font-family: 'Manrope', sans-serif; }
+  a { color: oklch(34% 0.09 148); }
+  a:hover { color: oklch(28% 0.09 148); }
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:56px 24px;display:flex;flex-direction:column;align-items:center;gap:28px;background:oklch(96% 0.014 92)">
+
+  <div style="max-width:640px;text-align:center;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:28px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.5px">Add / Edit listing</div>
+    <div style="font-size:15px;color:oklch(45% 0.02 95);line-height:1.5">Single screen for creating and editing a listing. Use the pills below to review every state.</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;align-items:center">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Screen:</div>
+      <div onClick="{{setModeNew}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{modeNewBg}};color:{{modeNewColor}};border:1px solid {{modeNewBorder}}">New listing (empty)</div>
+      <div onClick="{{setModeEdit}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{modeEditBg}};color:{{modeEditColor}};border:1px solid {{modeEditBorder}}">Editing (pre-filled)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Photos:</div>
+      <div onClick="{{setPhotosEmpty}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{photosEmptyBg}};color:{{photosEmptyColor}};border:1px solid {{photosEmptyBorder}}">Photos: empty</div>
+      <div onClick="{{setPhotosPartial}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{photosPartialBg}};color:{{photosPartialColor}};border:1px solid {{photosPartialBorder}}">Photos: partial</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Category:</div>
+      <div onClick="{{toggleCategoryOther}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{catOtherBg}};color:{{catOtherColor}};border:1px solid {{catOtherBorder}}">Category: Other selected</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">View:</div>
+      <div onClick="{{viewForm}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{viewFormBg}};color:{{viewFormColor}};border:1px solid {{viewFormBorder}}">Form</div>
+      <div onClick="{{viewPublished}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{viewPublishedBg}};color:{{viewPublishedColor}};border:1px solid {{viewPublishedBorder}}">Published (My Stuff)</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center">
+      <div style="font-size:12px;font-weight:700;color:oklch(45% 0.02 95)">Post-publish review:</div>
+      <div onClick="{{toggleToastReview}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{toastReviewBg}};color:{{toastReviewColor}};border:1px solid {{toastReviewBorder}}">Toast: visible</div>
+      <div onClick="{{toggleHighlightReview}}" style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer;background:{{highlightReviewBg}};color:{{highlightReviewColor}};border:1px solid {{highlightReviewBorder}}">My Stuff: highlighted</div>
+    </div>
+  </div>
+
+  <div style="width:390px;height:812px;background:oklch(99% 0.006 95);border-radius:44px;border:1px solid oklch(88% 0.015 90);box-shadow:0 24px 48px -12px oklch(30% 0.02 100 / 0.25);overflow:hidden;display:flex;flex-direction:column;position:relative">
+
+    <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 24px 4px">
+      <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">9:41</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div style="display:flex;align-items:flex-end;gap:2px">
+          <div style="width:3px;height:4px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+          <div style="width:3px;height:6px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+          <div style="width:3px;height:8px;background:oklch(22% 0.02 100);border-radius:1px"></div>
+        </div>
+        <div style="width:20px;height:11px;border:1.5px solid oklch(22% 0.02 100);border-radius:2px;padding:1px;display:flex">
+          <div style="flex:1;background:oklch(22% 0.02 100);border-radius:1px"></div>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{isFormView}}" hint-placeholder-val="{{true}}">
+    <div style="flex-shrink:0;display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+      <div style="cursor:pointer;color:oklch(22% 0.02 100);font-size:22px;line-height:1;font-weight:600">‹</div>
+      <div style="font-size:16px;font-weight:700;color:oklch(22% 0.02 100)">{{ screenTitle }}</div>
+    </div>
+
+    <div ref="{{contentRef}}" style="flex:1;overflow-y:auto;padding:18px 20px 24px;display:flex;flex-direction:column;gap:22px">
+
+      <sc-if value="{{bannerVisible}}">
+        <div style="padding:12px 14px;border-radius:12px;background:oklch(93% 0.06 40);color:oklch(38% 0.12 35);font-size:13px;font-weight:700;text-align:center">{{ bannerText }}</div>
+      </sc-if>
+
+      <div ref="{{photosWrapRef}}" onMouseDown="{{markPhotosTouched}}">
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:10px">PHOTOS<span style="color:oklch(58% 0.15 40);margin-left:3px">*</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px">
+          <sc-for list="{{photoSlots}}" as="slot" hint-placeholder-count="8">
+            <sc-if value="{{slot.filled}}">
+              <div style="aspect-ratio:1;border-radius:12px;position:relative;overflow:hidden;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)">
+                <div style="position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;background:oklch(20% 0.02 100 / 0.5);color:white;font-size:11px;display:flex;align-items:center;justify-content:center">✕</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{slot.empty}}">
+              <div style="aspect-ratio:1;border-radius:12px;border:1.5px dashed oklch(82% 0.02 90);display:flex;align-items:center;justify-content:center;color:oklch(58% 0.02 90);font-size:22px;font-weight:400;cursor:pointer">+</div>
+            </sc-if>
+          </sc-for>
+        </div>
+        <sc-if value="{{photosError}}">
+          <div style="font-size:12px;color:oklch(50% 0.15 30);margin-top:6px;font-weight:600">At least one photo is required</div>
+        </sc-if>
+      </div>
+
+      <div ref="{{titleWrapRef}}">
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">TITLE<span style="color:oklch(58% 0.15 40);margin-left:3px">*</span></div>
+        <input type="text" value="{{ title }}" onChange="{{ onTitleChange }}" onBlur="{{ onTitleBlur }}" placeholder="e.g. Wooden bookshelf" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid {{ titleBorder }};font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)" />
+        <sc-if value="{{titleError}}">
+          <div style="font-size:12px;color:oklch(50% 0.15 30);margin-top:6px;font-weight:600">Title is required</div>
+        </sc-if>
+      </div>
+
+      <div ref="{{categoryWrapRef}}" style="position:relative">
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">CATEGORY<span style="color:oklch(58% 0.15 40);margin-left:3px">*</span></div>
+        <input type="text" value="{{ categoryQuery }}" onChange="{{ onCategoryQueryChange }}" onFocus="{{ openCategoryDropdown }}" onBlur="{{ onCategoryBlur }}" placeholder="Search category..." style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid {{ categoryBorder }};font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)" />
+        <sc-if value="{{categoryError}}">
+          <div style="font-size:12px;color:oklch(50% 0.15 30);margin-top:6px;font-weight:600">Category is required</div>
+        </sc-if>
+
+        <sc-if value="{{categoryOpen}}">
+          <div onClick="{{closeCategoryDropdown}}" style="position:fixed;inset:0;z-index:20"></div>
+          <div style="position:absolute;left:0;right:0;top:calc(100% + 6px);max-height:220px;overflow-y:auto;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);border-radius:14px;box-shadow:0 12px 24px -8px oklch(30% 0.02 100 / 0.2);z-index:21">
+            <sc-for list="{{filteredCategories}}" as="cat" hint-placeholder-count="4">
+              <div onClick="{{cat.select}}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid oklch(93% 0.01 90)">
+                {{ cat.icon }}<div style="font-size:13px;font-weight:600;color:oklch(22% 0.02 100)">{{ cat.name }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{showOtherSuggest}}">
+              <div onClick="{{selectOther}}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;color:oklch(34% 0.09 148)">
+                <div style="font-size:13px;font-weight:700">Other — suggest a new category</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{isOtherSelected}}">
+        <div style="margin-top:-10px">
+          <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">SUGGEST A CATEGORY NAME (OPTIONAL)</div>
+          <input type="text" value="{{ suggestedName }}" onChange="{{ onSuggestedNameChange }}" placeholder="e.g. Board games accessories" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid oklch(85% 0.015 90);font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)" />
+          <div style="font-size:12px;color:oklch(50% 0.02 90);margin-top:6px;line-height:1.4">Your listing will show under Other for now.</div>
+        </div>
+      </sc-if>
+
+      <div ref="{{conditionWrapRef}}" onMouseDown="{{markConditionTouched}}">
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">CONDITION<span style="color:oklch(58% 0.15 40);margin-left:3px">*</span></div>
+        <div style="display:flex;gap:6px">
+          <sc-for list="{{conditions}}" as="cond" hint-placeholder-count="4">
+            <sc-if value="{{cond.selected}}">
+              <div onClick="{{cond.select}}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;cursor:pointer;background:oklch(93% 0.035 145)">
+                {{ cond.gauge }}<div style="font-size:11px;font-weight:700;color:oklch(34% 0.09 148);text-align:center">{{ cond.name }}</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{cond.notSelected}}">
+              <div onClick="{{cond.select}}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;cursor:pointer;border:1px solid oklch(88% 0.015 90)">
+                {{ cond.gauge }}<div style="font-size:11px;font-weight:600;color:oklch(45% 0.02 95);text-align:center">{{ cond.name }}</div>
+              </div>
+            </sc-if>
+          </sc-for>
+        </div>
+        <sc-if value="{{conditionError}}">
+          <div style="font-size:12px;color:oklch(50% 0.15 30);margin-top:6px;font-weight:600">Condition is required</div>
+        </sc-if>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">DESCRIPTION</div>
+        <textarea value="{{ description }}" onChange="{{ onDescriptionChange }}" placeholder="Add any details a trader should know..." rows="3" style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid oklch(85% 0.015 90);font-size:14px;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95);resize:none;line-height:1.5"></textarea>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">ESTIMATED VALUE</div>
+        <div style="display:flex;gap:8px">
+          <input type="number" value="{{ estValue }}" onChange="{{ onEstValueChange }}" placeholder="0" style="flex:1;padding:12px 14px;border-radius:12px;border:1px solid oklch(85% 0.015 90);font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)" />
+          <select value="{{ currency }}" onChange="{{ onCurrencyChange }}" style="width:90px;padding:12px 8px;border-radius:12px;border:1px solid oklch(85% 0.015 90);font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)">
+            <option value="PLN">PLN</option>
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="GBP">GBP</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:11px;font-weight:700;color:oklch(45% 0.02 95);letter-spacing:0.4px;margin-bottom:8px">MORE INFO LINK</div>
+        <input type="url" value="{{ moreInfoUrl }}" onChange="{{ onMoreInfoChange }}" placeholder="https://..." style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid oklch(85% 0.015 90);font-size:14px;font-weight:600;color:oklch(22% 0.02 100);background:oklch(99% 0.006 95)" />
+      </div>
+
+    </div>
+
+    <div style="flex-shrink:0;padding:14px 20px 22px;border-top:1px solid oklch(88% 0.015 90);background:oklch(99% 0.006 95)">
+      <div onClick="{{attemptSave}}" style="padding:14px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:15px;font-weight:700;text-align:center;cursor:pointer">{{ saveLabel }}</div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{isMyStuffView}}">
+      <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid oklch(88% 0.015 90)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:15px;height:15px;background:oklch(42% 0.1 148);transform:rotate(45deg);border-radius:3px"></div>
+          <div style="font-size:20px;font-weight:800;color:oklch(22% 0.02 100);letter-spacing:-0.3px">barter</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:24px;height:24px;position:relative;display:flex;align-items:center;justify-content:center;color:oklch(30% 0.03 120)">
+            <div style="width:13px;height:12px;border:2px solid currentColor;border-bottom:none;border-radius:7px 7px 2px 2px"></div>
+            <div style="width:15px;height:2px;background:currentColor;position:absolute;bottom:7px;border-radius:1px"></div>
+            <div style="width:4px;height:4px;background:currentColor;border-radius:50%;position:absolute;bottom:3px"></div>
+          </div>
+          <div style="width:32px;height:32px;border-radius:50%;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">MK</div>
+          <div style="width:24px;height:24px;border-radius:50%;border:1.5px solid oklch(30% 0.03 120);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:oklch(30% 0.03 120)">?</div>
+        </div>
+      </div>
+
+      <div style="flex:1;overflow-y:auto;padding:20px;background:oklch(96% 0.014 92)">
+        <div style="padding:14px;border-radius:14px;background:oklch(42% 0.1 148);color:white;font-size:15px;font-weight:700;text-align:center;margin-bottom:12px">+ Add a listing</div>
+
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;margin:0 -12px 4px;border-radius:14px;cursor:pointer;transition:box-shadow 0.6s ease, background 0.6s ease;box-shadow:{{highlightShadow}};background:{{highlightBg}}">
+          <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">{{ newListingTitle }}</div>
+              <sc-if value="{{highlightNew}}">
+                <div style="padding:1px 7px;border-radius:999px;background:oklch(60% 0.1 55);color:white;font-size:10px;font-weight:700;transition:opacity 0.6s ease">Just added</div>
+              </sc-if>
+            </div>
+            <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+          </div>
+          <div style="color:oklch(45% 0.02 95)">{{ shareIconRow }}</div>
+          <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid oklch(88% 0.015 90);cursor:pointer">
+          <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">Bike helmet</div>
+            <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+          </div>
+          <div style="color:oklch(45% 0.02 95)">{{ shareIconRow }}</div>
+          <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid oklch(88% 0.015 90);cursor:pointer">
+          <div style="width:52px;height:52px;border-radius:10px;flex-shrink:0;background:repeating-linear-gradient(135deg, oklch(90% 0.02 90), oklch(90% 0.02 90) 8px, oklch(94% 0.015 90) 8px, oklch(94% 0.015 90) 16px)"></div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:oklch(22% 0.02 100)">Board game set</div>
+            <div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:oklch(93% 0.035 145);color:oklch(34% 0.09 148);font-size:11px;font-weight:700">Active</div>
+          </div>
+          <div style="color:oklch(45% 0.02 95)">{{ shareIconRow }}</div>
+          <div style="color:oklch(60% 0.02 90);font-size:16px">›</div>
+        </div>
+      </div>
+
+      <div style="flex-shrink:0;display:flex;padding:8px 12px 22px;border-top:1px solid oklch(88% 0.015 90);background:oklch(99% 0.006 95)">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0">
+          <div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">
+            <div style="width:22px;height:22px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center"><div style="width:7px;height:7px;background:currentColor;transform:rotate(45deg);border-radius:1px"></div></div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:oklch(52% 0.02 85)">Discover</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0">
+          <div style="width:56px;height:32px;border-radius:16px;background:oklch(93% 0.035 145);display:flex;align-items:center;justify-content:center;color:oklch(34% 0.09 148)">
+            <div style="width:20px;height:18px;border:2px solid currentColor;border-radius:4px;position:relative"><div style="position:absolute;top:4px;left:0;right:0;height:2px;background:currentColor"></div></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:oklch(34% 0.09 148)">My Stuff</div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0">
+          <div style="width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:oklch(52% 0.02 85)">
+            <div style="width:22px;height:18px;border:2px solid currentColor;border-radius:6px 6px 6px 2px"></div>
+          </div>
+          <div style="font-size:11px;font-weight:600;color:oklch(52% 0.02 85)">Chat</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{toastVisible}}">
+      <div style="position:absolute;left:16px;right:16px;top:70px;padding:12px 14px;border-radius:12px;background:oklch(99% 0.006 95);border:1px solid oklch(88% 0.015 90);display:flex;align-items:center;gap:10px;box-shadow:0 8px 20px -8px oklch(30% 0.02 100 / 0.2);z-index:50">
+        <div style="width:22px;height:22px;border-radius:50%;background:oklch(42% 0.1 148);flex-shrink:0;display:flex;align-items:center;justify-content:center">
+          <div style="width:10px;height:6px;border-left:2px solid white;border-bottom:2px solid white;transform:rotate(-45deg) translate(1px,-1px)"></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:oklch(22% 0.02 100)">Listing published</div>
+      </div>
+    </sc-if>
+
+
+  </div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const GREEN = 'oklch(42% 0.1 148)';
+const BORDER = 'oklch(85% 0.015 90)';
+const CATEGORY_NAMES = ['Books', 'Toys & Games', 'Electronics', 'Clothing', 'Home & Garden', 'Sports & Outdoors', 'Food & Meals', 'Art & Crafts', 'Music & Instruments', 'Tools & Equipment', 'Beauty & Health', 'Collectibles', 'Other'];
+const ICON_TYPE = {
+  'Books': 'books', 'Toys & Games': 'toys', 'Electronics': 'electronics', 'Clothing': 'clothing',
+  'Home & Garden': 'home', 'Sports & Outdoors': 'sports', 'Food & Meals': 'food', 'Art & Crafts': 'art',
+  'Music & Instruments': 'music', 'Tools & Equipment': 'tools', 'Beauty & Health': 'beauty',
+  'Collectibles': 'collectibles', 'Other': 'other',
+};
+
+const EMPTY_DATA = { title: '', selectedCategory: null, categoryQuery: '', condition: null, description: '', estValue: '', currency: 'PLN', moreInfoUrl: '' };
+const EDIT_DATA = { title: 'Wooden bookshelf', selectedCategory: 'Home & Garden', categoryQuery: 'Home & Garden', condition: 'Good', description: 'Solid oak bookshelf, five shelves. Minor scuffs on the base but structurally sound — downsizing, so it needs a new home.', estValue: '120', currency: 'PLN', moreInfoUrl: 'https://example.com/listing-info' };
+
+class Component extends DCLogic {
+  state = {
+    mode: 'new', photoMode: 'empty', categoryOpen: false, categoryOtherToggle: false,
+    suggestedName: '', prevCategory: null, prevQuery: '', view: 'form', toastVisible: false, highlightNew: false,
+    touched: { title: false, category: false, condition: false, photos: false }, saveAttempted: false,
+    ...EMPTY_DATA,
+  };
+
+  contentRef = React.createRef();
+  titleWrapRef = React.createRef();
+  categoryWrapRef = React.createRef();
+  conditionWrapRef = React.createRef();
+  photosWrapRef = React.createRef();
+
+  publish() {
+    clearTimeout(this._toastTimer); clearTimeout(this._highlightTimer); clearTimeout(this._navTimer);
+    this.setState({ toastVisible: true });
+    this._navTimer = setTimeout(() => {
+      this.setState({ toastVisible: false, view: 'mystuff', highlightNew: true });
+      this._highlightTimer = setTimeout(() => this.setState({ highlightNew: false }), 4000);
+    }, 1300);
+  }
+
+  setView(view) {
+    clearTimeout(this._toastTimer); clearTimeout(this._highlightTimer); clearTimeout(this._navTimer);
+    this.setState({ view, toastVisible: false, highlightNew: view === 'mystuff', saveAttempted: false, touched: { title: false, category: false, condition: false, photos: false } });
+    if (view === 'mystuff') this._highlightTimer = setTimeout(() => this.setState({ highlightNew: false }), 4000);
+  }
+
+  toggleToastReview() {
+    clearTimeout(this._toastTimer); clearTimeout(this._highlightTimer); clearTimeout(this._navTimer);
+    this.setState((s) => ({ view: 'form', toastVisible: !s.toastVisible }));
+  }
+
+  toggleHighlightReview() {
+    clearTimeout(this._toastTimer); clearTimeout(this._highlightTimer); clearTimeout(this._navTimer);
+    this.setState((s) => ({ view: 'mystuff', toastVisible: false, highlightNew: !s.highlightNew }));
+  }
+
+  markTouched(field) {
+    this.setState(s => ({ touched: { ...s.touched, [field]: true } }));
+  }
+
+  getInvalidFields() {
+    const s = this.state;
+    const invalid = [];
+    if (!s.title.trim()) invalid.push('title');
+    if (!s.selectedCategory) invalid.push('category');
+    if (!s.condition) invalid.push('condition');
+    if (s.photoMode !== 'partial') invalid.push('photos');
+    return invalid;
+  }
+
+  scrollToField(field) {
+    const refMap = { title: this.titleWrapRef, category: this.categoryWrapRef, condition: this.conditionWrapRef, photos: this.photosWrapRef };
+    const target = refMap[field] && refMap[field].current;
+    const container = this.contentRef.current;
+    if (!target || !container) return;
+    const targetRect = target.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    container.scrollTop += (targetRect.top - containerRect.top) - 16;
+  }
+
+  attemptSave() {
+    const order = ['photos', 'title', 'category', 'condition'];
+    const invalid = this.getInvalidFields();
+    if (invalid.length > 0) {
+      this.setState({ saveAttempted: true, touched: { title: true, category: true, condition: true, photos: true } }, () => {
+        const first = order.find(f => invalid.includes(f));
+        this.scrollToField(first);
+      });
+      return;
+    }
+    this.publish();
+  }
+
+  setMode(mode) {
+    const data = mode === 'edit' ? EDIT_DATA : EMPTY_DATA;
+    this.setState({ mode, ...data, categoryOtherToggle: false, suggestedName: '', categoryOpen: false });
+  }
+
+  setPhotoMode(photoMode) { this.setState({ photoMode }); }
+
+  toggleCategoryOther() {
+    this.setState(s => {
+      if (!s.categoryOtherToggle) {
+        return { categoryOtherToggle: true, selectedCategory: 'Other', categoryQuery: 'Other', prevCategory: s.selectedCategory, prevQuery: s.categoryQuery };
+      }
+      return { categoryOtherToggle: false, selectedCategory: s.prevCategory, categoryQuery: s.prevQuery, suggestedName: '' };
+    });
+  }
+
+  openCategoryDropdown() { this.setState({ categoryOpen: true }); }
+  closeCategoryDropdown() { this.setState({ categoryOpen: false }); }
+
+  onCategoryQueryChange(e) {
+    this.setState({ categoryQuery: e.target.value, categoryOpen: true, selectedCategory: null });
+  }
+
+  selectCategory(name) {
+    const isOther = name === 'Other';
+    this.setState({ selectedCategory: name, categoryQuery: name, categoryOpen: false, categoryOtherToggle: isOther, suggestedName: isOther ? this.state.suggestedName : '' });
+  }
+
+  buildIcon(type, size) {
+    const s = size;
+    const D = (style, ...children) => React.createElement('div', { style: { position: 'relative', ...style } }, ...children);
+    const wrap = (...children) => D({ width: s, height: s, display: 'flex', alignItems: 'center', justifyContent: 'center' }, D({ width: s, height: s, position: 'relative' }, ...children));
+    const tri = (w, h, extra) => D({ width: 0, height: 0, borderLeft: `${w}px solid transparent`, borderRight: `${w}px solid transparent`, borderBottom: `${h}px solid currentColor`, position: 'absolute', ...extra });
+    switch (type) {
+      case 'books':
+        return wrap(D({ width: s * 0.62, height: s * 0.82, border: '2px solid currentColor', borderRadius: 2, top: s * 0.09, left: s * 0.19 },
+          D({ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1.5, background: 'currentColor' })));
+      case 'toys':
+        return wrap(D({ width: s * 0.7, height: s * 0.7, border: '2px solid currentColor', borderRadius: 4, top: s * 0.15, left: s * 0.15 },
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '16%', left: '16%' }),
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '44%', left: '44%' }),
+          D({ position: 'absolute', width: s * 0.12, height: s * 0.12, borderRadius: '50%', background: 'currentColor', top: '72%', left: '72%' })));
+      case 'electronics':
+        return wrap(
+          D({ width: s * 0.5, height: s * 0.4, border: '2px solid currentColor', borderRadius: 3, position: 'absolute', bottom: s * 0.14, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: 2, height: s * 0.26, background: 'currentColor', position: 'absolute', top: s * 0.1, left: '38%' }),
+          D({ width: 2, height: s * 0.26, background: 'currentColor', position: 'absolute', top: s * 0.1, left: '58%' }));
+      case 'clothing':
+        return wrap(
+          D({ width: s * 0.16, height: s * 0.16, borderRadius: '50%', border: '2px solid currentColor', position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          tri(s * 0.38, s * 0.3, { bottom: s * 0.1, left: '50%', transform: 'translateX(-50%)' }));
+      case 'home':
+        return wrap(
+          tri(s * 0.36, s * 0.3, { top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: s * 0.6, height: s * 0.42, border: '2px solid currentColor', position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }));
+      case 'sports':
+        return wrap(D({ width: s * 0.8, height: s * 0.8, border: '2px solid currentColor', borderRadius: '50%', overflow: 'hidden', position: 'absolute', top: '10%', left: '10%' },
+          D({ position: 'absolute', width: '100%', height: 2, background: 'currentColor', top: '50%', transform: 'translateY(-50%)' })));
+      case 'food':
+        return wrap(
+          D({ width: s * 0.8, height: s * 0.8, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '10%', left: '10%' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '1.5px solid currentColor', borderRadius: '50%', position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }));
+      case 'art':
+        return wrap(
+          D({ width: s * 0.76, height: s * 0.6, border: '2px solid currentColor', borderRadius: '50% 50% 50% 8%', position: 'absolute', top: '18%', left: '10%' }),
+          D({ width: s * 0.16, height: s * 0.16, border: '1.5px solid currentColor', borderRadius: '50%', position: 'absolute', bottom: '18%', right: '16%' }),
+          D({ width: s * 0.09, height: s * 0.09, borderRadius: '50%', background: 'currentColor', position: 'absolute', top: '28%', left: '24%' }),
+          D({ width: s * 0.09, height: s * 0.09, borderRadius: '50%', background: 'currentColor', position: 'absolute', top: '28%', left: '48%' }));
+      case 'music':
+        return wrap(
+          D({ width: s * 0.32, height: s * 0.26, background: 'currentColor', borderRadius: '50%', position: 'absolute', bottom: 0, left: s * 0.1, transform: 'rotate(-8deg)' }),
+          D({ width: 2, height: s * 0.62, background: 'currentColor', position: 'absolute', bottom: s * 0.12, left: s * 0.4 }),
+          tri(s * 0.14, s * 0.16, { top: 0, left: s * 0.4 }));
+      case 'tools':
+        return wrap(
+          D({ width: s * 0.78, height: s * 0.14, background: 'currentColor', borderRadius: 2, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(45deg)' }),
+          D({ width: s * 0.78, height: s * 0.14, background: 'currentColor', borderRadius: 2, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%) rotate(-45deg)' }));
+      case 'beauty':
+        return wrap(
+          tri(s * 0.22, s * 0.3, { top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          D({ width: s * 0.56, height: s * 0.56, background: 'currentColor', borderRadius: '50%', position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)' }));
+      case 'collectibles':
+        return wrap(
+          D({ width: s * 0.5, height: s * 0.5, border: '2px solid currentColor', borderRadius: '50%', position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)' }),
+          tri(s * 0.1, s * 0.22, { bottom: 0, left: '30%' }),
+          tri(s * 0.1, s * 0.22, { bottom: 0, left: '58%' }));
+      case 'share':
+        return wrap(
+          D({ width: s * 0.52, height: 2.2, background: 'currentColor', position: 'absolute', top: '50%', left: '24%', transform: 'translate(0,-50%) rotate(-32deg)', transformOrigin: 'left center' }),
+          D({ width: s * 0.52, height: 2.2, background: 'currentColor', position: 'absolute', top: '50%', left: '24%', transform: 'translate(0,-50%) rotate(32deg)', transformOrigin: 'left center' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '22%', left: '68%', transform: 'translate(-50%,-50%)' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '50%', left: '24%', transform: 'translate(-50%,-50%)' }),
+          D({ width: s * 0.36, height: s * 0.36, border: '2.2px solid currentColor', borderRadius: '50%', position: 'absolute', top: '78%', left: '68%', transform: 'translate(-50%,-50%)' }));
+      case 'other':
+      default:
+        return wrap(D({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: s * 0.12, width: s, height: s },
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' }),
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' }),
+          D({ width: s * 0.14, height: s * 0.14, borderRadius: '50%', background: 'currentColor' })));
+    }
+  }
+
+  buildGauge(level, size, filled, empty) {
+    const squares = [0, 1, 2, 3].map(i => React.createElement('div', {
+      key: i,
+      style: { width: size * 0.72, height: size * 0.72, borderRadius: size * 0.16, background: i < level ? filled : empty },
+    }));
+    return React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: size * 0.22 } }, ...squares);
+  }
+
+  pillStyle(active) {
+    return active
+      ? { bg: 'oklch(93% 0.035 145)', color: 'oklch(34% 0.09 148)', border: 'oklch(93% 0.035 145)' }
+      : { bg: 'transparent', color: 'oklch(45% 0.02 95)', border: 'oklch(85% 0.015 90)' };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const query = (s.categoryQuery || '').toLowerCase().trim();
+    const matches = CATEGORY_NAMES.filter(n => n !== 'Other' && n.toLowerCase().includes(query));
+    const filteredCategories = (query ? matches : CATEGORY_NAMES.filter(n => n !== 'Other')).map(name => ({
+      name, icon: this.buildIcon(ICON_TYPE[name], 20), select: () => this.selectCategory(name),
+    }));
+    const showOtherSuggest = query.length > 0 && matches.length === 0;
+
+    const photoCount = s.photoMode === 'partial' ? 3 : 0;
+    const photoSlots = Array.from({ length: 8 }, (_, i) => ({ filled: i < photoCount, empty: i >= photoCount }));
+
+    const conditions = ['Like New', 'Good', 'Used', 'Worn'].map((name, i) => {
+      const level = 4 - i;
+      const selected = s.condition === name;
+      return { name, selected, notSelected: !selected, gauge: this.buildGauge(level, 16, selected ? GREEN : GREEN, selected ? BORDER : BORDER), select: () => this.setState({ condition: name }) };
+    });
+
+    const mp = this.pillStyle(s.mode === 'new'), ep = this.pillStyle(s.mode === 'edit');
+    const pe = this.pillStyle(s.photoMode === 'empty'), pp = this.pillStyle(s.photoMode === 'partial');
+    const co = this.pillStyle(s.categoryOtherToggle);
+    const vf = this.pillStyle(s.view === 'form'), vp = this.pillStyle(s.view === 'mystuff');
+    const tr = this.pillStyle(s.toastVisible), hr = this.pillStyle(s.highlightNew);
+
+    return {
+      screenTitle: s.mode === 'edit' ? 'Edit listing' : 'Add listing',
+      saveLabel: s.mode === 'edit' ? 'Save changes' : 'Publish listing',
+      setModeNew: () => this.setMode('new'), setModeEdit: () => this.setMode('edit'),
+      modeNewBg: mp.bg, modeNewColor: mp.color, modeNewBorder: mp.border,
+      modeEditBg: ep.bg, modeEditColor: ep.color, modeEditBorder: ep.border,
+      setPhotosEmpty: () => this.setPhotoMode('empty'), setPhotosPartial: () => this.setPhotoMode('partial'),
+      photosEmptyBg: pe.bg, photosEmptyColor: pe.color, photosEmptyBorder: pe.border,
+      photosPartialBg: pp.bg, photosPartialColor: pp.color, photosPartialBorder: pp.border,
+      toggleCategoryOther: () => this.toggleCategoryOther(),
+      catOtherBg: co.bg, catOtherColor: co.color, catOtherBorder: co.border,
+      photoSlots,
+      title: s.title, onTitleChange: (e) => this.setState({ title: e.target.value }),
+      categoryQuery: s.categoryQuery, onCategoryQueryChange: (e) => this.onCategoryQueryChange(e),
+      openCategoryDropdown: () => this.openCategoryDropdown(), closeCategoryDropdown: () => this.closeCategoryDropdown(),
+      categoryOpen: s.categoryOpen, filteredCategories, showOtherSuggest, selectOther: () => this.selectCategory('Other'),
+      isOtherSelected: s.selectedCategory === 'Other',
+      suggestedName: s.suggestedName, onSuggestedNameChange: (e) => this.setState({ suggestedName: e.target.value }),
+      conditions,
+      description: s.description, onDescriptionChange: (e) => this.setState({ description: e.target.value }),
+      estValue: s.estValue, onEstValueChange: (e) => this.setState({ estValue: e.target.value }),
+      currency: s.currency, onCurrencyChange: (e) => this.setState({ currency: e.target.value }),
+      moreInfoUrl: s.moreInfoUrl, onMoreInfoChange: (e) => this.setState({ moreInfoUrl: e.target.value }),
+      isFormView: s.view === 'form', isMyStuffView: s.view === 'mystuff',
+      viewForm: () => this.setView('form'), viewPublished: () => this.setView('mystuff'),
+      viewFormBg: vf.bg, viewFormColor: vf.color, viewFormBorder: vf.border,
+      viewPublishedBg: vp.bg, viewPublishedColor: vp.color, viewPublishedBorder: vp.border,
+      toggleToastReview: () => this.toggleToastReview(), toggleHighlightReview: () => this.toggleHighlightReview(),
+      toastReviewBg: tr.bg, toastReviewColor: tr.color, toastReviewBorder: tr.border,
+      highlightReviewBg: hr.bg, highlightReviewColor: hr.color, highlightReviewBorder: hr.border,
+      publish: () => this.publish(),
+      toastVisible: s.toastVisible,
+      highlightNew: s.highlightNew,
+      highlightShadow: s.highlightNew ? '0 0 0 2px oklch(42% 0.1 148)' : '0 0 0 0px transparent',
+      highlightBg: s.highlightNew ? 'oklch(93% 0.035 145 / 0.5)' : 'transparent',
+      newListingTitle: s.title || 'Untitled listing',
+      shareIconRow: this.buildIcon('share', 15),
+      contentRef: this.contentRef, titleWrapRef: this.titleWrapRef, categoryWrapRef: this.categoryWrapRef,
+      conditionWrapRef: this.conditionWrapRef, photosWrapRef: this.photosWrapRef,
+      attemptSave: () => this.attemptSave(),
+      onTitleBlur: () => this.markTouched('title'),
+      onCategoryBlur: () => setTimeout(() => this.markTouched('category'), 150),
+      markConditionTouched: () => this.markTouched('condition'),
+      markPhotosTouched: () => this.markTouched('photos'),
+      titleError: (s.touched.title || s.saveAttempted) && !s.title.trim(),
+      categoryError: (s.touched.category || s.saveAttempted) && !s.selectedCategory,
+      conditionError: (s.touched.condition || s.saveAttempted) && !s.condition,
+      photosError: (s.touched.photos || s.saveAttempted) && (s.photoMode !== 'partial'),
+      titleBorder: (s.touched.title || s.saveAttempted) && !s.title.trim() ? 'oklch(55% 0.15 30)' : 'oklch(85% 0.015 90)',
+      categoryBorder: (s.touched.category || s.saveAttempted) && !s.selectedCategory ? 'oklch(55% 0.15 30)' : 'oklch(85% 0.015 90)',
+      bannerVisible: s.saveAttempted && this.getInvalidFields().length > 0,
+      bannerText: (() => {
+        const n = this.getInvalidFields().length;
+        return n === 1 ? '1 field needs attention' : `${n} fields need attention`;
+      })(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>
