@@ -48,6 +48,34 @@ delete from swipes;
 delete from matches;
 
 -- -----------------------------------------------------------------------------
+-- 1b. Rename swipes -> responses; rename direction values left/right/super to
+--    pass/like.
+--
+-- Note: is_super_like lives on `matches` (dropped in full in step 8 below),
+-- not on `swipes` — there is no is_super_like column on this table to drop.
+-- The "remove Super Like entirely" decision is satisfied here by shrinking
+-- the direction check constraint down to just pass/like (no more 'super'),
+-- plus matches.is_super_like disappearing when matches is dropped.
+--
+-- The table is empty at this point (see `delete from swipes` 3 lines above),
+-- so there's no existing 'left'/'right'/'super' data to remap — this
+-- constraint swap is safe as a straight drop + add.
+-- -----------------------------------------------------------------------------
+alter table swipes rename to responses;
+
+alter table responses rename constraint swipes_pkey to responses_pkey;
+alter table responses rename constraint swipes_user_id_fkey to responses_user_id_fkey;
+alter table responses rename constraint swipes_item_id_fkey to responses_item_id_fkey;
+alter table responses rename constraint swipes_user_id_item_id_key to responses_user_id_item_id_key;
+
+alter table responses drop constraint swipes_direction_check;
+alter table responses add constraint responses_direction_check check (direction in ('pass', 'like'));
+
+alter index idx_swipes_item rename to idx_responses_item;
+alter index idx_swipes_user_date rename to idx_responses_user_date;
+alter index idx_swipes_user_item_direction rename to idx_responses_user_item_direction;
+
+-- -----------------------------------------------------------------------------
 -- 2. connections — one row per user pair, ever
 --
 -- Note for whatever writes to this table (the rewritten RPC): user_id_1 must
@@ -251,6 +279,51 @@ create policy "Users can create trade completion items"
   );
 
 -- -----------------------------------------------------------------------------
+-- 5b. Drop old matches-dependent RLS policies on messages/reviews/items.
+--
+-- These three messages policies, two reviews policies, and one items policy
+-- aren't in any prior migration file (confirmed against live Barter2 via
+-- pg_policies) — they were added directly on the database outside version
+-- control, consistent with the other undocumented live drift already noted
+-- in the project plan. Postgres tracks policy dependencies on the specific
+-- columns/tables their USING/WITH CHECK clauses reference, so these must be
+-- dropped before both the `drop column match_id` statements below and
+-- `drop table matches` in step 8 — otherwise both fail with a dependency
+-- error.
+-- -----------------------------------------------------------------------------
+drop policy "Users can read messages from their matches" on messages;
+drop policy "Users can send messages to their matches" on messages;
+drop policy "Users can update messages in their matches" on messages;
+drop policy "Users can create reviews for their completed trades" on reviews;
+drop policy "Users can read reviews about themselves or their trades" on reviews;
+drop policy "Users can read traded items from their completed matches" on items;
+
+-- Recreates, on the new schema, the one items policy dropped just above that
+-- referenced matches. Not a faithful port: the old policy checked whether an
+-- item was one of the two items in the original match pair
+-- (item_id_1/item_id_2) plus completion_status = 'completed'. The old
+-- schema never separately tracked "items that matched" versus "items
+-- actually exchanged" — and Mark Trade Complete never functioned live
+-- before this rewrite, so completion_status = 'completed' wasn't a real,
+-- reachable state either. There's no literal old behavior to preserve here.
+-- This instead implements the same underlying intent (a trade participant
+-- can still see an item once it's confirmed traded) on the new data model,
+-- where trade_completion_items is the actual record of which items were
+-- exchanged, not just which items matched.
+create policy "Users can read traded items from their completed trades"
+  on items for select
+  using (
+    is_active = false
+    and exists (
+      select 1 from trade_completion_items tci
+      join trade_completions tc on tc.id = tci.trade_completion_id
+      join connections c on c.id = tc.connection_id
+      where tci.item_id = items.id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+    )
+  );
+
+-- -----------------------------------------------------------------------------
 -- 6. Repoint messages: match_id -> connection_id
 -- -----------------------------------------------------------------------------
 alter table messages drop column match_id;
@@ -258,6 +331,50 @@ alter table messages add column connection_id uuid not null references connectio
 
 create index messages_connection_id_idx
   on messages (connection_id);
+
+-- Recreates the three policies dropped in step 5b on the new connection_id
+-- column. Preserves the exact same active-status asymmetry confirmed against
+-- live Barter2: only the insert (send) policy checks connection status,
+-- read and update do not (that's how the old matches.status = 'accepted'
+-- check was scoped too, not a behavior change introduced here).
+create policy "Users can read messages from their connections"
+  on messages for select
+  using (
+    exists (
+      select 1 from connections c
+      where c.id = messages.connection_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+    )
+  );
+
+create policy "Users can send messages to their connections"
+  on messages for insert
+  with check (
+    auth.uid() = sender_id
+    and exists (
+      select 1 from connections c
+      where c.id = messages.connection_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+        and c.status = 'active'
+    )
+  );
+
+create policy "Users can update messages in their connections"
+  on messages for update
+  using (
+    exists (
+      select 1 from connections c
+      where c.id = messages.connection_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+    )
+  )
+  with check (
+    exists (
+      select 1 from connections c
+      where c.id = messages.connection_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+    )
+  );
 
 -- -----------------------------------------------------------------------------
 -- 7. Repoint reviews: match_id -> trade_completion_id
@@ -289,17 +406,60 @@ alter table reviews add constraint reviews_reviewer_id_fkey
 create index reviews_trade_completion_id_idx
   on reviews (trade_completion_id);
 
+-- Recreates the two policies dropped in step 5b on the new
+-- trade_completion_id column. The old insert policy additionally required
+-- matches.status = 'accepted'; a trade_completions row only ever exists once
+-- a trade is completed, so that status gate has no equivalent to carry
+-- forward here — its job is already done by the row's existence.
+--
+-- Deliberate hardening, not a faithful port: the live insert policy today
+-- only checks that the reviewer is A participant in the referenced match —
+-- it never constrains reviewee_id, so a request could currently name any
+-- UUID as the reviewee. This version closes that gap by requiring
+-- reviewee_id to be specifically the OTHER participant in the same
+-- connection. This one line is an intentional behavior change from what's
+-- live today, not an oversight or a preservation of existing behavior.
+create policy "Users can create reviews for their completed trades"
+  on reviews for insert
+  with check (
+    reviewer_id = auth.uid()
+    and exists (
+      select 1 from trade_completions tc
+      join connections c on c.id = tc.connection_id
+      where tc.id = reviews.trade_completion_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+        and reviewee_id = (case when c.user_id_1 = auth.uid() then c.user_id_2 else c.user_id_1 end)
+    )
+  );
+
+create policy "Users can read reviews about themselves or their trades"
+  on reviews for select
+  using (
+    reviewer_id = auth.uid()
+    or reviewee_id = auth.uid()
+    or exists (
+      select 1 from trade_completions tc
+      join connections c on c.id = tc.connection_id
+      where tc.id = reviews.trade_completion_id
+        and (auth.uid() = c.user_id_1 or auth.uid() = c.user_id_2)
+    )
+  );
+
 -- -----------------------------------------------------------------------------
 -- 8. Drop matches
 -- -----------------------------------------------------------------------------
 drop table matches;
 
 -- =============================================================================
--- NOT included in this file, intentionally, since these are separate,
--- independently-verifiable changes per the plan:
---   - Rewriting check_and_create_match / record_swipe_optimized to write to
---     connections instead of matches
---   - Removing is_super_like / the 'super' swipe direction (separate,
---     already-decided cleanup, not core to this migration)
+-- NOT included in this file, intentionally, reviewed and applied separately
+-- (see the follow-up migration, once approved):
+--   - Rewriting check_and_create_match / record_swipe_optimized (renamed to
+--     record_response_optimized) to target connections /
+--     connection_item_interests instead of matches, and responses instead of
+--     swipes.
+--   - Note: until that follow-up runs, both functions are transiently broken
+--     (they reference `matches` and `swipes`, which no longer exist by name
+--     after this file runs) — acceptable here since no rewrite code has
+--     shipped and there's no live traffic hitting these RPCs yet.
 --   - Any application-code changes (matchService.ts etc.)
 -- =============================================================================
