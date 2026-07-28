@@ -115,7 +115,7 @@ export const ItemDetail: React.FC = () => {
   const handleSwipe = async (direction: "left" | "right" | "super") => {
     if (!item || !user) return;
 
-    const { error } = await recordSwipe(item.id, direction);
+    const { error } = await recordSwipe({ itemId: item.id, direction });
 
     if (error) {
       toast.error("Failed to record action");
