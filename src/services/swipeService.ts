@@ -76,15 +76,16 @@ export class SwipeService {
       }
 
       // Try optimized RPC function first, fallback to old method if not available
-      const { data: result, error: rpcError } = await supabase.rpc("record_swipe_optimized", {
+      const responseDirection = swipeData.direction === "left" ? "pass" : "like";
+      const { data: result, error: rpcError } = await supabase.rpc("record_response_optimized", {
         user_uuid: swipeData.userId,
         target_item_id: swipeData.itemId,
-        swipe_direction: swipeData.direction,
+        response_direction: responseDirection,
       });
 
       if (rpcError) {
         // If the new RPC function doesn't exist, fall back to the old method
-        if (rpcError.message?.includes("function record_swipe_optimized") || rpcError.code === "42883") {
+        if (rpcError.message?.includes("function record_response_optimized") || rpcError.code === "42883") {
           console.log("Falling back to legacy swipe recording method");
           return await this.recordSwipeLegacy(swipeData);
         }
@@ -119,11 +120,9 @@ export class SwipeService {
       // Handle match checking in background if needed
       if (result?.matchCheckNeeded && result?.targetItemUserId) {
         // Don't await this - let it run in background
-        this.handleBackgroundMatchCheck(swipeData.userId, swipeData.itemId, swipeData.direction === "super").catch(
-          (error) => {
-            console.error("Background match creation failed:", error);
-          }
-        );
+        this.handleBackgroundMatchCheck(swipeData.userId, swipeData.itemId).catch((error) => {
+          console.error("Background match creation failed:", error);
+        });
       }
 
       return {
@@ -224,16 +223,11 @@ export class SwipeService {
   /**
    * Handle match checking in background
    */
-  private static async handleBackgroundMatchCheck(
-    userId: string,
-    itemId: string,
-    isSuperLike: boolean = false
-  ): Promise<void> {
+  private static async handleBackgroundMatchCheck(userId: string, itemId: string): Promise<void> {
     try {
       const { data: result, error } = await supabase.rpc("check_and_create_match", {
-        swiper_user_id: userId,
+        responder_user_id: userId,
         target_item_id: itemId,
-        is_super_like: isSuperLike,
       });
 
       if (error) {
@@ -242,7 +236,7 @@ export class SwipeService {
       }
 
       if (result?.matchCreated) {
-        console.log("Match created successfully:", result.matchId);
+        console.log("Match created successfully:", result.connectionId);
         // You could emit an event or update a global state here for real-time updates
       }
     } catch (error) {

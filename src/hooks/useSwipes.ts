@@ -41,15 +41,8 @@ export const useSwipes = () => {
           return { data: [variables.itemId] };
         });
 
-        // Update swipe limit data with returned values
-        queryClient.setQueryData(["swipeLimit", user?.id], (oldData: any) => {
-          return {
-            data: {
-              canSwipe: result.data.canSwipe,
-              dailySwipeCount: result.data.dailySwipeCount,
-            }
-          };
-        });
+        // Re-fetch swipe limit data since the RPC response no longer includes it
+        queryClient.invalidateQueries({ queryKey: ["swipeLimit", user?.id] });
 
         // Only invalidate matches if this was a right swipe that might create matches
         if ((variables.direction === "right" || variables.direction === "super") && result.data.matchCheckNeeded) {
