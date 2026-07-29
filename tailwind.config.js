@@ -28,6 +28,19 @@ export default {
           800: '#9d174d',
           900: '#831843',
         },
+        // New visual direction (PRD §13, warm greens/earth tones), taken
+        // directly from the approved Chat mockup (design/Barter Nav
+        // Shell.dc.html). Named distinctly from Tailwind's built-in
+        // 'green' so it never partially collides with default shades --
+        // this is the actual brand palette, not a generic green.
+        barter: {
+          50: 'oklch(99% 0.006 95)',
+          100: 'oklch(93% 0.035 145)',
+          200: 'oklch(90% 0.03 145)',
+          600: 'oklch(42% 0.1 148)',
+          700: 'oklch(34% 0.09 148)',
+          800: 'oklch(28% 0.08 148)',
+        },
       },
       borderWidth: {
         '3': '3px',

@@ -1,0 +1,143 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { Package, MessageCircleHeart } from "lucide-react";
+import { useConnections } from "../hooks/useConnections";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { formatRelativeTime } from "../utils/time";
+import type { ConnectionItemInterestPair, ConnectionLastMessage, ConnectionSummary } from "../services/connectionService";
+
+// Small rotating set of avatar tints (earth-tone family, matching the new
+// visual direction) so contacts have some visual variety, same spirit as
+// the approved mockup's per-contact avatar colors.
+const AVATAR_PALETTES = [
+  { bg: "oklch(93% 0.035 145)", color: "oklch(34% 0.09 148)" }, // sage green
+  { bg: "oklch(90% 0.04 70)", color: "oklch(45% 0.08 60)" }, // terracotta
+  { bg: "oklch(90% 0.03 230)", color: "oklch(42% 0.08 230)" }, // muted teal
+  { bg: "oklch(90% 0.03 300)", color: "oklch(42% 0.09 300)" }, // muted plum
+];
+
+function pickAvatarPalette(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  return AVATAR_PALETTES[hash % AVATAR_PALETTES.length];
+}
+
+function buildItemLabel(itemInterests: ConnectionItemInterestPair[]): string {
+  const seen = new Set<string>();
+  const titles: string[] = [];
+  const addItem = (item: { id: string; title: string } | null) => {
+    if (item && !seen.has(item.id)) {
+      seen.add(item.id);
+      titles.push(item.title);
+    }
+  };
+  itemInterests.forEach((interest) => addItem(interest.myItem));
+  itemInterests.forEach((interest) => addItem(interest.theirItem));
+  return titles.join(" · ");
+}
+
+function buildPreview(lastMessage: ConnectionLastMessage | null): { text: string; italic: boolean } {
+  if (!lastMessage) return { text: "Say hello!", italic: true };
+  if (lastMessage.messageType === "photo") return { text: "📷 Photo", italic: false };
+  if (lastMessage.messageType === "location") return { text: "📍 Location shared", italic: false };
+  return { text: lastMessage.content, italic: false };
+}
+
+const ConnectionRow: React.FC<{ connection: ConnectionSummary; onOpen: (id: string) => void }> = ({
+  connection,
+  onOpen,
+}) => {
+  const palette = pickAvatarPalette(connection.otherUser.id);
+  const initial = connection.otherUser.username.charAt(0).toUpperCase();
+  const itemLabel = buildItemLabel(connection.itemInterests);
+  const preview = buildPreview(connection.lastMessage);
+  const timestamp = connection.lastMessage?.createdAt ?? connection.updatedAt;
+
+  return (
+    <div
+      onClick={() => onOpen(connection.id)}
+      className="flex items-center gap-3 py-3 border-b border-[oklch(88%_0.015_90)] cursor-pointer"
+    >
+      <div
+        className="w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold"
+        style={{ background: palette.bg, color: palette.color }}
+      >
+        {initial}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-semibold text-[oklch(22%_0.02_100)]">{connection.otherUser.username}</div>
+        {itemLabel && (
+          <div className="flex items-center gap-1.5 my-0.5">
+            <Package className="w-3.5 h-3.5 text-[oklch(50%_0.02_90)] flex-shrink-0" />
+            <div className="text-xs font-semibold text-[oklch(50%_0.02_90)] truncate">{itemLabel}</div>
+          </div>
+        )}
+        <div className={`text-xs text-[oklch(45%_0.02_95)] truncate ${preview.italic ? "italic" : ""}`}>
+          {preview.text}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+        <div className="text-[11px] text-[oklch(50%_0.02_90)]">{formatRelativeTime(timestamp)}</div>
+        {connection.isNew && (
+          <div className="px-[7px] py-[2px] rounded-full bg-[oklch(60%_0.1_55)] text-white text-[10px] font-bold">
+            New
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const EmptyState: React.FC = () => (
+  <div className="h-full flex flex-col items-center justify-center text-center gap-3 px-5 py-16">
+    <div className="w-16 h-16 rounded-full bg-barter-100 flex items-center justify-center text-barter-700">
+      <MessageCircleHeart className="w-8 h-8" />
+    </div>
+    <div className="text-lg font-bold text-[oklch(22%_0.02_100)]">No connections yet</div>
+    <div className="text-sm text-[oklch(45%_0.02_95)] leading-relaxed max-w-[240px]">
+      When you and someone else both like the same item, you'll match here and can start chatting.
+    </div>
+  </div>
+);
+
+export const Chat: React.FC = () => {
+  const navigate = useNavigate();
+  const { connections, loading, error } = useConnections();
+
+  const handleOpen = (connectionId: string) => {
+    navigate(`/chat/${connectionId}`);
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 py-4">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-[oklch(22%_0.02_100)] mb-1">Chat</h1>
+        <p className="text-[oklch(45%_0.02_95)] text-sm">Your item exchange connections</p>
+      </div>
+
+      {loading && (
+        <div className="py-16">
+          <LoadingSpinner color="barter" />
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="text-center py-16 text-sm text-[oklch(50%_0.15_30)]">
+          Couldn't load your connections. Please try again.
+        </div>
+      )}
+
+      {!loading && !error && connections.length === 0 && <EmptyState />}
+
+      {!loading && !error && connections.length > 0 && (
+        <div>
+          {connections.map((connection) => (
+            <ConnectionRow key={connection.id} connection={connection} onOpen={handleOpen} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

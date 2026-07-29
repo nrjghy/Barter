@@ -7,8 +7,8 @@ import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { AddToy } from "./pages/AddToy";
 import { Profile } from "./pages/Profile";
-import { Matches } from "./pages/Matches";
-import { Messages } from "./pages/Messages";
+import { Chat } from "./pages/Chat";
+import { ChatThread } from "./pages/ChatThread";
 import { ItemDetail } from "./pages/ItemDetail";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthCallback } from "./pages/AuthCallback";
@@ -61,18 +61,18 @@ const AppContent: React.FC = () => {
             }
           />
           <Route
-            path="/matches"
+            path="/chat"
             element={
               <ProtectedRoute>
-                <Matches />
+                <Chat />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/messages"
+            path="/chat/:connectionId"
             element={
               <ProtectedRoute>
-                <Messages />
+                <ChatThread />
               </ProtectedRoute>
             }
           />

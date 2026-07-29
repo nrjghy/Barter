@@ -1,14 +1,19 @@
 import React from 'react';
-import { Home, Heart, Plus, MessageCircle, User, Settings } from 'lucide-react';
+import { Home, Plus, MessageCircle, User, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 
+// Matches and Messages used to be two separate tabs. PRD §13 merges them
+// into a single Chat destination -- no separate "Matches" destination
+// exists anymore. This is still 4 tabs, not the final 3 (Discover / My
+// Stuff / Chat) from the approved nav-shell design: My Stuff doesn't
+// exist as a built screen yet, and Add remains its own tab until that
+// separate nav-shell rewrite happens.
 const baseNavItems = [
   { icon: Home, label: 'Discover', path: '/' },
-  { icon: Heart, label: 'Matches', path: '/matches' },
   { icon: Plus, label: 'Add', path: '/add' },
-  { icon: MessageCircle, label: 'Messages', path: '/messages' },
+  { icon: MessageCircle, label: 'Chat', path: '/chat' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
@@ -27,15 +32,15 @@ export const BottomNavigation: React.FC = () => {
       <div className="max-w-md mx-auto">
         <div className="flex justify-around py-2">
           {navItems.map(({ icon: Icon, label, path }) => {
-            const isActive = location.pathname === path;
+            const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
             return (
               <motion.button
                 key={path}
                 onClick={() => navigate(path)}
                 className={`flex flex-col items-center space-y-1 px-2 py-2 rounded-xl transition-all duration-200 ${
                   isActive
-                    ? 'text-purple-600 bg-purple-50 shadow-sm'
-                    : 'text-gray-600 hover:text-purple-600 hover:bg-gray-50'
+                    ? 'text-barter-600 bg-barter-100 shadow-sm'
+                    : 'text-gray-600 hover:text-barter-600 hover:bg-gray-50'
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -47,7 +52,7 @@ export const BottomNavigation: React.FC = () => {
                 {isActive && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-600 rounded-full"
+                    className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-barter-600 rounded-full"
                   />
                 )}
               </motion.button>
