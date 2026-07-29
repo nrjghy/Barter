@@ -159,6 +159,116 @@ export interface Database {
           is_super_like?: boolean;
         };
       };
+      connections: {
+        Row: {
+          id: string;
+          user_id_1: string;
+          user_id_2: string;
+          status: "active" | "ended";
+          ended_at: string | null;
+          ended_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id_1: string;
+          user_id_2: string;
+          status?: "active" | "ended";
+          ended_at?: string | null;
+          ended_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id_1?: string;
+          user_id_2?: string;
+          status?: "active" | "ended";
+          ended_at?: string | null;
+          ended_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      connection_item_interests: {
+        Row: {
+          id: string;
+          connection_id: string;
+          item_id_1: string;
+          item_id_2: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          connection_id: string;
+          item_id_1: string;
+          item_id_2: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          connection_id?: string;
+          item_id_1?: string;
+          item_id_2?: string;
+          created_at?: string;
+        };
+      };
+      connection_reads: {
+        Row: {
+          connection_id: string;
+          user_id: string;
+          last_opened_at: string;
+        };
+        Insert: {
+          connection_id: string;
+          user_id: string;
+          last_opened_at?: string;
+        };
+        Update: {
+          connection_id?: string;
+          user_id?: string;
+          last_opened_at?: string;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          connection_id: string;
+          sender_id: string;
+          content: string;
+          message_type: "text" | "photo" | "location" | "system";
+          data: Record<string, unknown> | null;
+          is_read: boolean;
+          created_at: string;
+          updated_at: string;
+          read_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          connection_id: string;
+          sender_id: string;
+          content: string;
+          message_type?: "text" | "photo" | "location" | "system";
+          data?: Record<string, unknown> | null;
+          is_read?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          read_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          connection_id?: string;
+          sender_id?: string;
+          content?: string;
+          message_type?: "text" | "photo" | "location" | "system";
+          data?: Record<string, unknown> | null;
+          is_read?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          read_at?: string | null;
+        };
+      };
       reviews: {
         Row: {
           id: string;
@@ -259,6 +369,10 @@ export interface Database {
 export type User = Database["public"]["Tables"]["users"]["Row"];
 export type Item = Database["public"]["Tables"]["items"]["Row"];
 export type Match = Database["public"]["Tables"]["matches"]["Row"];
+export type Connection = Database["public"]["Tables"]["connections"]["Row"];
+export type ConnectionItemInterest = Database["public"]["Tables"]["connection_item_interests"]["Row"];
+export type ConnectionRead = Database["public"]["Tables"]["connection_reads"]["Row"];
+export type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];

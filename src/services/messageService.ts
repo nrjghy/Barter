@@ -3,12 +3,33 @@ import { ServiceResult, ServiceError } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES, BUSINESS_RULES } from "./config";
 import { ValidationService } from "./validation";
 
+// -----------------------------------------------------------------------------
+// Updated for the connection-model rewrite: match_id -> connection_id
+// throughout (messages.match_id was dropped and replaced by
+// messages.connection_id in 20260725000000_connection_model.sql), and
+// message_type widened from the old (text/image/template) set to the
+// agreed four-type model from PRD §5: text/photo/location/system (see
+// 20260726000001_reconcile_message_types.sql).
+//
+// "system" is deliberately NOT part of CreateMessageData / validTypes below.
+// System messages (e.g. the Mark Trade Complete confirmation) are meant to
+// be inserted server-side, not sent by a user through this method. Note
+// this is currently enforced only at this service layer, not by RLS -- the
+// messages insert policy checks sender_id/connection membership, not
+// message_type, so a client could still insert a 'system' row by calling
+// Supabase directly rather than through this service. Worth a follow-up if
+// that turns out to matter before launch.
+// -----------------------------------------------------------------------------
+
+export type UserSendableMessageType = "text" | "photo" | "location";
+export type MessageType = UserSendableMessageType | "system";
+
 export interface MessageWithDetails {
   id: string;
-  matchId: string;
+  connectionId: string;
   senderId: string;
   content: string;
-  messageType: "text" | "image" | "location" | "trade_offer";
+  messageType: MessageType;
   data?: Record<string, unknown>;
   isRead: boolean;
   createdAt: string;
@@ -22,9 +43,11 @@ export interface MessageWithDetails {
 }
 
 export interface CreateMessageData {
-  matchId: string;
+  connectionId: string;
   content: string;
-  messageType: "text" | "image" | "location" | "trade_offer";
+  messageType: UserSendableMessageType;
+  // For messageType 'photo': expected shape { url: string }.
+  // For messageType 'location': expected shape { lat: number, lng: number }.
   data?: Record<string, unknown>;
 }
 
@@ -36,15 +59,11 @@ export interface MessageStats {
 }
 
 export class MessageService {
-  /**
-   * Send a new message
-   */
   static async sendMessage(
     messageData: CreateMessageData,
     senderId: string
   ): Promise<ServiceResult<MessageWithDetails>> {
     try {
-      // Validate input
       const validationError = this.validateMessageData(messageData);
       if (validationError) {
         return { error: validationError };
@@ -55,24 +74,21 @@ export class MessageService {
         return { error: senderIdError };
       }
 
-      // Verify user is part of the match
-      const matchAccess = await this.verifyMatchAccess(messageData.matchId, senderId);
-      if (matchAccess.error) {
-        return { error: matchAccess.error };
+      const connectionAccess = await this.verifyConnectionAccess(messageData.connectionId, senderId);
+      if (connectionAccess.error) {
+        return { error: connectionAccess.error };
       }
 
-      // Check message rate limiting
       const rateLimitCheck = await this.checkRateLimit(senderId);
       if (rateLimitCheck.error) {
         return { error: rateLimitCheck.error };
       }
 
-      // Create the message
       const { data, error } = await supabase
         .from(TABLES.MESSAGES)
         .insert([
           {
-            match_id: messageData.matchId,
+            connection_id: messageData.connectionId,
             sender_id: senderId,
             content: messageData.content,
             message_type: messageData.messageType,
@@ -93,7 +109,6 @@ export class MessageService {
         };
       }
 
-      // Get the full message details
       const fullMessage = await this.getMessage(data.id);
       if (fullMessage.error) {
         return { error: fullMessage.error };
@@ -111,16 +126,13 @@ export class MessageService {
     }
   }
 
-  /**
-   * Get messages for a match
-   */
-  static async getMatchMessages(
-    matchId: string,
+  static async getConnectionMessages(
+    connectionId: string,
     limit: number = 50,
     offset: number = 0
   ): Promise<ServiceResult<MessageWithDetails[]>> {
     try {
-      const uuidError = ValidationService.validateUUID(matchId);
+      const uuidError = ValidationService.validateUUID(connectionId);
       if (uuidError) {
         return { error: uuidError };
       }
@@ -137,7 +149,7 @@ export class MessageService {
           )
         `
         )
-        .eq("match_id", matchId)
+        .eq("connection_id", connectionId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -153,7 +165,7 @@ export class MessageService {
 
       const transformedData: MessageWithDetails[] = data.map((message: any) => ({
         id: message.id,
-        matchId: message.match_id,
+        connectionId: message.connection_id,
         senderId: message.sender_id,
         content: message.content,
         messageType: message.message_type,
@@ -181,14 +193,11 @@ export class MessageService {
     }
   }
 
-  /**
-   * Get unread messages for a user in a match
-   */
-  static async getUnreadMessages(matchId: string, userId: string): Promise<ServiceResult<MessageWithDetails[]>> {
+  static async getUnreadMessages(connectionId: string, userId: string): Promise<ServiceResult<MessageWithDetails[]>> {
     try {
-      const matchIdError = ValidationService.validateUUID(matchId);
+      const connectionIdError = ValidationService.validateUUID(connectionId);
       const userIdError = ValidationService.validateUUID(userId);
-      if (matchIdError) return { error: matchIdError };
+      if (connectionIdError) return { error: connectionIdError };
       if (userIdError) return { error: userIdError };
 
       const { data, error } = await supabase
@@ -203,9 +212,9 @@ export class MessageService {
           )
         `
         )
-        .eq("match_id", matchId)
+        .eq("connection_id", connectionId)
         .eq("is_read", false)
-        .neq("sender_id", userId) // Only messages from other users
+        .neq("sender_id", userId)
         .order("created_at", { ascending: true });
 
       if (error) {
@@ -220,7 +229,7 @@ export class MessageService {
 
       const transformedData: MessageWithDetails[] = data.map((message: any) => ({
         id: message.id,
-        matchId: message.match_id,
+        connectionId: message.connection_id,
         senderId: message.sender_id,
         content: message.content,
         messageType: message.message_type,
@@ -248,18 +257,15 @@ export class MessageService {
     }
   }
 
-  /**
-   * Mark messages as read
-   */
   static async markMessagesAsRead(
-    matchId: string,
+    connectionId: string,
     userId: string,
     messageIds?: string[]
   ): Promise<ServiceResult<boolean>> {
     try {
-      const matchIdError = ValidationService.validateUUID(matchId);
+      const connectionIdError = ValidationService.validateUUID(connectionId);
       const userIdError = ValidationService.validateUUID(userId);
-      if (matchIdError) return { error: matchIdError };
+      if (connectionIdError) return { error: connectionIdError };
       if (userIdError) return { error: userIdError };
 
       let query = supabase
@@ -269,12 +275,11 @@ export class MessageService {
           read_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq("match_id", matchId)
+        .eq("connection_id", connectionId)
         .eq("is_read", false)
-        .neq("sender_id", userId); // Only mark messages from other users as read
+        .neq("sender_id", userId);
 
       if (messageIds && messageIds.length > 0) {
-        // Validate all message IDs
         for (const messageId of messageIds) {
           const messageIdError = ValidationService.validateUUID(messageId);
           if (messageIdError) return { error: messageIdError };
@@ -306,9 +311,6 @@ export class MessageService {
     }
   }
 
-  /**
-   * Get a single message by ID
-   */
   static async getMessage(messageId: string): Promise<ServiceResult<MessageWithDetails>> {
     try {
       const uuidError = ValidationService.validateUUID(messageId);
@@ -351,7 +353,7 @@ export class MessageService {
 
       const transformedData: MessageWithDetails = {
         id: data.id,
-        matchId: data.match_id,
+        connectionId: data.connection_id,
         senderId: data.sender_id,
         content: data.content,
         messageType: data.message_type,
@@ -379,9 +381,6 @@ export class MessageService {
     }
   }
 
-  /**
-   * Delete a message (only sender can delete)
-   */
   static async deleteMessage(messageId: string, userId: string): Promise<ServiceResult<boolean>> {
     try {
       const messageIdError = ValidationService.validateUUID(messageId);
@@ -389,7 +388,6 @@ export class MessageService {
       if (messageIdError) return { error: messageIdError };
       if (userIdError) return { error: userIdError };
 
-      // Verify user is the sender
       const message = await this.getMessage(messageId);
       if (message.error) {
         return { error: message.error };
@@ -428,12 +426,9 @@ export class MessageService {
     }
   }
 
-  /**
-   * Get message statistics for a match
-   */
-  static async getMessageStats(matchId: string): Promise<ServiceResult<MessageStats>> {
+  static async getMessageStats(connectionId: string): Promise<ServiceResult<MessageStats>> {
     try {
-      const uuidError = ValidationService.validateUUID(matchId);
+      const uuidError = ValidationService.validateUUID(connectionId);
       if (uuidError) {
         return { error: uuidError };
       }
@@ -441,9 +436,9 @@ export class MessageService {
       const { data, error } = await supabase
         .from(TABLES.MESSAGES)
         .select("*")
-        .eq("match_id", matchId)
+        .eq("connection_id", connectionId)
         .order("created_at", { ascending: false })
-        .limit(100); // Get recent messages for stats
+        .limit(100);
 
       if (error) {
         return {
@@ -465,7 +460,7 @@ export class MessageService {
 
       const recentMessages: MessageWithDetails[] = data.slice(0, 10).map((message: any) => ({
         id: message.id,
-        matchId: message.match_id,
+        connectionId: message.connection_id,
         senderId: message.sender_id,
         content: message.content,
         messageType: message.message_type,
@@ -500,9 +495,6 @@ export class MessageService {
     }
   }
 
-  /**
-   * Get unread message count for a user across all matches
-   */
   static async getUnreadMessageCount(userId: string): Promise<ServiceResult<number>> {
     try {
       const uuidError = ValidationService.validateUUID(userId);
@@ -514,7 +506,7 @@ export class MessageService {
         .from(TABLES.MESSAGES)
         .select("*", { count: "exact", head: true })
         .eq("is_read", false)
-        .neq("sender_id", userId); // Only count messages from other users
+        .neq("sender_id", userId);
 
       if (error) {
         return {
@@ -538,17 +530,14 @@ export class MessageService {
     }
   }
 
-  /**
-   * Private helper methods
-   */
   private static validateMessageData(messageData: CreateMessageData): ServiceError | null {
-    const matchIdError = ValidationService.validateUUID(messageData.matchId);
-    if (matchIdError) return matchIdError;
+    const connectionIdError = ValidationService.validateUUID(messageData.connectionId);
+    if (connectionIdError) return connectionIdError;
 
     const contentError = ValidationService.validateRequired(messageData.content, "Content");
     if (contentError) return contentError;
 
-    const validTypes = ["text", "image", "location", "trade_offer"];
+    const validTypes: UserSendableMessageType[] = ["text", "photo", "location"];
     if (!validTypes.includes(messageData.messageType)) {
       return {
         code: ERROR_CODES.VALIDATION_ERROR,
@@ -566,31 +555,31 @@ export class MessageService {
     return null;
   }
 
-  private static async verifyMatchAccess(matchId: string, userId: string): Promise<ServiceResult<boolean>> {
+  private static async verifyConnectionAccess(connectionId: string, userId: string): Promise<ServiceResult<boolean>> {
     try {
-      const { data: match, error } = await supabase
-        .from(TABLES.MATCHES)
+      const { data: connection, error } = await supabase
+        .from(TABLES.CONNECTIONS)
         .select("user_id_1, user_id_2, status")
-        .eq("id", matchId)
+        .eq("id", connectionId)
         .single();
 
-      if (error || !match) {
+      if (error || !connection) {
         return {
           error: {
             code: ERROR_CODES.ITEM_NOT_FOUND,
-            message: "Match not found",
+            message: "Connection not found",
           },
         };
       }
 
-      const isUserInMatch = match.user_id_1 === userId || match.user_id_2 === userId;
-      const isMatchActive = match.status === "pending" || match.status === "accepted";
+      const isUserInConnection = connection.user_id_1 === userId || connection.user_id_2 === userId;
+      const isConnectionActive = connection.status === "active";
 
-      if (!isUserInMatch || !isMatchActive) {
+      if (!isUserInConnection || !isConnectionActive) {
         return {
           error: {
             code: ERROR_CODES.UNAUTHORIZED,
-            message: "You can only send messages in active matches you participate in",
+            message: "You can only send messages in active connections you participate in",
           },
         };
       }

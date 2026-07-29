@@ -2,44 +2,44 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { MessageService } from "../services";
 
-export const useMessages = (matchId?: string) => {
+export const useMessages = (connectionId?: string) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Get messages for a specific match
+  // Get messages for a specific connection
   const {
     data: messagesData,
     isLoading: messagesLoading,
     error: messagesError,
   } = useQuery({
-    queryKey: ["messages", matchId],
-    queryFn: () => MessageService.getMatchMessages(matchId!),
-    enabled: !!matchId && !!user,
+    queryKey: ["messages", connectionId],
+    queryFn: () => MessageService.getConnectionMessages(connectionId!),
+    enabled: !!connectionId && !!user,
   });
 
-  // Get unread messages for a specific match
+  // Get unread messages for a specific connection
   const {
     data: unreadMessagesData,
     isLoading: unreadMessagesLoading,
     error: unreadMessagesError,
   } = useQuery({
-    queryKey: ["unreadMessages", matchId, user?.id],
-    queryFn: () => MessageService.getUnreadMessages(matchId!, user!.id),
-    enabled: !!matchId && !!user,
+    queryKey: ["unreadMessages", connectionId, user?.id],
+    queryFn: () => MessageService.getUnreadMessages(connectionId!, user!.id),
+    enabled: !!connectionId && !!user,
   });
 
-  // Get message statistics for a match
+  // Get message statistics for a connection
   const {
     data: messageStatsData,
     isLoading: messageStatsLoading,
     error: messageStatsError,
   } = useQuery({
-    queryKey: ["messageStats", matchId],
-    queryFn: () => MessageService.getMessageStats(matchId!),
-    enabled: !!matchId && !!user,
+    queryKey: ["messageStats", connectionId],
+    queryFn: () => MessageService.getMessageStats(connectionId!),
+    enabled: !!connectionId && !!user,
   });
 
-  // Get unread message count across all matches
+  // Get unread message count across all connections
   const {
     data: unreadMessageCountData,
     isLoading: unreadMessageCountLoading,
@@ -55,10 +55,10 @@ export const useMessages = (matchId?: string) => {
     mutationFn: ({ messageData }: { messageData: any }) => MessageService.sendMessage(messageData, user!.id),
     onSuccess: () => {
       // Invalidate related queries
-      if (matchId) {
-        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
-        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
+      if (connectionId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", connectionId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", connectionId] });
       }
       queryClient.invalidateQueries({ queryKey: ["unreadMessageCount", user?.id] });
     },
@@ -67,13 +67,13 @@ export const useMessages = (matchId?: string) => {
   // Mark messages as read mutation
   const markMessagesAsRead = useMutation({
     mutationFn: ({ messageIds }: { messageIds?: string[] } = {}) =>
-      MessageService.markMessagesAsRead(matchId!, user!.id, messageIds),
+      MessageService.markMessagesAsRead(connectionId!, user!.id, messageIds),
     onSuccess: () => {
       // Invalidate related queries
-      if (matchId) {
-        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
-        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
+      if (connectionId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", connectionId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", connectionId] });
       }
       queryClient.invalidateQueries({ queryKey: ["unreadMessageCount", user?.id] });
     },
@@ -84,31 +84,31 @@ export const useMessages = (matchId?: string) => {
     mutationFn: (messageId: string) => MessageService.deleteMessage(messageId, user!.id),
     onSuccess: () => {
       // Invalidate related queries
-      if (matchId) {
-        queryClient.invalidateQueries({ queryKey: ["messages", matchId] });
-        queryClient.invalidateQueries({ queryKey: ["unreadMessages", matchId, user?.id] });
-        queryClient.invalidateQueries({ queryKey: ["messageStats", matchId] });
+      if (connectionId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+        queryClient.invalidateQueries({ queryKey: ["unreadMessages", connectionId, user?.id] });
+        queryClient.invalidateQueries({ queryKey: ["messageStats", connectionId] });
       }
     },
   });
 
   return {
-    // Messages for current match
+    // Messages for current connection
     messages: messagesData?.data || [],
     messagesLoading,
     messagesError: messagesError?.message,
 
-    // Unread messages for current match
+    // Unread messages for current connection
     unreadMessages: unreadMessagesData?.data || [],
     unreadMessagesLoading,
     unreadMessagesError: unreadMessagesError?.message,
 
-    // Message statistics for current match
+    // Message statistics for current connection
     messageStats: messageStatsData?.data,
     messageStatsLoading,
     messageStatsError: messageStatsError?.message,
 
-    // Unread message count across all matches
+    // Unread message count across all connections
     unreadMessageCount: unreadMessageCountData?.data || 0,
     unreadMessageCountLoading,
     unreadMessageCountError: unreadMessageCountError?.message,

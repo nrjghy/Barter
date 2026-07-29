@@ -57,6 +57,14 @@ export const BUSINESS_RULES = {
     maxUnread: 50,
     retentionDays: 30,
   },
+  // NOTE: this key didn't exist before, messageService.ts referenced
+  // BUSINESS_RULES.message.* without it ever being defined, so the file
+  // could not compile. Values below are a reasonable placeholder, not a
+  // confirmed product decision -- flag if you want different numbers.
+  message: {
+    rateLimitWindowMs: 60 * 1000, // 1 minute
+    maxMessagesPerWindow: 30,
+  },
 } as const;
 
 // Error codes
@@ -72,6 +80,8 @@ export const ERROR_CODES = {
   NETWORK_ERROR: "NETWORK_ERROR",
   VALIDATION_ERROR: "VALIDATION_ERROR",
   UNKNOWN_ERROR: "UNKNOWN_ERROR",
+  // NOTE: also referenced by messageService.ts but never defined before.
+  RATE_LIMIT_EXCEEDED: "RATE_LIMIT_EXCEEDED",
 } as const;
 
 // Success messages
@@ -100,6 +110,7 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.NETWORK_ERROR]: "Network error occurred. Please try again.",
   [ERROR_CODES.VALIDATION_ERROR]: "Validation error occurred",
   [ERROR_CODES.UNKNOWN_ERROR]: "An unexpected error occurred",
+  [ERROR_CODES.RATE_LIMIT_EXCEEDED]: "Too many messages sent recently. Please wait a moment.",
 } as const;
 
 // Database table names
@@ -113,6 +124,9 @@ export const TABLES = {
   NOTIFICATIONS: "notifications",
   MESSAGES: "messages",
   USER_BLOCKS: "user_blocks",
+  CONNECTIONS: "connections",
+  CONNECTION_ITEM_INTERESTS: "connection_item_interests",
+  CONNECTION_READS: "connection_reads",
 } as const;
 
 // Real-time channels
