@@ -112,6 +112,16 @@ export const useItems = (options?: {
     },
   });
 
+  // Cancel item mutation (one-way, PRD §2/§13 -- not a generic status setter)
+  const cancelItem = useMutation({
+    mutationFn: (itemId: string) => ItemService.cancelItem(itemId, user!.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["items"] });
+      queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["item"] });
+    },
+  });
+
   // Flatten all pages into a single array of items
   const items = data?.pages.flatMap((page) => page.data || []) ?? [];
 
@@ -143,6 +153,10 @@ export const useItems = (options?: {
     deleteItem: deleteItem.mutate,
     deleteItemLoading: deleteItem.isPending,
     deleteItemError: deleteItem.error?.message,
+
+    cancelItem: cancelItem.mutateAsync,
+    cancelItemLoading: cancelItem.isPending,
+    cancelItemError: cancelItem.error?.message,
 
     // Helper function to get single item
     getItem,

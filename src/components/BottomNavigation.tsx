@@ -1,18 +1,19 @@
 import React from 'react';
-import { Home, Plus, MessageCircle, User, Settings } from 'lucide-react';
+import { Home, Package, MessageCircle, User, Settings } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 
-// Matches and Messages used to be two separate tabs. PRD §13 merges them
-// into a single Chat destination -- no separate "Matches" destination
-// exists anymore. This is still 4 tabs, not the final 3 (Discover / My
-// Stuff / Chat) from the approved nav-shell design: My Stuff doesn't
-// exist as a built screen yet, and Add remains its own tab until that
-// separate nav-shell rewrite happens.
+// Add used to be its own tab. Now that My Stuff exists as a real screen
+// with its own "+ Add a listing" action, keeping Add as a separate tab
+// too would be redundant, so it's replaced here. This is still not the
+// final 3-tab layout from the approved nav-shell design (Discover / My
+// Stuff / Chat, with Profile moved into a header avatar menu) --
+// Profile stays its own tab for now, since that header/avatar-menu piece
+// is part of the separate, still-untouched nav-shell rewrite.
 const baseNavItems = [
   { icon: Home, label: 'Discover', path: '/' },
-  { icon: Plus, label: 'Add', path: '/add' },
+  { icon: Package, label: 'My Stuff', path: '/my-stuff' },
   { icon: MessageCircle, label: 'Chat', path: '/chat' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];

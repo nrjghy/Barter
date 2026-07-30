@@ -36,6 +36,7 @@ export interface ItemData {
   tags?: string[];
   userId: string;
   isActive: boolean;
+  status?: "active" | "cancelled" | "traded" | "expired";
   // Update fields to match database schema:
   estimatedValue?: number | null;
   valueCurrency?: string;

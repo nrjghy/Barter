@@ -56,6 +56,7 @@ export interface Database {
           image_urls: string[]; // ✅ Changed from single image_url to array of image_urls
           tags: string[];
           is_active: boolean;
+          status: "active" | "cancelled" | "traded" | "expired";
           created_at: string;
           updated_at: string;
           estimated_value: number | null;
@@ -72,6 +73,7 @@ export interface Database {
           image_urls?: string[]; // ✅ Changed from single image_url to array of image_urls
           tags?: string[];
           is_active?: boolean;
+          status?: "active" | "cancelled" | "traded" | "expired";
           created_at?: string;
           updated_at?: string;
           estimated_value?: number | null;
@@ -88,6 +90,7 @@ export interface Database {
           image_urls?: string[]; // ✅ Changed from single image_url to array of image_urls
           tags?: string[];
           is_active?: boolean;
+          status?: "active" | "cancelled" | "traded" | "expired";
           created_at?: string;
           updated_at?: string;
           estimated_value?: number | null;

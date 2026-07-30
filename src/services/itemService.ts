@@ -198,6 +198,7 @@ export class ItemService {
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
+        status: item.status,
         // Update to use correct fields:
         estimatedValue: item.estimated_value,
         valueCurrency: item.value_currency,
@@ -283,6 +284,7 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
+        status: data.status,
         // Update to use correct fields:
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
@@ -386,6 +388,7 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
+        status: data.status,
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
@@ -461,7 +464,102 @@ export class ItemService {
         tags: data.tags,
         userId: data.user_id,
         isActive: data.is_active,
+        status: data.status,
         // Update to use correct fields:
+        estimatedValue: data.estimated_value,
+        valueCurrency: data.value_currency,
+        sourceUrl: data.source_url,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      };
+
+      return { data: transformedData };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Cancel a listing (one-way for v1, no resume -- PRD §2/§13). Sets both
+   * status='cancelled' and is_active=false, keeping the two in sync
+   * rather than letting them drift apart. Verifies the requester actually
+   * owns the item first, since this is meant to be user-initiated, not a
+   * generic status setter.
+   */
+  static async cancelItem(itemId: string, userId: string): Promise<ServiceResult<ItemData>> {
+    try {
+      const itemIdError = ValidationService.validateUUID(itemId);
+      if (itemIdError) return { error: itemIdError };
+      const userIdError = ValidationService.validateUUID(userId);
+      if (userIdError) return { error: userIdError };
+
+      const { data: existing, error: fetchError } = await supabase
+        .from(TABLES.ITEMS)
+        .select("user_id, status")
+        .eq("id", itemId)
+        .single();
+
+      if (fetchError || !existing) {
+        return {
+          error: {
+            code: ERROR_CODES.ITEM_NOT_FOUND,
+            message: ERROR_MESSAGES[ERROR_CODES.ITEM_NOT_FOUND],
+          },
+        };
+      }
+
+      if (existing.user_id !== userId) {
+        return {
+          error: {
+            code: ERROR_CODES.UNAUTHORIZED,
+            message: "You can only cancel your own listings",
+          },
+        };
+      }
+
+      if (existing.status !== "active") {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: "Only active listings can be cancelled",
+          },
+        };
+      }
+
+      const { data, error } = await supabase
+        .from(TABLES.ITEMS)
+        .update({ status: "cancelled", is_active: false, updated_at: new Date().toISOString() })
+        .eq("id", itemId)
+        .select()
+        .single();
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to cancel listing",
+            details: error,
+          },
+        };
+      }
+
+      const transformedData: ItemData = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        condition: data.condition,
+        imageUrls: data.image_urls,
+        tags: data.tags,
+        userId: data.user_id,
+        isActive: data.is_active,
+        status: data.status,
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
