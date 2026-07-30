@@ -530,7 +530,7 @@ export class NotificationService {
    */
   static async createTradeCompletedNotification(
     userId: string,
-    matchId: string,
+    connectionId: string,
     otherUserUsername: string
   ): Promise<ServiceResult<NotificationWithDetails>> {
     return this.createNotification({
@@ -538,7 +538,7 @@ export class NotificationService {
       type: "trade_completed",
       title: "✅ Trade Completed!",
       content: `Your trade with ${otherUserUsername} has been completed. Don't forget to leave a review!`,
-      data: { matchId, otherUserUsername },
+      data: { connectionId, otherUserUsername },
     });
   }
 

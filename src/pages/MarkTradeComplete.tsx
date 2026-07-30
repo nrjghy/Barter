@@ -6,16 +6,15 @@ import { useUserItems } from "../hooks/useItems";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { toast } from "react-hot-toast";
+import { TradeCompletionService, NotificationService } from "../services";
 import type { ItemData } from "../services/types";
 
-// Step 4a: the item picker + confirmation screen UI, matching the approved
-// mockup exactly (checklists, bottom-sheet confirm, dispute-date copy).
-// The actual write (a new complete_trade RPC, since marking someone else's
-// item as traded can't be done via a plain client update -- items' RLS
-// only lets the owner update their own row) is step 4b, not built yet.
-// "Confirm trade complete" is present but intentionally not wired to a
-// real action here, so the screen is fully reviewable before that RPC
-// exists.
+// Step 4a built the item picker + confirmation screen UI, matching the
+// approved mockup exactly (checklists, bottom-sheet confirm, dispute-date
+// copy). Step 4b (this pass) wires "Confirm trade complete" to the new
+// complete_trade RPC -- required because marking someone else's item as
+// traded can't be done via a plain client update, items' RLS only lets
+// the owner update their own row.
 
 type Step = "select" | "confirm";
 
@@ -99,6 +98,7 @@ export const MarkTradeComplete: React.FC = () => {
   const [step, setStep] = useState<Step>("select");
   const [selectedMine, setSelectedMine] = useState<Set<string>>(new Set());
   const [selectedTheirs, setSelectedTheirs] = useState<Set<string>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
 
   const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
   const theirActiveItems = theirItems; // RLS already limits a non-owner's view to active items only
@@ -123,9 +123,38 @@ export const MarkTradeComplete: React.FC = () => {
     .filter(Boolean)
     .join(" and ");
 
-  const handleConfirm = () => {
-    // Wired for real in step 4b, once the complete_trade RPC exists.
-    toast("Trade completion isn't fully wired up yet -- coming very soon.");
+  const handleConfirm = async () => {
+    if (!connectionId || !connection || !user) return;
+
+    const itemIds = [...selectedMine, ...selectedTheirs];
+    setSubmitting(true);
+    try {
+      const { error } = await TradeCompletionService.completeTrade(connectionId, itemIds);
+
+      if (error) {
+        toast.error(error.message || "Couldn't complete the trade. Please try again.");
+        return;
+      }
+
+      // Best-effort: the trade itself is already done at this point (the
+      // RPC succeeded), so a failure here shouldn't be shown as if the
+      // whole action failed, it would just mean the other person doesn't
+      // get a notification-center entry for it.
+      try {
+        await NotificationService.createTradeCompletedNotification(
+          connection.otherUser.id,
+          connectionId,
+          user.username
+        );
+      } catch {
+        // Swallowed on purpose -- see comment above.
+      }
+
+      toast.success("Trade marked complete");
+      navigate(`/chat/${connectionId}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -176,7 +205,7 @@ export const MarkTradeComplete: React.FC = () => {
 
       {step === "confirm" && (
         <div className="fixed inset-0 z-30 flex items-end justify-center">
-          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => setStep("select")} />
+          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => !submitting && setStep("select")} />
           <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
             <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Confirm trade complete</div>
             <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
@@ -186,13 +215,15 @@ export const MarkTradeComplete: React.FC = () => {
             </div>
             <button
               onClick={handleConfirm}
-              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+              disabled={submitting}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-60"
             >
-              Confirm trade complete
+              {submitting ? "Completing…" : "Confirm trade complete"}
             </button>
             <button
               onClick={() => setStep("select")}
-              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(22%_0.02_100)] text-sm font-bold"
+              disabled={submitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(22%_0.02_100)] text-sm font-bold disabled:opacity-60"
             >
               Go back
             </button>
