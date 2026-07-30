@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 
 export interface StorageService {
   uploadImages: (files: File[], userId: string, itemId: string) => Promise<string[]>;
+  uploadMessageImage: (file: File, userId: string, connectionId: string) => Promise<string>;
   deleteImage: (imageUrl: string) => Promise<boolean>;
   deleteImages: (imageUrls: string[]) => Promise<boolean>;
 }
@@ -63,6 +64,51 @@ class StorageServiceImpl implements StorageService {
       return uploadedUrls;
     } catch (error) {
       console.error("Image upload failed:", error);
+      toast.error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Upload a single chat message photo to Supabase Storage.
+   *
+   * Separate from uploadImages because that method's path shape
+   * (${userId}/${itemId}/...) is item-specific -- a chat message belongs
+   * to a connection, not an item, so this uses its own path
+   * (${userId}/messages/${connectionId}/...) rather than repurposing the
+   * itemId slot for something it doesn't mean.
+   * @param file - Image file to upload
+   * @param userId - User ID for organizing storage
+   * @param connectionId - Connection ID for organizing storage
+   * @returns Promise<string> - Uploaded image's public URL
+   */
+  async uploadMessageImage(file: File, userId: string, connectionId: string): Promise<string> {
+    try {
+      const validFiles = this.validateFiles([file]);
+      if (validFiles.length === 0) {
+        throw new Error("No valid file to upload");
+      }
+
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(2, 15);
+      const extension = file.name.split(".").pop() || "jpg";
+      const fileName = `${timestamp}_${randomId}.${extension}`;
+      const filePath = `${userId}/messages/${connectionId}/${fileName}`;
+
+      const { error } = await supabase.storage.from(this.BUCKET_NAME).upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+      if (error) {
+        console.error(`Failed to upload ${file.name}:`, error);
+        throw new Error(`Failed to upload ${file.name}: ${error.message}`);
+      }
+
+      const { data: urlData } = supabase.storage.from(this.BUCKET_NAME).getPublicUrl(filePath);
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error("Message image upload failed:", error);
       toast.error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       throw error;
     }

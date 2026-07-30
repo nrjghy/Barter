@@ -534,15 +534,43 @@ export class MessageService {
     const connectionIdError = ValidationService.validateUUID(messageData.connectionId);
     if (connectionIdError) return connectionIdError;
 
-    const contentError = ValidationService.validateRequired(messageData.content, "Content");
-    if (contentError) return contentError;
-
     const validTypes: UserSendableMessageType[] = ["text", "photo", "location"];
     if (!validTypes.includes(messageData.messageType)) {
       return {
         code: ERROR_CODES.VALIDATION_ERROR,
         message: "Invalid message type",
       };
+    }
+
+    // content is a required message body for 'text', but only an optional
+    // caption for 'photo'/'location' (the actual payload lives in
+    // messageData.data -- a photo URL or lat/lng). messages.content is
+    // NOT NULL in the DB, so callers still pass '' rather than omitting
+    // it; this just stops requiring it to be non-empty for those types.
+    if (messageData.messageType === "text") {
+      const contentError = ValidationService.validateRequired(messageData.content, "Content");
+      if (contentError) return contentError;
+    }
+
+    if (messageData.messageType === "photo") {
+      const url = (messageData.data as { url?: unknown } | undefined)?.url;
+      if (typeof url !== "string" || !url) {
+        return {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: "Photo messages require a data.url",
+        };
+      }
+    }
+
+    if (messageData.messageType === "location") {
+      const lat = (messageData.data as { lat?: unknown } | undefined)?.lat;
+      const lng = (messageData.data as { lng?: unknown } | undefined)?.lng;
+      if (typeof lat !== "number" || typeof lng !== "number") {
+        return {
+          code: ERROR_CODES.VALIDATION_ERROR,
+          message: "Location messages require numeric data.lat/data.lng",
+        };
+      }
     }
 
     if (messageData.content.length > 1000) {

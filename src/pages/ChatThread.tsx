@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, MapPin, Send } from "lucide-react";
 import { useConnection, useConnections } from "../hooks/useConnections";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../hooks/useAuth";
+import { storageService } from "../services/storageService";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import type { MessageWithDetails } from "../services/messageService";
 
@@ -27,6 +28,7 @@ const MessageBubble: React.FC<{ message: MessageWithDetails; isMine: boolean }> 
   const radiusClass = isMine ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-bl-md";
 
   if (message.messageType === "photo") {
+    const url = (message.data as { url?: string })?.url;
     return (
       <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
         <div
@@ -34,9 +36,13 @@ const MessageBubble: React.FC<{ message: MessageWithDetails; isMine: boolean }> 
             isMine ? "bg-barter-600" : "bg-[oklch(99%_0.006_95)] border border-[oklch(88%_0.015_90)]"
           }`}
         >
-          <div className="w-40 h-[118px] rounded-lg bg-[oklch(90%_0.02_90)] flex items-center justify-center">
-            <Camera className="w-6 h-6 text-[oklch(60%_0.02_90)]" />
-          </div>
+          {url ? (
+            <img src={url} alt="Shared photo" className="w-40 h-[118px] object-cover rounded-lg" />
+          ) : (
+            <div className="w-40 h-[118px] rounded-lg bg-[oklch(90%_0.02_90)] flex items-center justify-center">
+              <Camera className="w-6 h-6 text-[oklch(60%_0.02_90)]" />
+            </div>
+          )}
           {message.content && (
             <div className={`text-xs px-1 pt-1.5 pb-0.5 ${isMine ? "text-white" : "text-[oklch(22%_0.02_100)]"}`}>
               {message.content}
@@ -102,7 +108,9 @@ export const ChatThread: React.FC = () => {
   const { markConnectionOpened } = useConnections();
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
   const [draft, setDraft] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
 
   useEffect(() => {
@@ -123,6 +131,23 @@ export const ChatThread: React.FC = () => {
     if (!content || !connectionId) return;
     sendMessage({ messageData: { connectionId, content, messageType: "text" } });
     setDraft("");
+  };
+
+  const handlePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset immediately so selecting the same file again still fires onChange.
+    e.target.value = "";
+    if (!file || !connectionId || !user) return;
+
+    setPhotoUploading(true);
+    try {
+      const url = await storageService.uploadMessageImage(file, user.id, connectionId);
+      sendMessage({ messageData: { connectionId, content: "", messageType: "photo", data: { url } } });
+    } catch {
+      // storageService already surfaces a toast on failure; nothing further to do here.
+    } finally {
+      setPhotoUploading(false);
+    }
   };
 
   const itemLabel = connection
@@ -165,12 +190,24 @@ export const ChatThread: React.FC = () => {
       </div>
 
       <div className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 border-t border-[oklch(88%_0.015_90)] bg-[oklch(99%_0.006_95)]">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+          onChange={handlePhotoSelected}
+          className="hidden"
+        />
         <button
-          disabled
-          title="Photo sharing is coming soon"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[oklch(45%_0.02_95)] opacity-40 cursor-not-allowed flex-shrink-0"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={photoUploading}
+          title="Share a photo"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[oklch(45%_0.02_95)] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40 flex-shrink-0"
         >
-          <Camera className="w-[18px] h-[18px]" />
+          {photoUploading ? (
+            <div className="w-4 h-4 border-2 border-[oklch(88%_0.015_90)] border-t-barter-600 rounded-full animate-spin" />
+          ) : (
+            <Camera className="w-[18px] h-[18px]" />
+          )}
         </button>
         <button
           disabled
