@@ -5,6 +5,7 @@ import { useConnection, useConnections } from "../hooks/useConnections";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../hooks/useAuth";
 import { storageService } from "../services/storageService";
+import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import type { MessageWithDetails } from "../services/messageService";
 
@@ -56,30 +57,46 @@ const MessageBubble: React.FC<{ message: MessageWithDetails; isMine: boolean }> 
   if (message.messageType === "location") {
     const lat = (message.data as { lat?: number })?.lat;
     const lng = (message.data as { lng?: number })?.lng;
-    return (
-      <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-        <div
-          className={`max-w-[76%] overflow-hidden ${radiusClass} ${
-            isMine ? "bg-barter-600" : "bg-[oklch(99%_0.006_95)] border border-[oklch(88%_0.015_90)]"
-          }`}
-        >
-          <div className="w-[200px] h-[100px] bg-[oklch(92%_0.015_90)] flex items-center justify-center">
-            <MapPin className="w-7 h-7 text-[oklch(50%_0.15_30)]" />
-          </div>
-          <div className="flex items-center gap-2 px-3 py-2.5">
-            <MapPin className="w-4 h-4 flex-shrink-0 text-[oklch(50%_0.15_30)]" />
-            <div className="min-w-0">
-              <div className={`text-xs font-bold ${isMine ? "text-white" : "text-[oklch(22%_0.02_100)]"}`}>
-                Location shared
-              </div>
-              {lat != null && lng != null && (
-                <div className={`text-[11px] truncate ${isMine ? "text-[oklch(90%_0.02_145)]" : "text-[oklch(45%_0.02_95)]"}`}>
-                  {lat.toFixed(4)}, {lng.toFixed(4)}
-                </div>
-              )}
+    const hasCoords = lat != null && lng != null;
+
+    const inner = (
+      <>
+        <div className="w-[200px] h-[100px] bg-[oklch(92%_0.015_90)] flex items-center justify-center">
+          <MapPin className="w-7 h-7 text-[oklch(50%_0.15_30)]" />
+        </div>
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <MapPin className="w-4 h-4 flex-shrink-0 text-[oklch(50%_0.15_30)]" />
+          <div className="min-w-0">
+            <div className={`text-xs font-bold ${isMine ? "text-white" : "text-[oklch(22%_0.02_100)]"}`}>
+              Location shared
             </div>
+            {hasCoords && (
+              <div className={`text-[11px] truncate ${isMine ? "text-[oklch(90%_0.02_145)]" : "text-[oklch(45%_0.02_95)]"}`}>
+                {lat!.toFixed(4)}, {lng!.toFixed(4)} · Tap to open in Maps
+              </div>
+            )}
           </div>
         </div>
+      </>
+    );
+    const bubbleClass = `block max-w-[76%] overflow-hidden ${radiusClass} ${
+      isMine ? "bg-barter-600" : "bg-[oklch(99%_0.006_95)] border border-[oklch(88%_0.015_90)]"
+    }`;
+
+    return (
+      <div className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+        {hasCoords ? (
+          <a
+            href={`https://www.google.com/maps?q=${lat},${lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={bubbleClass}
+          >
+            {inner}
+          </a>
+        ) : (
+          <div className={bubbleClass}>{inner}</div>
+        )}
       </div>
     );
   }
@@ -109,6 +126,7 @@ export const ChatThread: React.FC = () => {
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
   const [draft, setDraft] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
+  const [locationSharing, setLocationSharing] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
@@ -148,6 +166,39 @@ export const ChatThread: React.FC = () => {
     } finally {
       setPhotoUploading(false);
     }
+  };
+
+  const handleShareLocation = () => {
+    if (!connectionId) return;
+
+    if (!("geolocation" in navigator)) {
+      toast.error("Location sharing isn't supported on this device.");
+      return;
+    }
+
+    setLocationSharing(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationSharing(false);
+        sendMessage({
+          messageData: {
+            connectionId,
+            content: "",
+            messageType: "location",
+            data: { lat: position.coords.latitude, lng: position.coords.longitude },
+          },
+        });
+      },
+      (error) => {
+        setLocationSharing(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          toast.error("Location permission denied. Enable it in your browser settings to share your location.");
+        } else {
+          toast.error("Couldn't get your location. Please try again.");
+        }
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   const itemLabel = connection
@@ -210,11 +261,16 @@ export const ChatThread: React.FC = () => {
           )}
         </button>
         <button
-          disabled
-          title="Location sharing is coming soon"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[oklch(45%_0.02_95)] opacity-40 cursor-not-allowed flex-shrink-0"
+          onClick={handleShareLocation}
+          disabled={locationSharing}
+          title="Share your location"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[oklch(45%_0.02_95)] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40 flex-shrink-0"
         >
-          <MapPin className="w-[18px] h-[18px]" />
+          {locationSharing ? (
+            <div className="w-4 h-4 border-2 border-[oklch(88%_0.015_90)] border-t-barter-600 rounded-full animate-spin" />
+          ) : (
+            <MapPin className="w-[18px] h-[18px]" />
+          )}
         </button>
         <input
           value={draft}
