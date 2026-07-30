@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, MapPin, Send } from "lucide-react";
+import { ArrowLeft, Camera, MapPin, Send, MoreVertical, X } from "lucide-react";
 import { useConnection, useConnections } from "../hooks/useConnections";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../hooks/useAuth";
+import { useUserBlocks } from "../hooks/useUserBlocks";
+import { useReports } from "../hooks/useReports";
+import { ConnectionService } from "../services";
 import { storageService } from "../services/storageService";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
 
 // Bubble styling matches the approved mockup exactly (design/Barter Nav
@@ -124,9 +128,17 @@ export const ChatThread: React.FC = () => {
   const { user } = useAuth();
   const { markConnectionOpened } = useConnections();
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
+  const { blockUser } = useUserBlocks();
+  const { createReport, createReportLoading } = useReports();
   const [draft, setDraft] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
   const [locationSharing, setLocationSharing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
+  const [blockSubmitting, setBlockSubmitting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string | null>(null);
+  const [reportText, setReportText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
@@ -201,6 +213,62 @@ export const ChatThread: React.FC = () => {
     );
   };
 
+  const otherUserId = connection?.otherUser.id;
+  const otherUsername = connection?.otherUser.username ?? "this user";
+
+  const handleConfirmBlock = async () => {
+    if (!connectionId || !otherUserId || !user) return;
+    setBlockSubmitting(true);
+    try {
+      await blockUser({ blockedId: otherUserId });
+      await ConnectionService.endConnection(connectionId, user.id);
+      toast.success(`${otherUsername} blocked`);
+      navigate("/chat");
+    } catch {
+      toast.error("Couldn't block this user. Please try again.");
+    } finally {
+      setBlockSubmitting(false);
+      setBlockConfirmOpen(false);
+    }
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportReason || !connection || !otherUserId) return;
+    // reports.reported_item_id is still NOT NULL at the DB level today
+    // (making it optional for user-only reports is a separate, already
+    // tracked backend task), so this attaches one of the connection's
+    // item interests -- the other person's item, since they're who's
+    // being reported.
+    const reportedItemId = connection.itemInterests[0]?.theirItem?.id ?? connection.itemInterests[0]?.myItem?.id;
+    if (!reportedItemId) {
+      toast.error("Couldn't submit this report right now. Please try again later.");
+      return;
+    }
+    try {
+      const { error } = await createReport({
+        reportedItemId,
+        reportedUserId: otherUserId,
+        reason: reportReason,
+        description: reportText.trim() || undefined,
+      });
+      if (error) {
+        toast.error("Failed to submit report");
+        return;
+      }
+      toast.success("Report submitted — we'll review this shortly");
+      setReportOpen(false);
+      setReportReason(null);
+      setReportText("");
+    } catch {
+      toast.error("Failed to submit report");
+    }
+  };
+
+  const handleOpenTradeComplete = () => {
+    setMenuOpen(false);
+    if (connectionId) navigate(`/chat/${connectionId}/trade-complete`);
+  };
+
   const itemLabel = connection
     ? Array.from(
         new Set(
@@ -215,16 +283,51 @@ export const ChatThread: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col">
-      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[oklch(88%_0.015_90)]">
+      <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[oklch(88%_0.015_90)] relative">
         <button onClick={() => navigate("/chat")} className="p-1 -ml-1">
           <ArrowLeft className="w-5 h-5 text-[oklch(22%_0.02_100)]" />
         </button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-base font-semibold text-[oklch(22%_0.02_100)] truncate">
             {connection?.otherUser.username ?? "Chat"}
           </div>
           {itemLabel && <div className="text-xs text-[oklch(50%_0.02_90)] truncate">{itemLabel}</div>}
         </div>
+        <button onClick={() => setMenuOpen((v) => !v)} className="p-1.5 flex-shrink-0">
+          <MoreVertical className="w-5 h-5 text-[oklch(22%_0.02_100)]" />
+        </button>
+
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+            <div className="absolute top-full right-4 mt-1 w-52 bg-white rounded-xl shadow-lg border border-[oklch(88%_0.015_90)] overflow-hidden z-20">
+              <button
+                onClick={handleOpenTradeComplete}
+                className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700 border-b border-[oklch(88%_0.015_90)]"
+              >
+                Mark trade complete
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setBlockConfirmOpen(true);
+                }}
+                className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)] border-b border-[oklch(88%_0.015_90)]"
+              >
+                Block {otherUsername}
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setReportOpen(true);
+                }}
+                className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+              >
+                Report
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 bg-[oklch(96%_0.014_92)]">
@@ -292,6 +395,83 @@ export const ChatThread: React.FC = () => {
           <Send className="w-4 h-4" />
         </button>
       </div>
+
+      {blockConfirmOpen && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center">
+          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => setBlockConfirmOpen(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-4">Block {otherUsername}?</div>
+            <button
+              onClick={() => setBlockConfirmOpen(false)}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+            >
+              Keep chatting
+            </button>
+            <button
+              onClick={handleConfirmBlock}
+              disabled={blockSubmitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-50"
+            >
+              {blockSubmitting ? "Blocking…" : `Block ${otherUsername}`}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {reportOpen && (
+        <div className="fixed inset-0 z-30 bg-[oklch(99%_0.006_95)] flex flex-col">
+          <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
+            <button onClick={() => setReportOpen(false)} className="p-1 -ml-1">
+              <X className="w-5 h-5 text-[oklch(22%_0.02_100)]" />
+            </button>
+            <div className="text-base font-bold text-[oklch(22%_0.02_100)]">Report {otherUsername}</div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 py-4.5">
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] mb-4.5">What's the issue?</div>
+            <div className="flex flex-col gap-2 mb-5">
+              {REPORT_REASONS.map(({ value, label }) => {
+                const selected = reportReason === value;
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setReportReason(value)}
+                    className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left ${
+                      selected ? "border-barter-600" : "border-[oklch(88%_0.015_90)]"
+                    }`}
+                  >
+                    <span
+                      className={`w-[18px] h-[18px] rounded-full border flex-shrink-0 flex items-center justify-center ${
+                        selected ? "border-barter-600" : "border-[oklch(80%_0.015_90)]"
+                      }`}
+                    >
+                      {selected && <span className="w-[9px] h-[9px] rounded-full bg-barter-600" />}
+                    </span>
+                    <span className="text-sm font-semibold text-[oklch(22%_0.02_100)]">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-[11px] font-bold text-[oklch(45%_0.02_95)] tracking-wide mb-2">
+              ADDITIONAL CONTEXT (OPTIONAL)
+            </div>
+            <textarea
+              value={reportText}
+              onChange={(e) => setReportText(e.target.value)}
+              placeholder="Add any details that might help us review this…"
+              className="w-full min-h-[90px] px-3.5 py-3 rounded-2xl border border-[oklch(88%_0.015_90)] text-[13.5px] text-[oklch(22%_0.02_100)] resize-y"
+            />
+          </div>
+          <div className="flex-shrink-0 px-5 pt-3.5 pb-5 border-t border-[oklch(88%_0.015_90)]">
+            <button
+              onClick={handleSubmitReport}
+              disabled={!reportReason || createReportLoading}
+              className="w-full py-3.5 rounded-2xl bg-[oklch(50%_0.15_30)] text-white text-sm font-bold disabled:opacity-50"
+            >
+              {createReportLoading ? "Submitting…" : "Submit report"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

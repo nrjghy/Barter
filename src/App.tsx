@@ -9,6 +9,7 @@ import { AddToy } from "./pages/AddToy";
 import { Profile } from "./pages/Profile";
 import { Chat } from "./pages/Chat";
 import { ChatThread } from "./pages/ChatThread";
+import { MarkTradeComplete } from "./pages/MarkTradeComplete";
 import { ItemDetail } from "./pages/ItemDetail";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthCallback } from "./pages/AuthCallback";
@@ -73,6 +74,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <ChatThread />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:connectionId/trade-complete"
+            element={
+              <ProtectedRoute>
+                <MarkTradeComplete />
               </ProtectedRoute>
             }
           />

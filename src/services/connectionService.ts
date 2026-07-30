@@ -259,6 +259,70 @@ export class ConnectionService {
   }
 
   /**
+   * Ends a connection (sets status='ended'). Used by Block, since the
+   * approved design has a blocked connection disappear from the Chat
+   * list entirely -- getUserConnections only returns status='active'
+   * connections, so ending it here is what makes that happen.
+   */
+  static async endConnection(connectionId: string, userId: string): Promise<ServiceResult<boolean>> {
+    try {
+      const connectionIdError = ValidationService.validateUUID(connectionId);
+      const userIdError = ValidationService.validateUUID(userId);
+      if (connectionIdError) return { error: connectionIdError };
+      if (userIdError) return { error: userIdError };
+
+      const { data: connection, error: fetchError } = await supabase
+        .from(TABLES.CONNECTIONS)
+        .select("user_id_1, user_id_2")
+        .eq("id", connectionId)
+        .single();
+
+      if (fetchError || !connection) {
+        return {
+          error: {
+            code: ERROR_CODES.ITEM_NOT_FOUND,
+            message: "Connection not found",
+          },
+        };
+      }
+
+      if (connection.user_id_1 !== userId && connection.user_id_2 !== userId) {
+        return {
+          error: {
+            code: ERROR_CODES.UNAUTHORIZED,
+            message: ERROR_MESSAGES[ERROR_CODES.UNAUTHORIZED],
+          },
+        };
+      }
+
+      const { error } = await supabase
+        .from(TABLES.CONNECTIONS)
+        .update({ status: "ended", ended_at: new Date().toISOString(), ended_by: userId })
+        .eq("id", connectionId);
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to end connection",
+            details: error,
+          },
+        };
+      }
+
+      return { data: true };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
    * Private helpers
    */
 

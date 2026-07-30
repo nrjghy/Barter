@@ -84,7 +84,7 @@ export const useReports = () => {
     reportStatsError: reportStatsError?.message,
 
     // Actions
-    createReport: createReport.mutate,
+    createReport: (reportData: any) => createReport.mutateAsync({ reportData }),
     createReportLoading: createReport.isPending,
     createReportError: createReport.error?.message,
 
