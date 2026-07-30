@@ -15,6 +15,11 @@ export const useMessages = (connectionId?: string) => {
     queryKey: ["messages", connectionId],
     queryFn: () => MessageService.getConnectionMessages(connectionId!),
     enabled: !!connectionId && !!user,
+    // PRD §5: "fast polling is sufficient -- no full realtime/websocket
+    // infrastructure." Only polls while a thread is actually open
+    // (queryKey includes connectionId, and React Query only refetches
+    // active/mounted queries).
+    refetchInterval: 4000,
   });
 
   // Get unread messages for a specific connection
