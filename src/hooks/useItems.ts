@@ -3,6 +3,29 @@ import { useAuth } from "./useAuth";
 import { ItemService, ItemWithUser } from "../services/itemService";
 import { ServiceResult, ItemData } from "../services/types";
 
+/**
+ * Items belonging to a given user (any user, not just the current one).
+ * Reused for both sides of the Mark Trade Complete item picker: calling
+ * this with the current user's own id shares its cache with useItems'
+ * own userItems query below (same queryKey shape), and calling it with
+ * someone else's id naturally returns just their active items -- items'
+ * RLS only lets a non-owner see active rows, which is exactly the
+ * right scope for "what could they have traded me."
+ */
+export const useUserItems = (userId?: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["userItems", userId],
+    queryFn: () => ItemService.getUserItems(userId!),
+    enabled: !!userId,
+  });
+
+  return {
+    items: data?.data ?? [],
+    loading: isLoading,
+    error: error?.message,
+  };
+};
+
 export const useItems = (options?: {
   limit?: number;
   categories?: string[];

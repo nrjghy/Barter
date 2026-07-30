@@ -1,28 +1,204 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { Package } from "lucide-react";
+import { useConnection } from "../hooks/useConnections";
+import { useUserItems } from "../hooks/useItems";
+import { useAuth } from "../hooks/useAuth";
+import { LoadingSpinner } from "../components/LoadingSpinner";
+import { toast } from "react-hot-toast";
+import type { ItemData } from "../services/types";
 
-// PLACEHOLDER: only the "···" menu entry point is in scope here. The
-// actual flow (multi-select item picker for both sides, confirmation
-// screen with the dispute deadline date, and the resulting system
-// message in the thread) is its own separate, already-tracked task.
+// Step 4a: the item picker + confirmation screen UI, matching the approved
+// mockup exactly (checklists, bottom-sheet confirm, dispute-date copy).
+// The actual write (a new complete_trade RPC, since marking someone else's
+// item as traded can't be done via a plain client update -- items' RLS
+// only lets the owner update their own row) is step 4b, not built yet.
+// "Confirm trade complete" is present but intentionally not wired to a
+// real action here, so the screen is fully reviewable before that RPC
+// exists.
+
+type Step = "select" | "confirm";
+
+function previewDisputeDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+}
+
+function summarize(items: ItemData[], ids: Set<string>): string {
+  const titles = items.filter((i) => ids.has(i.id)).map((i) => i.title);
+  if (titles.length === 0) return "";
+  if (titles.length === 1) return titles[0];
+  if (titles.length === 2) return `${titles[0]} and ${titles[1]}`;
+  return `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+}
+
+const ItemChecklist: React.FC<{
+  label: string;
+  items: ItemData[];
+  loading: boolean;
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+}> = ({ label, items, loading, selected, onToggle }) => (
+  <div className="mb-5">
+    <div className="text-[11px] font-bold text-[oklch(45%_0.02_95)] tracking-wide mb-2.5">{label}</div>
+    {loading && (
+      <div className="py-4">
+        <LoadingSpinner color="barter" />
+      </div>
+    )}
+    {!loading && items.length === 0 && (
+      <div className="text-[13px] text-[oklch(52%_0.02_90)]">No active listings to choose from.</div>
+    )}
+    <div className="flex flex-col gap-2">
+      {items.map((item) => {
+        const checked = selected.has(item.id);
+        const thumbnail = item.imageUrls?.[0];
+        return (
+          <button
+            key={item.id}
+            onClick={() => onToggle(item.id)}
+            className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border text-left ${
+              checked ? "border-barter-600 bg-barter-100" : "border-[oklch(88%_0.015_90)] bg-transparent"
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded-[6px] border flex-shrink-0 flex items-center justify-center ${
+                checked ? "bg-barter-600 border-barter-600" : "border-[oklch(80%_0.015_90)]"
+              }`}
+            >
+              {checked && (
+                <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                  <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
+            <span className="w-[22px] h-[22px] rounded-[5px] flex-shrink-0 overflow-hidden bg-[oklch(90%_0.02_90)] flex items-center justify-center">
+              {thumbnail ? (
+                <img src={thumbnail} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <Package className="w-3 h-3 text-[oklch(60%_0.02_90)]" />
+              )}
+            </span>
+            <span className="text-sm font-semibold text-[oklch(22%_0.02_100)]">{item.title}</span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 export const MarkTradeComplete: React.FC = () => {
   const { connectionId } = useParams<{ connectionId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { connection, loading: connectionLoading } = useConnection(connectionId);
+  const { items: myItems, loading: myItemsLoading } = useUserItems(user?.id);
+  const { items: theirItems, loading: theirItemsLoading } = useUserItems(connection?.otherUser.id);
+
+  const [step, setStep] = useState<Step>("select");
+  const [selectedMine, setSelectedMine] = useState<Set<string>>(new Set());
+  const [selectedTheirs, setSelectedTheirs] = useState<Set<string>>(new Set());
+
+  const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
+  const theirActiveItems = theirItems; // RLS already limits a non-owner's view to active items only
+
+  const toggleMine = (id: string) =>
+    setSelectedMine((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const toggleTheirs = (id: string) =>
+    setSelectedTheirs((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const hasSelection = selectedMine.size > 0 || selectedTheirs.size > 0;
+  const otherUsername = connection?.otherUser.username ?? "this user";
+  const selectedSummary = [summarize(myActiveItems, selectedMine), summarize(theirActiveItems, selectedTheirs)]
+    .filter(Boolean)
+    .join(" and ");
+
+  const handleConfirm = () => {
+    // Wired for real in step 4b, once the complete_trade RPC exists.
+    toast("Trade completion isn't fully wired up yet -- coming very soon.");
+  };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[oklch(88%_0.015_90)]">
-        <button onClick={() => navigate(`/chat/${connectionId}`)} className="p-1 -ml-1">
-          <ArrowLeft className="w-5 h-5 text-[oklch(22%_0.02_100)]" />
+    <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
+      <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
+        <button onClick={() => navigate(`/chat/${connectionId}`)} className="p-1 -ml-1 text-2xl leading-none text-[oklch(22%_0.02_100)]">
+          ‹
         </button>
-        <div className="text-base font-semibold text-[oklch(22%_0.02_100)]">Mark trade complete</div>
+        <div className="text-base font-bold text-[oklch(22%_0.02_100)]">Mark trade complete</div>
       </div>
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="text-center text-sm text-[oklch(45%_0.02_95)]">
-          The full Mark Trade Complete flow is coming soon.
+
+      {connectionLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingSpinner color="barter" />
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="flex-1 overflow-y-auto px-5 py-4.5">
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-5">
+              Select the item(s) that were actually exchanged with {otherUsername}.
+            </div>
+            <ItemChecklist
+              label="YOUR ITEMS"
+              items={myActiveItems}
+              loading={myItemsLoading}
+              selected={selectedMine}
+              onToggle={toggleMine}
+            />
+            <ItemChecklist
+              label="THEIR ITEMS"
+              items={theirActiveItems}
+              loading={theirItemsLoading}
+              selected={selectedTheirs}
+              onToggle={toggleTheirs}
+            />
+          </div>
+          <div className="flex-shrink-0 px-5 pt-3.5 pb-6 border-t border-[oklch(88%_0.015_90)]">
+            <button
+              onClick={() => setStep("confirm")}
+              disabled={!hasSelection}
+              className="w-full py-3.5 rounded-2xl bg-barter-600 text-white text-sm font-bold disabled:opacity-40"
+            >
+              Continue
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === "confirm" && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center">
+          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => setStep("select")} />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Confirm trade complete</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+              Marking <strong>{selectedSummary}</strong> as traded. These item(s) will be removed from Discover, and
+              anyone else with an open connection about them will be notified. {otherUsername} will have until{" "}
+              {previewDisputeDate()} to dispute this.
+            </div>
+            <button
+              onClick={handleConfirm}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+            >
+              Confirm trade complete
+            </button>
+            <button
+              onClick={() => setStep("select")}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(22%_0.02_100)] text-sm font-bold"
+            >
+              Go back
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
