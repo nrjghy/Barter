@@ -1,0 +1,30 @@
+-- =============================================================================
+-- Barter: close EXECUTE-grant gap on notify_connections_item_unavailable
+--
+-- Context: 20260731090000 extracted this out of complete_trade as a shared
+-- plain (SECURITY INVOKER) function, but never revoked its default EXECUTE
+-- grant to authenticated. Unlike complete_trade and notify_item_cancelled,
+-- this function does zero validation of its own -- no auth check, no
+-- verification that the item(s) it's told about are actually
+-- traded/cancelled/owned by anyone in particular. It's meant to only ever
+-- run inside those two SECURITY DEFINER callers, which do the validation
+-- before invoking it. Left exposed to `authenticated`, any signed-in client
+-- could call supabase.rpc('notify_connections_item_unavailable', {...})
+-- directly and inject a fake "item unavailable" notification + system
+-- message into any connection, attributed to whichever user it likes.
+--
+-- Fix: revoke EXECUTE from authenticated, same as the public/anon revoke
+-- already done for complete_trade (20260730201108) and notify_item_cancelled
+-- (20260731090000). public/anon were already clear here (Supabase's default
+-- per-schema privileges only auto-grant new public-schema functions to
+-- authenticated/service_role, not anon/public -- confirmed via aclexplode
+-- before this migration).
+--
+-- This doesn't affect complete_trade/notify_item_cancelled's internal
+-- `perform notify_connections_item_unavailable(...)` calls: both are owned
+-- by the same role that owns this function (postgres), and a function
+-- owner always retains implicit EXECUTE on its own objects regardless of
+-- explicit grants/revokes to other roles.
+-- =============================================================================
+
+revoke all on function notify_connections_item_unavailable(uuid[], text, uuid) from authenticated;
