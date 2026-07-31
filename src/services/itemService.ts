@@ -549,6 +549,17 @@ export class ItemService {
         };
       }
 
+      // Best-effort: the cancel itself is already done at this point, so a
+      // failure here shouldn't be surfaced as if the cancel failed -- it
+      // would just mean other connections referencing this item don't get
+      // notified it's gone. Same pattern as the trade-completed notification
+      // in MarkTradeComplete.
+      try {
+        await supabase.rpc("notify_item_cancelled", { p_item_id: itemId, p_user_id: userId });
+      } catch {
+        // Swallowed on purpose -- see comment above.
+      }
+
       const transformedData: ItemData = {
         id: data.id,
         title: data.title,
