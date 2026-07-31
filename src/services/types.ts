@@ -75,7 +75,7 @@ export interface ReportData {
 
 export interface NotificationData {
   userId: string;
-  type: "match" | "message" | "trade_completed" | "review" | "system";
+  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
   title: string;
   content: string;
   data?: Record<string, unknown>;

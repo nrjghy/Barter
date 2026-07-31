@@ -24,6 +24,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         return '⭐';
       case 'system':
         return '🔔';
+      case 'item_unavailable':
+        return '🚫';
       default:
         return '📢';
     }
