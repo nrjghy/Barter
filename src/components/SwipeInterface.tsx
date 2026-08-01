@@ -10,7 +10,7 @@ interface SwipeInterfaceProps {
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  onSwipe: (direction: "left" | "right" | "super") => void;
+  onSwipe: (direction: "left" | "right") => void;
 }
 
 export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(

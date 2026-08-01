@@ -3,7 +3,7 @@
 export interface SwipeData {
   userId: string;
   itemId: string;
-  direction: "left" | "right" | "super";
+  direction: "left" | "right";
 }
 
 export interface SwipeLimitData {

@@ -98,7 +98,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSwipe = async (direction: "left" | "right" | "super") => {
+  const handleSwipe = async (direction: "left" | "right") => {
     if (!currentItem || !user) return;
 
     const swipedItemId = currentItem.id;
@@ -117,9 +117,7 @@ export const Dashboard: React.FC = () => {
     });
 
     // Show immediate feedback
-    if (direction === "super") {
-      toast.success("Super Like sent! ⚡");
-    } else if (direction === "right") {
+    if (direction === "right") {
       toast.success("Right swipe!");
     }
 

@@ -1,12 +1,12 @@
 import React, { useState, useRef } from "react";
 import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
-import { Heart, X, Zap, MapPin, Clock, Star } from "lucide-react";
+import { Heart, X, MapPin, Clock, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ItemWithUser } from "../services/itemService";
 
 interface SwipeCardProps {
   item: ItemWithUser;
-  onSwipe: (direction: "left" | "right" | "super") => void;
+  onSwipe: (direction: "left" | "right") => void;
   style?: React.CSSProperties;
 }
 
@@ -20,7 +20,6 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
   // Transform for swipe indicators
   const leftIndicatorOpacity = useTransform(x, [-150, -50], [1, 0]);
   const rightIndicatorOpacity = useTransform(x, [50, 150], [0, 1]); // Changed from [1, 0] to [0, 1]
-  const superIndicatorOpacity = useTransform(x, [-50, 50], [0, 0]);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -28,13 +27,6 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
     const threshold = 100;
     const velocity = info.velocity.x;
     const movement = info.offset.x;
-
-    // Super like (upward swipe)
-    if (info.offset.y < -100 && Math.abs(movement) < 50) {
-      setExitX(0);
-      onSwipe("super");
-      return;
-    }
 
     // Regular swipes
     if (movement > threshold || velocity > 500) {
@@ -90,13 +82,6 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           style={{ opacity: rightIndicatorOpacity }}
         >
           <Heart className="w-6 h-6" />
-        </motion.div>
-
-        <motion.div
-          className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10 bg-blue-500 text-white px-4 py-2 rounded-full font-bold text-lg border-4 border-white shadow-lg"
-          style={{ opacity: superIndicatorOpacity }}
-        >
-          <Zap className="w-6 h-6" />
         </motion.div>
 
         {/* Image */}

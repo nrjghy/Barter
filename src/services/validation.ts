@@ -146,7 +146,7 @@ export class ValidationService {
    * Validates swipe direction
    */
   static validateSwipeDirection(direction: string): ServiceError | null {
-    const validDirections = ["left", "right", "super"] as const;
+    const validDirections = ["left", "right"] as const;
 
     if (!validDirections.includes(direction as any)) {
       return {

@@ -187,12 +187,8 @@ export class SwipeService {
       await supabase.rpc("increment_swipe_count", { user_uuid: swipeData.userId });
 
       // Handle match checking in background for right swipes
-      if (swipeData.direction === "right" || swipeData.direction === "super") {
-        this.handleBackgroundMatchCheckLegacy(
-          swipeData.userId,
-          swipeData.itemId,
-          swipeData.direction === "super"
-        ).catch((error) => {
+      if (swipeData.direction === "right") {
+        this.handleBackgroundMatchCheckLegacy(swipeData.userId, swipeData.itemId).catch((error) => {
           console.error("Background match creation failed:", error);
         });
       }
@@ -206,7 +202,7 @@ export class SwipeService {
           success: true,
           dailySwipeCount,
           canSwipe: dailySwipeCount < 50,
-          matchCheckNeeded: swipeData.direction === "right" || swipeData.direction === "super",
+          matchCheckNeeded: swipeData.direction === "right",
         },
       };
     } catch (error) {
@@ -323,7 +319,7 @@ export class SwipeService {
         .select("item_id")
         .eq("user_id", item.user_id)
         .in("item_id", userItemIds)
-        .in("direction", ["right", "super"]);
+        .in("direction", ["right"]);
 
       if (swipesError) {
         return {

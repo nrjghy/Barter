@@ -112,7 +112,7 @@ export const ItemDetail: React.FC = () => {
     }
   };
 
-  const handleSwipe = async (direction: "left" | "right" | "super") => {
+  const handleSwipe = async (direction: "left" | "right") => {
     if (!item || !user) return;
 
     const { error } = await recordSwipe({ itemId: item.id, direction });
@@ -122,9 +122,7 @@ export const ItemDetail: React.FC = () => {
       return;
     }
 
-    if (direction === "super") {
-      toast.success("Super Like sent! ⚡");
-    } else if (direction === "right") {
+    if (direction === "right") {
       toast.success("Liked! 💖");
     } else {
       toast.success("Passed");

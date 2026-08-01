@@ -26,7 +26,7 @@ export const useSwipes = () => {
 
   // Record swipe mutation
   const recordSwipe = useMutation({
-    mutationFn: ({ itemId, direction }: { itemId: string; direction: "left" | "right" | "super" }) =>
+    mutationFn: ({ itemId, direction }: { itemId: string; direction: "left" | "right" }) =>
       SwipeService.recordSwipe({ userId: user!.id, itemId, direction }),
     onSuccess: (result, variables) => {
       if (result.data) {
@@ -45,7 +45,7 @@ export const useSwipes = () => {
         queryClient.invalidateQueries({ queryKey: ["swipeLimit", user?.id] });
 
         // Only invalidate matches if this was a right swipe that might create matches
-        if ((variables.direction === "right" || variables.direction === "super") && result.data.matchCheckNeeded) {
+        if (variables.direction === "right" && result.data.matchCheckNeeded) {
           // Invalidate matches after a short delay to allow background match creation
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
@@ -64,7 +64,7 @@ export const useSwipes = () => {
     loading: recordSwipe.isPending || swipedItemsLoading || swipeLimitLoading,
     dailySwipeCount: swipeLimitData?.data?.dailySwipeCount ?? 0,
     swipeLimit: 50, // From APP_CONFIG
-    recordSwipe: ({ itemId, direction }: { itemId: string; direction: "left" | "right" | "super" }) =>
+    recordSwipe: ({ itemId, direction }: { itemId: string; direction: "left" | "right" }) =>
       recordSwipe.mutateAsync({ itemId, direction }),
     checkSwipeLimit: () => SwipeService.checkSwipeLimit(user!.id),
     getSwipedItems: () => refetchSwipedItems().then((res) => res.data?.data ?? []),
