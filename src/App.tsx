@@ -16,6 +16,8 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthCallback } from "./pages/AuthCallback";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
+import { Account } from "./pages/Account";
+import { AccountDeleted } from "./pages/AccountDeleted";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const AppContent: React.FC = () => {
@@ -29,6 +31,7 @@ const AppContent: React.FC = () => {
         <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/account-deleted" element={<AccountDeleted />} />
         <Route path="/" element={<Layout />}>
           <Route
             index
@@ -67,6 +70,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
               </ProtectedRoute>
             }
           />
