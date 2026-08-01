@@ -1,0 +1,25 @@
+-- =============================================================================
+-- Barter: drop mark_items_as_traded (dead code, unauthenticated + unvalidated)
+--
+-- Context: security sweep flagged this function as a third old
+-- access-control gap: zero validation, no auth check, unconditionally sets
+-- is_active = false on any item_ids passed to it, and (per aclexplode) had
+-- EXECUTE granted to PUBLIC/anon on top of that -- any caller, authenticated
+-- or not, could deactivate arbitrary items.
+--
+-- Rather than patch it, confirmed dead per the same rigor applied to
+-- handle_swipe_and_match (20260725000002's note): zero references in the
+-- current repo, zero across every local and remote branch, zero in the full
+-- git history (git log -S across all branches), no pg_cron jobs (extension
+-- isn't even installed on this project), no Edge Function references, and
+-- no other database function or trigger calls it. It predates
+-- complete_trade (20260730200639), which now handles item deactivation
+-- directly as part of marking a trade complete -- this was leftover dead
+-- code from before that RPC existed, never wired to anything in the
+-- connection-model rewrite.
+--
+-- Dropped entirely rather than patched, consistent with "drop dead code
+-- instead of hardening it" for functions with no live caller.
+-- =============================================================================
+
+drop function if exists mark_items_as_traded(uuid[]);
