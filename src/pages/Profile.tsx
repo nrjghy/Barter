@@ -87,6 +87,8 @@ export const Profile: React.FC = () => {
           const { error } = await updateProfile({
             ...profileData,
             location: locationString,
+            latitude,
+            longitude,
           });
 
           if (error) {

@@ -197,6 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: user.id,
             username: updates.username || user.username,
             location: updates.location || user.location,
+            latitude: updates.latitude ?? user.latitude,
+            longitude: updates.longitude ?? user.longitude,
             avatar_url: updates.avatar_url || user.avatar_url,
           },
         ]);
@@ -216,6 +218,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .update({
           username: updates.username,
           location: updates.location,
+          latitude: updates.latitude,
+          longitude: updates.longitude,
           avatar_url: updates.avatar_url,
           updated_at: new Date().toISOString(),
         })
