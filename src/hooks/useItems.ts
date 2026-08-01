@@ -37,6 +37,9 @@ export const useItems = (options?: {
   maxValue?: string;
   maxAge?: number;
   minRating?: number;
+  // Caller's own location, for the radius filter -- null/undefined skips it
+  lat?: number | null;
+  lng?: number | null;
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -50,13 +53,15 @@ export const useItems = (options?: {
     maxValue,
     maxAge,
     minRating,
+    lat,
+    lng,
   } = options || {};
 
   // Get items for browsing with infinite pagination
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
     queryKey: [
       "items",
-      { limit, categories, conditions, excludeUserId, radius, minValue, maxValue, maxAge, minRating },
+      { limit, categories, conditions, excludeUserId, radius, minValue, maxValue, maxAge, minRating, lat, lng },
     ],
     queryFn: ({ pageParam = 0 }) =>
       ItemService.getItems({
@@ -70,6 +75,8 @@ export const useItems = (options?: {
         maxValue,
         maxAge,
         minRating,
+        lat,
+        lng,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: ServiceResult<ItemWithUser[]>, allPages) => {

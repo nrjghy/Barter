@@ -97,6 +97,10 @@ export interface FilterOptions {
   maxValue?: string;
   maxAge?: number;
   minRating?: number;
+  // Caller's own location, for the radius filter. Both null/undefined skip
+  // the radius bounds check entirely (get_items_browse handles this).
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface ServiceError {

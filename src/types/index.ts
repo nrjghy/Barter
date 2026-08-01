@@ -3,6 +3,8 @@ export interface AuthUser {
   email: string;
   username: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   avatar_url?: string;
   role?: string;
 }

@@ -10,7 +10,11 @@ export interface ItemWithUser extends ItemData {
 
 export class ItemService {
   /**
-   * Get items for browsing with pagination and filtering
+   * Get items for browsing with pagination and filtering. Calls the
+   * get_items_browse RPC rather than a plain client query -- the RPC is
+   * also where the is_system/is_demo exclusion and mutual user_blocks
+   * enforcement live (see 20260801000007/20260801000009 migrations), so a
+   * hand-built query here would silently bypass both.
    */
   static async getItems(
     options: PaginationOptions & FilterOptions & { userId?: string }
@@ -22,82 +26,20 @@ export class ItemService {
         return { error: paginationError };
       }
 
-      let query = supabase
-        .from(TABLES.ITEMS)
-        .select(
-          `
-          id,
-          title,
-          description,
-          category,
-          condition,
-          image_urls,
-          tags,
-          created_at,
-          updated_at,
-          user_id,
-          is_active,
-          price,
-          source_url,
-          estimated_value,
-          value_currency,
-          users!inner (
-            id,
-            username,
-            location,
-            avatar_url,
-            rating
-          )
-        `
-        )
-        .eq("is_active", true);
-
-      // Apply filters
-      if (options.excludeUserId) {
-        query = query.neq("user_id", options.excludeUserId);
-      }
-
-      if (options.categories && options.categories.length > 0) {
-        query = query.in("category", options.categories);
-      }
-
-      if (options.conditions && options.conditions.length > 0) {
-        query = query.in("condition", options.conditions);
-      }
-
-      // Apply advanced filters
-      if (options.minValue && options.minValue !== "") {
-        query = query.gte("estimated_value", parseFloat(options.minValue));
-      }
-
-      if (options.maxValue && options.maxValue !== "") {
-        query = query.lte("estimated_value", parseFloat(options.maxValue));
-      }
-
-      if (options.maxAge && options.maxAge > 0) {
-        const maxAgeDate = new Date();
-        maxAgeDate.setDate(maxAgeDate.getDate() - options.maxAge);
-        query = query.gte("created_at", maxAgeDate.toISOString());
-      }
-
-      if (options.minRating && options.minRating > 0) {
-        query = query.gte("users.rating", options.minRating);
-      }
-
-      // Apply radius filter if user location is available
-      if (options.radius && options.radius > 0) {
-        // For now, we'll implement basic radius filtering
-        // This would need to be enhanced with proper geospatial queries
-        // when user location data is available
-        // TODO: Implement proper radius filtering with user location
-      }
-
-      // Apply pagination
-      const start = options.page * options.limit;
-      const end = start + options.limit - 1;
-      query = query.order("created_at", { ascending: false }).range(start, end);
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.rpc("get_items_browse", {
+        p_lat: options.lat ?? null,
+        p_lng: options.lng ?? null,
+        p_radius_km: options.radius ?? null,
+        p_categories: options.categories ?? null,
+        p_conditions: options.conditions ?? null,
+        p_exclude_user_id: options.excludeUserId ?? null,
+        p_min_value: options.minValue ? parseFloat(options.minValue) : null,
+        p_max_value: options.maxValue ? parseFloat(options.maxValue) : null,
+        p_max_age_days: options.maxAge ?? null,
+        p_min_rating: options.minRating ?? null,
+        p_limit: options.limit,
+        p_offset: options.page * options.limit,
+      });
 
       if (error) {
         return {
@@ -109,32 +51,32 @@ export class ItemService {
         };
       }
 
-      // Transform data to match our interface
-      const transformedData: ItemWithUser[] = data.map((item: any) => ({
+      // Transform data to match our interface. The RPC returns flat
+      // user_* columns instead of a nested users relation.
+      const transformedData: ItemWithUser[] = (data || []).map((item: any) => ({
         id: item.id,
         title: item.title,
         description: item.description,
         category: item.category,
         condition: item.condition,
-        imageUrls: item.image_urls, // ✅ Updated to use imageUrls array
+        imageUrls: item.image_urls,
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
-        // Update to use correct fields:
         estimatedValue: item.estimated_value,
         valueCurrency: item.value_currency,
         sourceUrl: item.source_url,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         user: {
-          id: item.users.id,
-          username: item.users.username,
-          email: "", // Not included in select
-          location: item.users.location,
-          avatarUrl: item.users.avatar_url,
-          role: "", // Not included in select
-          rating: item.users.rating,
-          totalRatings: 0, // Not included in select
+          id: item.user_id,
+          username: item.user_username,
+          email: "", // Not included in the RPC's return columns
+          location: item.user_location,
+          avatarUrl: item.user_avatar_url,
+          role: "", // Not included in the RPC's return columns
+          rating: item.user_rating,
+          totalRatings: 0, // Not included in the RPC's return columns
         },
       }));
 

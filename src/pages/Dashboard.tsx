@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
-// import { CategoryFilter } from "../components/CategoryFilter";
+import { CategoryFilter } from "../components/CategoryFilter";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { SwipeCounter } from "../components/SwipeCounter";
 import { SwipeInterface } from "../components/SwipeInterface";
@@ -17,15 +17,15 @@ export const Dashboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
-  const [selectedCategories] = useState<string[]>([]);
-  const [selectedConditions] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
   // Advanced filter states
-  const [radius] = useState(50);
-  const [minValue] = useState("");
-  const [maxValue] = useState("");
-  const [maxAge] = useState(30);
-  const [minRating] = useState(3.0);
+  const [radius, setRadius] = useState(50);
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+  const [maxAge, setMaxAge] = useState(30);
+  const [minRating, setMinRating] = useState(3.0);
 
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
@@ -36,6 +36,10 @@ export const Dashboard: React.FC = () => {
     maxAge: maxAge !== 30 ? maxAge : undefined,
     minRating: minRating !== 3.0 ? minRating : undefined,
     excludeUserId: user?.id, // ✅ Exclude current user's own items
+    // New account / location never set -> both null, get_items_browse skips
+    // the radius bounds check entirely rather than erroring.
+    lat: user?.latitude ?? null,
+    lng: user?.longitude ?? null,
   });
   const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
 
@@ -239,18 +243,23 @@ export const Dashboard: React.FC = () => {
 
       <AnimatePresence>
         {showFilter && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Filters</h3>
-              <p className="text-gray-600">Filter functionality temporarily disabled for performance optimization.</p>
-              <button
-                onClick={() => setShowFilter(false)}
-                className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Close
-              </button>
-            </div>
-          </div>
+          <CategoryFilter
+            selectedCategories={selectedCategories}
+            selectedConditions={selectedConditions}
+            onCategoriesChange={setSelectedCategories}
+            onConditionsChange={setSelectedConditions}
+            onClose={() => setShowFilter(false)}
+            radius={radius}
+            minValue={minValue}
+            maxValue={maxValue}
+            maxAge={maxAge}
+            minRating={minRating}
+            onRadiusChange={setRadius}
+            onMinValueChange={setMinValue}
+            onMaxValueChange={setMaxValue}
+            onMaxAgeChange={setMaxAge}
+            onMinRatingChange={setMinRating}
+          />
         )}
       </AnimatePresence>
     </div>

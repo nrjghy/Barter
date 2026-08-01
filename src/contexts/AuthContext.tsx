@@ -40,6 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email: authUser.email!,
         username: data.username,
         location: data.location || undefined,
+        latitude: data.latitude ?? undefined,
+        longitude: data.longitude ?? undefined,
         avatar_url: data.avatar_url || undefined,
         role: data.role || "user",
       });
@@ -61,6 +63,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: session.user.user_metadata?.avatar_url || undefined,
           role: session.user.user_metadata?.role || "user",
         });
+        // Metadata above is signup-time data and never has latitude/longitude
+        // (or a post-signup location update) -- refine with the real users
+        // row once it's back, same pattern as onAuthStateChange below.
+        fetchUserProfile(session.user);
       } else {
         setUser(null);
       }
@@ -81,6 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: session.user.user_metadata?.avatar_url || undefined,
           role: session.user.user_metadata?.role || "user",
         });
+        fetchUserProfile(session.user);
       } else {
         setUser(null);
       }
@@ -91,14 +98,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Optionally, fetch user profile from your users table after user is set
-  useEffect(() => {
-    if (user) {
-      // You can fetch additional profile info here if needed
-      // fetchUserProfile(user.id) ...
-    }
-  }, [user]);
 
   // Don't render children until the context is fully initialized
   if (!initialized) {
