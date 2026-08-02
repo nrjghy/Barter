@@ -9,6 +9,7 @@ export interface SwipeData {
 export interface SwipeLimitData {
   canSwipe: boolean;
   dailySwipeCount: number;
+  limit: number;
 }
 
 export interface SwipeResult {

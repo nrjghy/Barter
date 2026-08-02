@@ -373,6 +373,23 @@ export interface Database {
           created_at?: string;
         };
       };
+      app_settings: {
+        Row: {
+          key: string;
+          value: unknown;
+          updated_at: string;
+        };
+        Insert: {
+          key: string;
+          value: unknown;
+          updated_at?: string;
+        };
+        Update: {
+          key?: string;
+          value?: unknown;
+          updated_at?: string;
+        };
+      };
       issues: {
         Row: {
           id: string;

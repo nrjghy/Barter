@@ -130,6 +130,7 @@ export const TABLES = {
   TRADE_COMPLETIONS: "trade_completions",
   TRADE_COMPLETION_ITEMS: "trade_completion_items",
   ISSUES: "issues",
+  APP_SETTINGS: "app_settings",
 } as const;
 
 // Real-time channels

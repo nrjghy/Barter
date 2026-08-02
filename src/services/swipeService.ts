@@ -47,10 +47,24 @@ export class SwipeService {
         };
       }
 
+      // PRD §3: the daily like limit is a tunable config value, not a
+      // hardcoded number -- read it fresh rather than assuming it's
+      // still whatever it was when this file was last touched. Falls
+      // back to 300 rather than failing the whole check if the row is
+      // ever missing.
+      const { data: settingData } = await supabase
+        .from(TABLES.APP_SETTINGS)
+        .select("value")
+        .eq("key", "daily_like_limit")
+        .single();
+
+      const limit = typeof settingData?.value === "number" ? settingData.value : 300;
+
       return {
         data: {
           canSwipe: canSwipe as boolean,
           dailySwipeCount: userData?.daily_swipes ?? 0,
+          limit,
         },
       };
     } catch (error) {

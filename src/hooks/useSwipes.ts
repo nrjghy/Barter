@@ -63,7 +63,7 @@ export const useSwipes = () => {
   return {
     loading: recordSwipe.isPending || swipedItemsLoading || swipeLimitLoading,
     dailySwipeCount: swipeLimitData?.data?.dailySwipeCount ?? 0,
-    swipeLimit: 50, // From APP_CONFIG
+    swipeLimit: swipeLimitData?.data?.limit ?? 300,
     recordSwipe: ({ itemId, direction }: { itemId: string; direction: "left" | "right" }) =>
       recordSwipe.mutateAsync({ itemId, direction }),
     checkSwipeLimit: () => SwipeService.checkSwipeLimit(user!.id),
