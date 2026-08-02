@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, Menu, X } from 'lucide-react';
+import { Bell, Search, User, Menu, X, HelpCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NotificationCenter } from './NotificationCenter';
+import { IssueReportDialog } from './IssueReportDialog';
 
 export const Header: React.FC = () => {
   const { user } = useAuth();
@@ -12,6 +13,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const [showSearch, setShowSearch] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e: React.FormEvent) => {
@@ -51,7 +53,17 @@ export const Header: React.FC = () => {
             <Search className="w-5 h-5 text-gray-600" />
           </motion.button>
           
-          <motion.button 
+          <motion.button
+            onClick={() => setShowIssueDialog(true)}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Report an issue"
+          >
+            <HelpCircle className="w-5 h-5 text-gray-600" />
+          </motion.button>
+
+          <motion.button
             onClick={() => setShowNotifications(true)}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
             whileHover={{ scale: 1.05 }}
@@ -121,10 +133,12 @@ export const Header: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <NotificationCenter 
-        isOpen={showNotifications} 
-        onClose={() => setShowNotifications(false)} 
+      <NotificationCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
       />
+
+      <IssueReportDialog isOpen={showIssueDialog} onClose={() => setShowIssueDialog(false)} />
     </header>
   );
 };

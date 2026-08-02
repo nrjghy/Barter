@@ -373,11 +373,49 @@ export interface Database {
           created_at?: string;
         };
       };
+      issues: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string;
+          issue_type: "bug" | "feature_request" | "general" | "other";
+          status: "open" | "in_progress" | "resolved" | "closed" | null;
+          priority: "low" | "medium" | "high" | "urgent" | null;
+          image_urls: string[] | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          description: string;
+          issue_type: "bug" | "feature_request" | "general" | "other";
+          status?: "open" | "in_progress" | "resolved" | "closed" | null;
+          priority?: "low" | "medium" | "high" | "urgent" | null;
+          image_urls?: string[] | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          description?: string;
+          issue_type?: "bug" | "feature_request" | "general" | "other";
+          status?: "open" | "in_progress" | "resolved" | "closed" | null;
+          priority?: "low" | "medium" | "high" | "urgent" | null;
+          image_urls?: string[] | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+      };
       notifications: {
         Row: {
           id: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status";
           title: string;
           content: string;
           data: any;
@@ -388,7 +426,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status";
           title: string;
           content: string;
           data?: any;
@@ -399,7 +437,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
+          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status";
           title?: string;
           content?: string;
           data?: any;
@@ -424,3 +462,4 @@ export type TradeCompletionItem = Database["public"]["Tables"]["trade_completion
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type Issue = Database["public"]["Tables"]["issues"]["Row"];
