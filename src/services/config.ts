@@ -127,6 +127,7 @@ export const TABLES = {
   CONNECTIONS: "connections",
   CONNECTION_ITEM_INTERESTS: "connection_item_interests",
   CONNECTION_READS: "connection_reads",
+  TRADE_COMPLETIONS: "trade_completions",
 } as const;
 
 // Real-time channels

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useItems } from "../hooks/useItems";
-import { useMatches } from "../hooks/useMatches";
+import { useTradeCompletions } from "../hooks/useTradeCompletions";
 import { useReviews } from "../hooks/useReviews";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { StatsCard } from "../components/StatsCard";
@@ -27,7 +27,7 @@ import toast from "react-hot-toast";
 export const Profile: React.FC = () => {
   const { user, signOut, updateProfile, updatePassword } = useAuth();
   const { userItems, loading, deleteItem } = useItems();
-  const { matches } = useMatches();
+  const { completedTradeCount } = useTradeCompletions();
   const { reviews, reviewsLoading, reviewsError } = useReviews();
   const [showSettings, setShowSettings] = useState(false);
   const [activeTab, setActiveTab] = useState<"items" | "stats" | "reviews">("items");
@@ -129,19 +129,13 @@ export const Profile: React.FC = () => {
   };
 
   const stats = React.useMemo(() => {
-    const totalMatches = matches.filter((match) => match.status === "accepted").length;
-    const pendingMatches = matches.filter((match) => match.status === "pending").length;
-    const totalViews = userItems.reduce((acc, item) => acc + Math.floor(Math.random() * 50) + 10, 0);
-
     return {
       totalItems: userItems.length,
       activeItems: userItems.filter((item) => item.is_active).length,
-      totalMatches,
-      pendingMatches,
-      totalViews,
+      completedTrades: completedTradeCount,
       avgRating: 4.0, // TODO: Get actual rating from user profile
     };
-  }, [userItems, matches, user]);
+  }, [userItems, completedTradeCount]);
 
   if (loading) {
     return (
@@ -315,18 +309,11 @@ export const Profile: React.FC = () => {
           trend={{ value: 12, isPositive: true }}
         />
         <StatsCard
-          title="Matches"
-          value={stats.totalMatches}
+          title="Trades completed"
+          value={stats.completedTrades}
           icon={Heart}
           color="pink"
           trend={{ value: 8, isPositive: true }}
-        />
-        <StatsCard
-          title="Total Views"
-          value={stats.totalViews}
-          icon={Eye}
-          color="blue"
-          trend={{ value: 15, isPositive: true }}
         />
         <StatsCard
           title="Rating"
@@ -455,16 +442,6 @@ export const Profile: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Active Listings</span>
                 <span className="font-semibold">{stats.activeItems}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Pending Matches</span>
-                <span className="font-semibold">{stats.pendingMatches}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Success Rate</span>
-                <span className="font-semibold text-green-600">
-                  {stats.totalItems > 0 ? Math.round((stats.totalMatches / stats.totalItems) * 100) : 0}%
-                </span>
               </div>
             </div>
           </div>

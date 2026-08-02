@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { ServiceResult } from "./types";
-import { ERROR_CODES, ERROR_MESSAGES } from "./config";
+import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
 export interface TradeCompletionResult {
@@ -70,6 +70,64 @@ export class TradeCompletionService {
           disputeDeadline: result.disputeDeadline,
         },
       };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Counts completed trades for a user: trade_completions rows whose
+   * connection_id belongs to one of this user's connections. Two-step
+   * read (connection ids, then count) since Supabase-js can't cleanly
+   * express an OR-through-a-join in one call.
+   */
+  static async getCompletedTradeCount(userId: string): Promise<ServiceResult<number>> {
+    try {
+      const uuidError = ValidationService.validateUUID(userId);
+      if (uuidError) return { error: uuidError };
+
+      const { data: connections, error: connectionsError } = await supabase
+        .from(TABLES.CONNECTIONS)
+        .select("id")
+        .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+
+      if (connectionsError) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to fetch connections",
+            details: connectionsError,
+          },
+        };
+      }
+
+      const connectionIds = (connections || []).map((connection: any) => connection.id);
+      if (connectionIds.length === 0) {
+        return { data: 0 };
+      }
+
+      const { count, error: countError } = await supabase
+        .from(TABLES.TRADE_COMPLETIONS)
+        .select("id", { count: "exact", head: true })
+        .in("connection_id", connectionIds);
+
+      if (countError) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to fetch completed trade count",
+            details: countError,
+          },
+        };
+      }
+
+      return { data: count ?? 0 };
     } catch (error) {
       return {
         error: {

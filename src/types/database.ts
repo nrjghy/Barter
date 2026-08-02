@@ -234,6 +234,52 @@ export interface Database {
           last_opened_at?: string;
         };
       };
+      trade_completions: {
+        Row: {
+          id: string;
+          connection_id: string;
+          completed_by: string;
+          completed_at: string;
+          dispute_deadline: string;
+          disputed_at: string | null;
+          disputed_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          connection_id: string;
+          completed_by: string;
+          completed_at?: string;
+          dispute_deadline: string;
+          disputed_at?: string | null;
+          disputed_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          connection_id?: string;
+          completed_by?: string;
+          completed_at?: string;
+          dispute_deadline?: string;
+          disputed_at?: string | null;
+          disputed_by?: string | null;
+        };
+      };
+      trade_completion_items: {
+        Row: {
+          id: string;
+          trade_completion_id: string;
+          item_id: string;
+        };
+        Insert: {
+          id?: string;
+          trade_completion_id: string;
+          item_id: string;
+        };
+        Update: {
+          id?: string;
+          trade_completion_id?: string;
+          item_id?: string;
+        };
+      };
       messages: {
         Row: {
           id: string;
@@ -376,6 +422,8 @@ export type Connection = Database["public"]["Tables"]["connections"]["Row"];
 export type ConnectionItemInterest = Database["public"]["Tables"]["connection_item_interests"]["Row"];
 export type ConnectionRead = Database["public"]["Tables"]["connection_reads"]["Row"];
 export type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
+export type TradeCompletion = Database["public"]["Tables"]["trade_completions"]["Row"];
+export type TradeCompletionItem = Database["public"]["Tables"]["trade_completion_items"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
