@@ -47,14 +47,13 @@ export const useReviews = () => {
       queryClient.invalidateQueries({ queryKey: ["reviews", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["reviewsByUser", user?.id] });
       queryClient.invalidateQueries({ queryKey: ["reviewStats", user?.id] });
-      queryClient.invalidateQueries({ queryKey: ["matches", user?.id] });
     },
   });
 
-  // Check if user can review a match
-  const canReviewMatch = async (matchId: string) => {
+  // Check if user can review a trade completion
+  const canReviewTrade = async (tradeCompletionId: string) => {
     if (!user) return false;
-    const result = await ReviewService.canReviewMatch(matchId, user.id);
+    const result = await ReviewService.canReviewTrade(tradeCompletionId, user.id);
     return result.data || false;
   };
 
@@ -78,6 +77,6 @@ export const useReviews = () => {
     createReview: createReview.mutate,
     createReviewLoading: createReview.isPending,
     createReviewError: createReview.error?.message,
-    canReviewMatch,
+    canReviewTrade,
   };
 };

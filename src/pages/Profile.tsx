@@ -423,12 +423,6 @@ export const Profile: React.FC = () => {
                 </div>
 
                 {review.comment && <p className="text-gray-700 mb-3">{review.comment}</p>}
-
-                {review.trade_experience && (
-                  <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {review.trade_experience.charAt(0).toUpperCase() + review.trade_experience.slice(1)} Experience
-                  </div>
-                )}
               </div>
             ))
           )}

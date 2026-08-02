@@ -1,16 +1,15 @@
 import { supabase } from "../lib/supabase";
-import { ServiceResult, ServiceError, ReviewData } from "./types";
-import { ERROR_CODES, ERROR_MESSAGES, TABLES, BUSINESS_RULES } from "./config";
+import { ServiceResult, ServiceError } from "./types";
+import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
 export interface ReviewWithDetails {
   id: string;
-  matchId: string;
+  tradeCompletionId: string;
   reviewerId: string;
   revieweeId: string;
   rating: number;
   comment?: string;
-  tradeExperience: "excellent" | "good" | "fair" | "poor";
   createdAt: string;
   updatedAt: string;
   reviewer: {
@@ -23,20 +22,13 @@ export interface ReviewWithDetails {
     username: string;
     avatarUrl?: string;
   };
-  match: {
-    id: string;
-    itemId1: string;
-    itemId2: string;
-    status: string;
-  };
 }
 
 export interface CreateReviewData {
-  matchId: string;
+  tradeCompletionId: string;
   revieweeId: string;
   rating: number;
   comment?: string;
-  tradeExperience: "excellent" | "good" | "fair" | "poor";
 }
 
 export interface ReviewStats {
@@ -48,12 +40,6 @@ export interface ReviewStats {
     3: number;
     4: number;
     5: number;
-  };
-  tradeExperienceDistribution: {
-    excellent: number;
-    good: number;
-    fair: number;
-    poor: number;
   };
 }
 
@@ -77,8 +63,8 @@ export class ReviewService {
         return { error: reviewerIdError };
       }
 
-      // Check if user has already reviewed this match
-      const existingReview = await this.getReviewByMatchAndUser(reviewData.matchId, reviewerId);
+      // Check if user has already reviewed this trade
+      const existingReview = await this.getReviewByTradeAndUser(reviewData.tradeCompletionId, reviewerId);
       if (existingReview.data) {
         return {
           error: {
@@ -88,10 +74,13 @@ export class ReviewService {
         };
       }
 
-      // Verify the match exists and user is part of it
-      const matchResult = await this.verifyMatchAccess(reviewData.matchId, reviewerId, reviewData.revieweeId);
-      if (matchResult.error) {
-        return { error: matchResult.error };
+      // Verify the trade completion exists and both users are part of it.
+      // Deliberately not gated on the dispute window having closed -- the
+      // review reminder (send_review_reminders) is a nudge, not a gate, per
+      // PRD §4.
+      const tradeResult = await this.verifyTradeAccess(reviewData.tradeCompletionId, reviewerId, reviewData.revieweeId);
+      if (tradeResult.error) {
+        return { error: tradeResult.error };
       }
 
       // Create the review
@@ -99,12 +88,11 @@ export class ReviewService {
         .from(TABLES.REVIEWS)
         .insert([
           {
-            match_id: reviewData.matchId,
+            trade_completion_id: reviewData.tradeCompletionId,
             reviewer_id: reviewerId,
             reviewee_id: reviewData.revieweeId,
             rating: reviewData.rating,
             comment: reviewData.comment,
-            trade_experience: reviewData.tradeExperience,
           },
         ])
         .select()
@@ -165,12 +153,6 @@ export class ReviewService {
             id,
             username,
             avatar_url
-          ),
-          match:matches!match_id (
-            id,
-            item_id_1,
-            item_id_2,
-            status
           )
         `
         )
@@ -189,12 +171,11 @@ export class ReviewService {
 
       const transformedData: ReviewWithDetails[] = data.map((review: any) => ({
         id: review.id,
-        matchId: review.match_id,
+        tradeCompletionId: review.trade_completion_id,
         reviewerId: review.reviewer_id,
         revieweeId: review.reviewee_id,
         rating: review.rating,
         comment: review.comment,
-        tradeExperience: review.trade_experience,
         createdAt: review.created_at,
         updatedAt: review.updated_at,
         reviewer: {
@@ -206,12 +187,6 @@ export class ReviewService {
           id: review.reviewee.id,
           username: review.reviewee.username,
           avatarUrl: review.reviewee.avatar_url,
-        },
-        match: {
-          id: review.match.id,
-          itemId1: review.match.item_id_1,
-          itemId2: review.match.item_id_2,
-          status: review.match.status,
         },
       }));
 
@@ -251,12 +226,6 @@ export class ReviewService {
             id,
             username,
             avatar_url
-          ),
-          match:matches!match_id (
-            id,
-            item_id_1,
-            item_id_2,
-            status
           )
         `
         )
@@ -275,12 +244,11 @@ export class ReviewService {
 
       const transformedData: ReviewWithDetails[] = data.map((review: any) => ({
         id: review.id,
-        matchId: review.match_id,
+        tradeCompletionId: review.trade_completion_id,
         reviewerId: review.reviewer_id,
         revieweeId: review.reviewee_id,
         rating: review.rating,
         comment: review.comment,
-        tradeExperience: review.trade_experience,
         createdAt: review.created_at,
         updatedAt: review.updated_at,
         reviewer: {
@@ -292,12 +260,6 @@ export class ReviewService {
           id: review.reviewee.id,
           username: review.reviewee.username,
           avatarUrl: review.reviewee.avatar_url,
-        },
-        match: {
-          id: review.match.id,
-          itemId1: review.match.item_id_1,
-          itemId2: review.match.item_id_2,
-          status: review.match.status,
         },
       }));
 
@@ -337,12 +299,6 @@ export class ReviewService {
             id,
             username,
             avatar_url
-          ),
-          match:matches!match_id (
-            id,
-            item_id_1,
-            item_id_2,
-            status
           )
         `
         )
@@ -369,12 +325,11 @@ export class ReviewService {
 
       const transformedData: ReviewWithDetails = {
         id: data.id,
-        matchId: data.match_id,
+        tradeCompletionId: data.trade_completion_id,
         reviewerId: data.reviewer_id,
         revieweeId: data.reviewee_id,
         rating: data.rating,
         comment: data.comment,
-        tradeExperience: data.trade_experience,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         reviewer: {
@@ -386,12 +341,6 @@ export class ReviewService {
           id: data.reviewee.id,
           username: data.reviewee.username,
           avatarUrl: data.reviewee.avatar_url,
-        },
-        match: {
-          id: data.match.id,
-          itemId1: data.match.item_id_1,
-          itemId2: data.match.item_id_2,
-          status: data.match.status,
         },
       };
 
@@ -417,10 +366,7 @@ export class ReviewService {
         return { error: uuidError };
       }
 
-      const { data, error } = await supabase
-        .from(TABLES.REVIEWS)
-        .select("rating, trade_experience")
-        .eq("reviewee_id", userId);
+      const { data, error } = await supabase.from(TABLES.REVIEWS).select("rating").eq("reviewee_id", userId);
 
       if (error) {
         return {
@@ -443,19 +389,11 @@ export class ReviewService {
         5: data.filter((review) => review.rating === 5).length,
       };
 
-      const tradeExperienceDistribution = {
-        excellent: data.filter((review) => review.trade_experience === "excellent").length,
-        good: data.filter((review) => review.trade_experience === "good").length,
-        fair: data.filter((review) => review.trade_experience === "fair").length,
-        poor: data.filter((review) => review.trade_experience === "poor").length,
-      };
-
       return {
         data: {
           totalReviews,
           averageRating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
           ratingDistribution,
-          tradeExperienceDistribution,
         },
       };
     } catch (error) {
@@ -470,36 +408,32 @@ export class ReviewService {
   }
 
   /**
-   * Check if user can review a match
+   * Check if user can review a trade completion
    */
-  static async canReviewMatch(matchId: string, userId: string): Promise<ServiceResult<boolean>> {
+  static async canReviewTrade(tradeCompletionId: string, userId: string): Promise<ServiceResult<boolean>> {
     try {
-      const matchIdError = ValidationService.validateUUID(matchId);
+      const tradeCompletionIdError = ValidationService.validateUUID(tradeCompletionId);
       const userIdError = ValidationService.validateUUID(userId);
-      if (matchIdError) return { error: matchIdError };
+      if (tradeCompletionIdError) return { error: tradeCompletionIdError };
       if (userIdError) return { error: userIdError };
 
       // Check if review already exists
-      const existingReview = await this.getReviewByMatchAndUser(matchId, userId);
+      const existingReview = await this.getReviewByTradeAndUser(tradeCompletionId, userId);
       if (existingReview.data) {
         return { data: false };
       }
 
-      // Check if match is completed and user is part of it
-      const { data: match, error } = await supabase
-        .from(TABLES.MATCHES)
-        .select("status, user_id_1, user_id_2")
-        .eq("id", matchId)
-        .single();
-
-      if (error || !match) {
+      // Check the trade completion exists and the user is a participant in
+      // its connection. Deliberately not gated on the dispute window having
+      // closed -- see the note in createReview.
+      const participants = await this.getTradeConnectionParticipants(tradeCompletionId);
+      if (!participants.data) {
         return { data: false };
       }
 
-      const isUserInMatch = match.user_id_1 === userId || match.user_id_2 === userId;
-      const isMatchCompleted = match.status === "accepted";
+      const isParticipant = participants.data.userId1 === userId || participants.data.userId2 === userId;
 
-      return { data: isUserInMatch && isMatchCompleted };
+      return { data: isParticipant };
     } catch (error) {
       return {
         error: {
@@ -515,8 +449,8 @@ export class ReviewService {
    * Private helper methods
    */
   private static validateReviewData(reviewData: CreateReviewData): ServiceError | null {
-    const matchIdError = ValidationService.validateUUID(reviewData.matchId);
-    if (matchIdError) return matchIdError;
+    const tradeCompletionIdError = ValidationService.validateUUID(reviewData.tradeCompletionId);
+    if (tradeCompletionIdError) return tradeCompletionIdError;
 
     const revieweeIdError = ValidationService.validateUUID(reviewData.revieweeId);
     if (revieweeIdError) return revieweeIdError;
@@ -527,22 +461,11 @@ export class ReviewService {
     const commentError = ValidationService.validateReviewComment(reviewData.comment);
     if (commentError) return commentError;
 
-    const experienceError = ValidationService.validateRequired(reviewData.tradeExperience, "Trade experience");
-    if (experienceError) return experienceError;
-
-    const validExperiences = ["excellent", "good", "fair", "poor"];
-    if (!validExperiences.includes(reviewData.tradeExperience)) {
-      return {
-        code: ERROR_CODES.VALIDATION_ERROR,
-        message: "Invalid trade experience value",
-      };
-    }
-
     return null;
   }
 
-  private static async getReviewByMatchAndUser(
-    matchId: string,
+  private static async getReviewByTradeAndUser(
+    tradeCompletionId: string,
     userId: string
   ): Promise<ServiceResult<ReviewWithDetails | null>> {
     try {
@@ -560,16 +483,10 @@ export class ReviewService {
             id,
             username,
             avatar_url
-          ),
-          match:matches!match_id (
-            id,
-            item_id_1,
-            item_id_2,
-            status
           )
         `
         )
-        .eq("match_id", matchId)
+        .eq("trade_completion_id", tradeCompletionId)
         .eq("reviewer_id", userId)
         .single();
 
@@ -589,12 +506,11 @@ export class ReviewService {
 
       const transformedData: ReviewWithDetails = {
         id: data.id,
-        matchId: data.match_id,
+        tradeCompletionId: data.trade_completion_id,
         reviewerId: data.reviewer_id,
         revieweeId: data.reviewee_id,
         rating: data.rating,
         comment: data.comment,
-        tradeExperience: data.trade_experience,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         reviewer: {
@@ -606,12 +522,6 @@ export class ReviewService {
           id: data.reviewee.id,
           username: data.reviewee.username,
           avatarUrl: data.reviewee.avatar_url,
-        },
-        match: {
-          id: data.match.id,
-          itemId1: data.match.item_id_1,
-          itemId2: data.match.item_id_2,
-          status: data.match.status,
         },
       };
 
@@ -627,36 +537,65 @@ export class ReviewService {
     }
   }
 
-  private static async verifyMatchAccess(
-    matchId: string,
+  /**
+   * Looks up the two participants of the connection behind a trade
+   * completion. Returns { data: null } (not an error) if the trade
+   * completion or its connection can't be found, so callers that only care
+   * about "can this user act on it" (canReviewTrade) can treat not-found and
+   * not-a-participant the same way, while callers that need to distinguish
+   * the two (verifyTradeAccess) still can.
+   */
+  private static async getTradeConnectionParticipants(
+    tradeCompletionId: string
+  ): Promise<ServiceResult<{ userId1: string; userId2: string } | null>> {
+    const { data: tradeCompletion, error } = await supabase
+      .from(TABLES.TRADE_COMPLETIONS)
+      .select("connection_id")
+      .eq("id", tradeCompletionId)
+      .single();
+
+    if (error || !tradeCompletion) {
+      return { data: null };
+    }
+
+    const { data: connection, error: connectionError } = await supabase
+      .from(TABLES.CONNECTIONS)
+      .select("user_id_1, user_id_2")
+      .eq("id", tradeCompletion.connection_id)
+      .single();
+
+    if (connectionError || !connection) {
+      return { data: null };
+    }
+
+    return { data: { userId1: connection.user_id_1, userId2: connection.user_id_2 } };
+  }
+
+  private static async verifyTradeAccess(
+    tradeCompletionId: string,
     reviewerId: string,
     revieweeId: string
   ): Promise<ServiceResult<boolean>> {
     try {
-      const { data: match, error } = await supabase
-        .from(TABLES.MATCHES)
-        .select("user_id_1, user_id_2, status")
-        .eq("id", matchId)
-        .single();
-
-      if (error || !match) {
+      const participants = await this.getTradeConnectionParticipants(tradeCompletionId);
+      if (!participants.data) {
         return {
           error: {
             code: ERROR_CODES.ITEM_NOT_FOUND,
-            message: "Match not found",
+            message: "Trade completion not found",
           },
         };
       }
 
-      const isUserInMatch = match.user_id_1 === reviewerId || match.user_id_2 === reviewerId;
-      const isRevieweeInMatch = match.user_id_1 === revieweeId || match.user_id_2 === revieweeId;
-      const isMatchCompleted = match.status === "accepted";
+      const { userId1, userId2 } = participants.data;
+      const isReviewerParticipant = userId1 === reviewerId || userId2 === reviewerId;
+      const isRevieweeParticipant = userId1 === revieweeId || userId2 === revieweeId;
 
-      if (!isUserInMatch || !isRevieweeInMatch || !isMatchCompleted) {
+      if (!isReviewerParticipant || !isRevieweeParticipant) {
         return {
           error: {
             code: ERROR_CODES.UNAUTHORIZED,
-            message: "You can only review completed matches you participated in",
+            message: "You can only review trades you participated in",
           },
         };
       }

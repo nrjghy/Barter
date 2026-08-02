@@ -57,12 +57,11 @@ export interface UserData {
 }
 
 export interface ReviewData {
-  matchId: string;
+  tradeCompletionId: string;
   reviewerId: string;
   revieweeId: string;
   rating: number;
   comment?: string;
-  tradeExperience: "excellent" | "good" | "fair" | "poor";
 }
 
 export interface ReportData {

@@ -321,34 +321,31 @@ export interface Database {
       reviews: {
         Row: {
           id: string;
-          match_id: string;
+          trade_completion_id: string;
           reviewer_id: string;
           reviewee_id: string;
           rating: number;
           comment: string | null;
-          trade_experience: "excellent" | "good" | "fair" | "poor" | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          match_id: string;
+          trade_completion_id: string;
           reviewer_id: string;
           reviewee_id: string;
           rating: number;
           comment?: string | null;
-          trade_experience?: "excellent" | "good" | "fair" | "poor" | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          match_id?: string;
+          trade_completion_id?: string;
           reviewer_id?: string;
           reviewee_id?: string;
           rating?: number;
           comment?: string | null;
-          trade_experience?: "excellent" | "good" | "fair" | "poor" | null;
           created_at?: string;
           updated_at?: string;
         };
