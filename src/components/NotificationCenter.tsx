@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, Trash2, BookMarked as MarkAsRead } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoadingSpinner } from './LoadingSpinner';
+import type { NotificationWithDetails } from '../services/notificationService';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -11,6 +13,19 @@ interface NotificationCenterProps {
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
   const { notifications, loading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const navigate = useNavigate();
+
+  // Tap-to-navigate is only wired up for review_reminder so far -- every
+  // other type's tap behavior (just mark-as-read/delete, no navigation)
+  // is a pre-existing, already-tracked gap ("wire up in-app + email
+  // notifications"), not something this pass fixes.
+  const handleNotificationClick = (notification: NotificationWithDetails) => {
+    if (notification.type !== 'review_reminder') return;
+    const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
+    if (!tradeCompletionId) return;
+    onClose();
+    navigate(`/trade-completion/${tradeCompletionId}/review`);
+  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -120,7 +135,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
-                          <div className="flex-1">
+                          <div
+                            className={`flex-1 ${notification.type === 'review_reminder' ? 'cursor-pointer' : ''}`}
+                            onClick={() => handleNotificationClick(notification)}
+                          >
                             <h4 className={`text-sm font-medium ${
                               !notification.is_read ? 'text-gray-900' : 'text-gray-700'
                             }`}>

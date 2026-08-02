@@ -31,6 +31,16 @@ export interface CreateReviewData {
   comment?: string;
 }
 
+export interface ReviewContext {
+  connectionId: string;
+  reviewee: {
+    id: string;
+    username: string;
+    avatarUrl?: string;
+  };
+  itemLabel: string;
+}
+
 export interface ReviewStats {
   totalReviews: number;
   averageRating: number;
@@ -434,6 +444,113 @@ export class ReviewService {
       const isParticipant = participants.data.userId1 === userId || participants.data.userId2 === userId;
 
       return { data: isParticipant };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Everything the review-writing screen needs to render itself, looked up
+   * from just a trade completion id (the screen is reached from a
+   * notification tap, not router state, so it can't rely on anything
+   * being passed in-memory).
+   */
+  static async getReviewContext(tradeCompletionId: string, viewerId: string): Promise<ServiceResult<ReviewContext>> {
+    try {
+      const tradeCompletionIdError = ValidationService.validateUUID(tradeCompletionId);
+      const viewerIdError = ValidationService.validateUUID(viewerId);
+      if (tradeCompletionIdError) return { error: tradeCompletionIdError };
+      if (viewerIdError) return { error: viewerIdError };
+
+      const { data: tradeCompletion, error: tradeCompletionError } = await supabase
+        .from(TABLES.TRADE_COMPLETIONS)
+        .select("connection_id")
+        .eq("id", tradeCompletionId)
+        .single();
+
+      if (tradeCompletionError || !tradeCompletion) {
+        return {
+          error: {
+            code: ERROR_CODES.ITEM_NOT_FOUND,
+            message: "Trade completion not found",
+          },
+        };
+      }
+
+      const { data: connection, error: connectionError } = await supabase
+        .from(TABLES.CONNECTIONS)
+        .select(
+          `
+          id,
+          user_id_1,
+          user_id_2,
+          user1:users!user_id_1 ( id, username, avatar_url ),
+          user2:users!user_id_2 ( id, username, avatar_url )
+        `
+        )
+        .eq("id", tradeCompletion.connection_id)
+        .single();
+
+      if (connectionError || !connection) {
+        return {
+          error: {
+            code: ERROR_CODES.ITEM_NOT_FOUND,
+            message: "Connection not found",
+          },
+        };
+      }
+
+      if (connection.user_id_1 !== viewerId && connection.user_id_2 !== viewerId) {
+        return {
+          error: {
+            code: ERROR_CODES.UNAUTHORIZED,
+            message: ERROR_MESSAGES[ERROR_CODES.UNAUTHORIZED],
+          },
+        };
+      }
+
+      const revieweeRaw: any = connection.user_id_1 === viewerId ? (connection as any).user2 : (connection as any).user1;
+
+      const { data: tradeItems, error: itemsError } = await supabase
+        .from(TABLES.TRADE_COMPLETION_ITEMS)
+        .select("items ( title )")
+        .eq("trade_completion_id", tradeCompletionId);
+
+      if (itemsError) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to fetch traded items",
+            details: itemsError,
+          },
+        };
+      }
+
+      // Multiple items per trade is expected (uneven/multi-item trades,
+      // PRD §1), so this joins every traded item's title with a comma
+      // rather than assuming there's exactly one.
+      const itemLabel = (tradeItems || [])
+        .map((row: any) => row.items?.title)
+        .filter(Boolean)
+        .join(", ");
+
+      return {
+        data: {
+          connectionId: connection.id,
+          reviewee: {
+            id: revieweeRaw.id,
+            username: revieweeRaw.username,
+            avatarUrl: revieweeRaw.avatar_url,
+          },
+          itemLabel,
+        },
+      };
     } catch (error) {
       return {
         error: {

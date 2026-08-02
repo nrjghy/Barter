@@ -6,7 +6,7 @@ import { ValidationService } from "./validation";
 export interface NotificationWithDetails {
   id: string;
   userId: string;
-  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
+  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
   title: string;
   content: string;
   data?: Record<string, unknown>;
@@ -18,7 +18,7 @@ export interface NotificationWithDetails {
 
 export interface CreateNotificationData {
   userId: string;
-  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
+  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
   title: string;
   content: string;
   data?: Record<string, unknown>;
@@ -572,7 +572,7 @@ export class NotificationService {
     const contentError = ValidationService.validateRequired(notificationData.content, "Content");
     if (contentError) return contentError;
 
-    const validTypes = ["match", "message", "trade_completed", "review", "system", "item_unavailable"];
+    const validTypes = ["match", "message", "trade_completed", "review", "system", "item_unavailable", "review_reminder"];
     if (!validTypes.includes(notificationData.type)) {
       return {
         code: ERROR_CODES.VALIDATION_ERROR,

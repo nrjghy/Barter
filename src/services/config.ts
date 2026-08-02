@@ -128,6 +128,7 @@ export const TABLES = {
   CONNECTION_ITEM_INTERESTS: "connection_item_interests",
   CONNECTION_READS: "connection_reads",
   TRADE_COMPLETIONS: "trade_completions",
+  TRADE_COMPLETION_ITEMS: "trade_completion_items",
 } as const;
 
 // Real-time channels

@@ -10,6 +10,7 @@ import { Profile } from "./pages/Profile";
 import { Chat } from "./pages/Chat";
 import { ChatThread } from "./pages/ChatThread";
 import { MarkTradeComplete } from "./pages/MarkTradeComplete";
+import { ReviewWrite } from "./pages/ReviewWrite";
 import { MyStuff } from "./pages/MyStuff";
 import { ItemDetail } from "./pages/ItemDetail";
 import { AdminDashboard } from "./pages/AdminDashboard";
@@ -102,6 +103,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <MarkTradeComplete />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trade-completion/:tradeCompletionId/review"
+            element={
+              <ProtectedRoute>
+                <ReviewWrite />
               </ProtectedRoute>
             }
           />

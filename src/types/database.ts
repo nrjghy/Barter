@@ -377,7 +377,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
           title: string;
           content: string;
           data: any;
@@ -388,7 +388,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
           title: string;
           content: string;
           data?: any;
@@ -399,7 +399,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable";
+          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder";
           title?: string;
           content?: string;
           data?: any;
