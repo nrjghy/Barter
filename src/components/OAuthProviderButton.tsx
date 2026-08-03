@@ -1,9 +1,9 @@
 import React from 'react';
-import { Chrome, Facebook, Github } from 'lucide-react';
+import { Chrome, Facebook, Apple } from 'lucide-react';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface OAuthProviderButtonProps {
-  provider: 'google' | 'facebook' | 'github';
+  provider: 'google' | 'facebook' | 'apple';
   onClick: () => void;
   loading: boolean;
   disabled: boolean;
@@ -26,12 +26,12 @@ const providerConfig = {
     borderColor: 'border-[#1877F2]',
     iconColor: 'text-white'
   },
-  github: {
-    icon: Github,
-    label: 'Continue with GitHub',
-    bgColor: 'bg-[#24292F] hover:bg-[#1C2128]',
+  apple: {
+    icon: Apple,
+    label: 'Continue with Apple',
+    bgColor: 'bg-black hover:bg-gray-900',
     textColor: 'text-white',
-    borderColor: 'border-[#24292F]',
+    borderColor: 'border-black',
     iconColor: 'text-white'
   }
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, MapPin, AlertCircle, Chrome, Facebook, Github, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { OAuthProviderButton } from '../components/OAuthProviderButton';
@@ -59,7 +59,7 @@ export const Register: React.FC = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'github') => {
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
     setSocialLoading(provider);
     setError('');
 
@@ -156,9 +156,9 @@ export const Register: React.FC = () => {
             />
             
             <OAuthProviderButton
-              provider="github"
-              onClick={() => handleSocialLogin('github')}
-              loading={socialLoading === 'github'}
+              provider="apple"
+              onClick={() => handleSocialLogin('apple')}
+              loading={socialLoading === 'apple'}
               disabled={socialLoading !== null}
             />
           </div>

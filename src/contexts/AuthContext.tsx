@@ -7,7 +7,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signInWithOAuth: (provider: "google" | "facebook" | "github") => Promise<{ data: any; error: any }>;
+  signInWithOAuth: (provider: "google" | "facebook" | "apple") => Promise<{ data: any; error: any }>;
   signUp: (email: string, password: string, username: string, location?: string) => Promise<{ error: any }>;
   resendVerification: (email: string) => Promise<{ error: any }>;
   resetPassword: (email: string) => Promise<{ error: any }>;
@@ -125,15 +125,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const signInWithOAuth = async (provider: "google" | "facebook" | "github") => {
+  const signInWithOAuth = async (provider: "google" | "facebook" | "apple") => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
-        },
+        // access_type/prompt are Google-OAuth2-specific concepts (offline
+        // refresh tokens, forced consent screen) -- they don't mean anything
+        // to Facebook or Apple's OAuth flows, so they're now scoped to
+        // google only rather than sent to every provider unconditionally.
+        ...(provider === "google" && {
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        }),
       },
     });
     return { data, error };
