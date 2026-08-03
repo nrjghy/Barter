@@ -59,6 +59,14 @@ const AppContent: React.FC = () => {
             }
           />
           <Route
+            path="/edit/:itemId"
+            element={
+              <ProtectedRoute>
+                <AddToy />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/my-stuff"
             element={
               <ProtectedRoute>

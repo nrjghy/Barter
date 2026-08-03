@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { MoreVertical, ChevronRight, Package } from "lucide-react";
 import { useItems } from "../hooks/useItems";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -18,15 +18,21 @@ const STATUS_META: Record<ItemStatus, { label: string; bg: string; color: string
 const ListingRow: React.FC<{
   item: ItemData;
   onOpenDetail: () => void;
+  onEdit: () => void;
   onCancel: () => void;
-}> = ({ item, onOpenDetail, onCancel }) => {
+  highlighted?: boolean;
+}> = ({ item, onOpenDetail, onEdit, onCancel, highlighted }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const status = (item.status ?? "active") as ItemStatus;
   const meta = STATUS_META[status];
   const thumbnail = item.imageUrls?.[0];
 
   return (
-    <div className="flex items-center gap-3 py-3 border-t border-[oklch(88%_0.015_90)] relative">
+    <div
+      className={`flex items-center gap-3 py-3 border-t border-[oklch(88%_0.015_90)] relative transition-colors duration-500 ${
+        highlighted ? "bg-[oklch(93%_0.035_145)]" : ""
+      }`}
+    >
       <button onClick={onOpenDetail} className="w-[52px] h-[52px] rounded-[10px] flex-shrink-0 overflow-hidden bg-[oklch(90%_0.02_90)]">
         {thumbnail ? (
           <img src={thumbnail} alt={item.title} className="w-full h-full object-cover" />
@@ -79,6 +85,15 @@ const ListingRow: React.FC<{
             <button
               onClick={() => {
                 setMenuOpen(false);
+                onEdit();
+              }}
+              className="w-full text-left px-3.5 py-2.5 text-[13px] font-semibold text-[oklch(22%_0.02_100)] border-b border-[oklch(88%_0.015_90)]"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => {
+                setMenuOpen(false);
                 onCancel();
               }}
               className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
@@ -94,9 +109,22 @@ const ListingRow: React.FC<{
 
 export const MyStuff: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userItems, userItemsLoading, cancelItem, cancelItemLoading } = useItems();
   const [filter, setFilter] = useState<"all" | "active">("all");
   const [confirmingItem, setConfirmingItem] = useState<ItemData | null>(null);
+
+  // Post-publish flow (PRD §13): after Add/Edit, land here with the affected
+  // listing briefly highlighted rather than a separate confirmation screen.
+  const [highlightItemId, setHighlightItemId] = useState<string | undefined>(
+    (location.state as { highlightItemId?: string } | null)?.highlightItemId
+  );
+
+  useEffect(() => {
+    if (!highlightItemId) return;
+    const timeout = setTimeout(() => setHighlightItemId(undefined), 3000);
+    return () => clearTimeout(timeout);
+  }, [highlightItemId]);
 
   const visibleItems = filter === "active" ? userItems.filter((i) => (i.status ?? "active") === "active") : userItems;
 
@@ -160,7 +188,9 @@ export const MyStuff: React.FC = () => {
             key={item.id}
             item={item}
             onOpenDetail={() => navigate(`/item/${item.id}`)}
+            onEdit={() => navigate(`/edit/${item.id}`)}
             onCancel={() => setConfirmingItem(item)}
+            highlighted={item.id === highlightItemId}
           />
         ))}
 

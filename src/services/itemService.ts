@@ -145,6 +145,7 @@ export class ItemService {
         estimatedValue: item.estimated_value,
         valueCurrency: item.value_currency,
         sourceUrl: item.source_url,
+        categorySuggestion: item.category_suggestion,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
         user: {
@@ -231,6 +232,7 @@ export class ItemService {
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        categorySuggestion: data.category_suggestion,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         user: {
@@ -350,7 +352,11 @@ export class ItemService {
   /**
    * Update an existing item
    */
-  static async updateItem(itemId: string, updates: Partial<ItemData>): Promise<ServiceResult<ItemData>> {
+  static async updateItem(
+    itemId: string,
+    updates: Partial<ItemData>,
+    userId: string
+  ): Promise<ServiceResult<ItemData>> {
     try {
       const uuidError = ValidationService.validateUUID(itemId);
       if (uuidError) {
@@ -368,6 +374,34 @@ export class ItemService {
         if (descError) return { error: descError };
       }
 
+      // updates.imageUrls may be a mix of already-uploaded storage URLs (images the
+      // user kept from before) and new base64 previews (freshly picked files), since
+      // the edit form pre-fills existing images and only generates base64 previews for
+      // ones added during this session. Unlike createItem, this method previously wrote
+      // that array straight through -- any base64 entries would have been persisted as
+      // raw data URIs in image_urls instead of real storage URLs. Only the base64
+      // portion needs uploading; already-real URLs pass through unchanged.
+      let finalImageUrls = updates.imageUrls;
+      if (updates.imageUrls && updates.imageUrls.length > 0) {
+        const alreadyUploadedUrls = updates.imageUrls.filter((url) => !url.startsWith("data:"));
+        const newBase64Images = updates.imageUrls.filter((url) => url.startsWith("data:"));
+
+        if (newBase64Images.length > 0) {
+          try {
+            const imageFiles = await ItemService.convertBase64ToFiles(newBase64Images);
+            const uploadedUrls = await storageService.uploadImages(imageFiles, userId, itemId);
+            finalImageUrls = [...alreadyUploadedUrls, ...uploadedUrls];
+          } catch (uploadError) {
+            console.error("Image upload failed during update:", uploadError);
+            // Fall back to only the images that were already real URLs, rather than
+            // persisting unresolved base64 data into image_urls.
+            finalImageUrls = alreadyUploadedUrls;
+          }
+        } else {
+          finalImageUrls = alreadyUploadedUrls;
+        }
+      }
+
       const { data, error } = await supabase
         .from(TABLES.ITEMS)
         .update({
@@ -375,13 +409,14 @@ export class ItemService {
           description: updates.description,
           category: updates.category,
           condition: updates.condition,
-          image_urls: updates.imageUrls, // ✅ Updated to use imageUrls array
+          image_urls: finalImageUrls, // ✅ Updated to use imageUrls array
           tags: updates.tags,
           is_active: updates.isActive,
           // Update to use correct fields:
           estimated_value: updates.estimatedValue,
           value_currency: updates.valueCurrency,
           source_url: updates.sourceUrl,
+          category_suggestion: updates.categorySuggestion, // was previously dropped entirely
           updated_at: new Date().toISOString(),
         })
         .eq("id", itemId)
@@ -413,6 +448,7 @@ export class ItemService {
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        categorySuggestion: data.category_suggestion,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };

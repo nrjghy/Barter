@@ -122,7 +122,8 @@ export const useItems = (options?: {
 
   // Update item mutation
   const updateItem = useMutation({
-    mutationFn: ({ itemId, updates }: { itemId: string; updates: any }) => ItemService.updateItem(itemId, updates),
+    mutationFn: ({ itemId, updates }: { itemId: string; updates: any }) =>
+      ItemService.updateItem(itemId, updates, user!.id),
     onSuccess: () => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["items"] });
@@ -176,7 +177,7 @@ export const useItems = (options?: {
     createItemLoading: createItem.isPending,
     createItemError: createItem.error?.message,
 
-    updateItem: updateItem.mutate,
+    updateItem: updateItem.mutateAsync,
     updateItemLoading: updateItem.isPending,
     updateItemError: updateItem.error?.message,
 
