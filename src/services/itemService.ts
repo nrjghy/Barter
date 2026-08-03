@@ -282,6 +282,7 @@ export class ItemService {
             estimated_value: itemData.estimatedValue,
             value_currency: itemData.valueCurrency,
             source_url: itemData.sourceUrl,
+            category_suggestion: itemData.categorySuggestion,
             created_at: itemData.createdAt,
             updated_at: itemData.updatedAt,
           },
@@ -334,6 +335,7 @@ export class ItemService {
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
+        categorySuggestion: data.category_suggestion,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };

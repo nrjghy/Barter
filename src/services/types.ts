@@ -42,6 +42,7 @@ export interface ItemData {
   estimatedValue?: number | null;
   valueCurrency?: string;
   sourceUrl?: string;
+  categorySuggestion?: string;
   createdAt: string;
   updatedAt: string;
 }

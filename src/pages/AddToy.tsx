@@ -12,6 +12,7 @@ export const AddToy: React.FC = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [categorySuggestion, setCategorySuggestion] = useState("");
   const [condition, setCondition] = useState("");
   const [images, setImages] = useState<File[]>([]); // ✅ Changed from single image to array
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // ✅ Changed from single preview to array
@@ -87,6 +88,7 @@ export const AddToy: React.FC = () => {
         estimatedValue: isFreeItem ? null : parseFloat(estimatedValue),
         valueCurrency: "USD",
         sourceUrl: null,
+        categorySuggestion: categorySuggestion || undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       })) as ServiceResult<ItemData>;
@@ -197,6 +199,22 @@ export const AddToy: React.FC = () => {
               </option>
             ))}
           </select>
+          {category === "Other" && (
+            <div className="mt-3">
+              <label htmlFor="categorySuggestion" className="block text-sm font-medium text-gray-700 mb-2">
+                Suggest a category name (optional)
+              </label>
+              <input
+                id="categorySuggestion"
+                type="text"
+                value={categorySuggestion}
+                onChange={(e) => setCategorySuggestion(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="e.g. Board Games"
+              />
+              <p className="text-xs text-gray-500 mt-1">Your listing will show under Other for now.</p>
+            </div>
+          )}
         </div>
 
         {/* Condition */}
