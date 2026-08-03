@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         longitude: data.longitude ?? undefined,
         avatar_url: data.avatar_url || undefined,
         role: data.role || "user",
+        locationPromptDismissedAt: data.location_prompt_dismissed_at ?? undefined,
       });
     } catch (error) {
       console.error("[AuthContext] Error in fetchUserProfile (catch):", error);
@@ -200,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             latitude: updates.latitude ?? user.latitude,
             longitude: updates.longitude ?? user.longitude,
             avatar_url: updates.avatar_url || user.avatar_url,
+            location_prompt_dismissed_at: updates.locationPromptDismissedAt ?? user.locationPromptDismissedAt,
           },
         ]);
 
@@ -221,6 +223,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           latitude: updates.latitude,
           longitude: updates.longitude,
           avatar_url: updates.avatar_url,
+          location_prompt_dismissed_at: updates.locationPromptDismissedAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);

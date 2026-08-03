@@ -7,6 +7,7 @@ export interface AuthUser {
   longitude?: number;
   avatar_url?: string;
   role?: string;
+  locationPromptDismissedAt?: string;
 }
 
 export interface ItemFormData {

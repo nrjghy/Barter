@@ -7,6 +7,7 @@ import { SwipeCounter } from "../components/SwipeCounter";
 import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
+import { LocationPrompt } from "../components/LocationPrompt";
 import { useItems } from "../hooks/useItems";
 import { useSwipes } from "../hooks/useSwipes";
 import { useAuth } from "../hooks/useAuth";
@@ -17,6 +18,7 @@ export const Dashboard: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
@@ -54,6 +56,12 @@ export const Dashboard: React.FC = () => {
       loadSwipedItems();
     }
   }, [user]); // Remove getSwipedItems from dependencies
+
+  useEffect(() => {
+    if (user && user.latitude == null && !user.locationPromptDismissedAt) {
+      setShowLocationPrompt(true);
+    }
+  }, [user]);
 
   // Filter items based on swiped items - use more efficient filtering
   const availableItems = React.useMemo(() => {
@@ -260,6 +268,8 @@ export const Dashboard: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      <LocationPrompt isOpen={showLocationPrompt} onClose={() => setShowLocationPrompt(false)} />
     </div>
   );
 };
