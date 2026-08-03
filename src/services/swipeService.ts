@@ -453,7 +453,7 @@ export class SwipeService {
         return { error: uuidError };
       }
 
-      const { data, error } = await supabase.from(TABLES.SWIPES).select("item_id").eq("user_id", userId);
+      const { data, error } = await supabase.from(TABLES.RESPONSES).select("item_id").eq("user_id", userId);
 
       if (error) {
         return {
