@@ -59,7 +59,7 @@ export const ITEM_CATEGORIES = [
   "Other",
 ] as const;
 
-export const ITEM_CONDITIONS = ["Like New", "Very Good", "Good", "Fair", "Poor"] as const;
+export const ITEM_CONDITIONS = ["Like New", "Good", "Used", "Worn"] as const;
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 export type ItemCondition = (typeof ITEM_CONDITIONS)[number];
