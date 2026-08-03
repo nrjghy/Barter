@@ -24,6 +24,34 @@ export const useSwipes = () => {
     enabled: !!user,
   });
 
+  // Undo mutation -- real server-side reversal via undo_response, not just
+  // local state (see SwipeService.undoResponse for why the old client-only
+  // Undo was never actually reversing anything).
+  const undoResponse = useMutation({
+    mutationFn: ({ itemId }: { itemId: string }) => SwipeService.undoResponse(user!.id, itemId),
+    onSuccess: (result, variables) => {
+      if (result.data) {
+        // Inverse of recordSwipe's cache update: remove rather than add.
+        queryClient.setQueryData(["swipedItems", user?.id], (oldData: any) => {
+          if (oldData?.data) {
+            return {
+              ...oldData,
+              data: oldData.data.filter((id: string) => id !== variables.itemId),
+            };
+          }
+          return oldData;
+        });
+
+        // The daily like counter may have been given back -- re-fetch rather
+        // than guess the new value client-side.
+        queryClient.invalidateQueries({ queryKey: ["swipeLimit", user?.id] });
+      }
+    },
+    onError: (error) => {
+      console.error("Undo failed:", error);
+    },
+  });
+
   // Record swipe mutation
   const recordSwipe = useMutation({
     mutationFn: ({ itemId, direction }: { itemId: string; direction: "left" | "right" }) =>
@@ -66,6 +94,7 @@ export const useSwipes = () => {
     swipeLimit: swipeLimitData?.data?.limit ?? 300,
     recordSwipe: ({ itemId, direction }: { itemId: string; direction: "left" | "right" }) =>
       recordSwipe.mutateAsync({ itemId, direction }),
+    undoResponse: (itemId: string) => undoResponse.mutateAsync({ itemId }),
     checkSwipeLimit: () => SwipeService.checkSwipeLimit(user!.id),
     getSwipedItems: () => refetchSwipedItems().then((res) => res.data?.data ?? []),
     // Debug function to test match creation

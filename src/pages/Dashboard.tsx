@@ -43,7 +43,7 @@ export const Dashboard: React.FC = () => {
     lat: user?.latitude ?? null,
     lng: user?.longitude ?? null,
   });
-  const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems } = useSwipes();
+  const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems, undoResponse } = useSwipes();
 
   // Load previously swiped items
   useEffect(() => {
@@ -146,24 +146,37 @@ export const Dashboard: React.FC = () => {
       if (error.message && error.message.includes("Daily swipe limit reached")) {
         return; // Toast already shown in useSwipes
       }
-      toast.error("Failed to record swipe");
+      toast.error("No connection, please try again.");
     }
   };
 
-  const handleUndo = () => {
-    if (swipedItems.size > 0) {
-      const lastSwipedItem = Array.from(swipedItems).pop();
-      if (lastSwipedItem) {
-        setSwipedItems((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(lastSwipedItem);
-          return newSet;
-        });
-        if (currentIndex > 0) {
-          setCurrentIndex((prev) => prev - 1);
-        }
-        toast.success("Undo successful!");
+  const handleUndo = async () => {
+    if (swipedItems.size === 0) return;
+    const lastSwipedItem = Array.from(swipedItems).pop();
+    if (!lastSwipedItem) return;
+
+    try {
+      const result = await undoResponse(lastSwipedItem);
+
+      if (result.error) {
+        // Covers both "already matched, can't undo" and any other server-side
+        // refusal -- either way, nothing was actually reversed, so local state
+        // (swipedItems/currentIndex) must not change either.
+        toast.error(result.error.message);
+        return;
       }
+
+      setSwipedItems((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(lastSwipedItem);
+        return newSet;
+      });
+      if (currentIndex > 0) {
+        setCurrentIndex((prev) => prev - 1);
+      }
+      toast.success("Undo successful!");
+    } catch (error) {
+      toast.error("Couldn't undo, please try again.");
     }
   };
 

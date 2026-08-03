@@ -102,7 +102,7 @@ export const ERROR_MESSAGES = {
   [ERROR_CODES.SWIPE_LIMIT_EXCEEDED]: "Daily swipe limit reached! Come back tomorrow for more swipes.",
   [ERROR_CODES.ITEM_NOT_FOUND]: "Item not found",
   [ERROR_CODES.USER_NOT_FOUND]: "User not found",
-  [ERROR_CODES.MATCH_ALREADY_EXISTS]: "Match already exists",
+  [ERROR_CODES.MATCH_ALREADY_EXISTS]: "You've already matched on this -- undo isn't available anymore.",
   [ERROR_CODES.INVALID_SWIPE_DIRECTION]: "Invalid swipe direction",
   [ERROR_CODES.DUPLICATE_REVIEW]: "You have already reviewed this match",
   [ERROR_CODES.INVALID_RATING]: "Rating must be between 1 and 5",

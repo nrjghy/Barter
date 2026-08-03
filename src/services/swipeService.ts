@@ -79,6 +79,61 @@ export class SwipeService {
   }
 
   /**
+   * Undo a previously-recorded like/pass (Dashboard's Undo button). This is a
+   * real server-side reversal via the undo_response RPC -- it was previously
+   * client-state-only, meaning the original response was never actually
+   * removed and the daily like counter was never given back. Refuses (rather
+   * than silently no-op'ing) if the like has already resulted in a
+   * connection, since reversing an already-formed match is a materially
+   * different, more consequential action than undoing a quick mis-tap.
+   */
+  static async undoResponse(userId: string, itemId: string): Promise<ServiceResult<{ success: true }>> {
+    try {
+      const { data: result, error: rpcError } = await supabase.rpc("undo_response", {
+        user_uuid: userId,
+        target_item_id: itemId,
+      });
+
+      if (rpcError) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: ERROR_MESSAGES[ERROR_CODES.NETWORK_ERROR],
+            details: rpcError,
+          },
+        };
+      }
+
+      if (result?.error) {
+        if (result.alreadyMatched) {
+          return {
+            error: {
+              code: ERROR_CODES.MATCH_ALREADY_EXISTS,
+              message: ERROR_MESSAGES[ERROR_CODES.MATCH_ALREADY_EXISTS],
+            },
+          };
+        }
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return { data: { success: true } };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
    * Record a swipe with optimized performance
    */
   static async recordSwipe(swipeData: SwipeData): Promise<ServiceResult<SwipeResult>> {
