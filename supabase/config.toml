@@ -1,0 +1,10 @@
+# Records per-function settings that were previously only set via direct
+# deploys (Supabase MCP), never tracked in the repo. admin-listings is
+# deliberately not listed here -- it isn't currently deployed to Barter2 at
+# all (confirmed via list_edge_functions), so there's no live setting to match.
+
+[functions.item-preview]
+verify_jwt = false
+
+[functions.send-notification-email]
+verify_jwt = true
