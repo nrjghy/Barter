@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { MessageService } from "../services";
+import { trackEvent } from "../lib/analytics";
 
 export const useMessages = (connectionId?: string) => {
   const { user } = useAuth();
@@ -58,7 +59,13 @@ export const useMessages = (connectionId?: string) => {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: ({ messageData }: { messageData: any }) => MessageService.sendMessage(messageData, user!.id),
-    onSuccess: () => {
+    onSuccess: (_result, variables) => {
+      // PRD §17 core conversion funnel, step 5: first message sent. Tracked
+      // generically on every send -- PostHog's own funnel analysis already
+      // identifies the first occurrence per user/connection in sequence, so
+      // no manual "is this actually the first message" check is needed here.
+      trackEvent("message_sent", { connectionId: variables.messageData.connectionId });
+
       // Invalidate related queries
       if (connectionId) {
         queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });

@@ -20,9 +20,17 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { Account } from "./pages/Account";
 import { AccountDeleted } from "./pages/AccountDeleted";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { useEffect } from "react";
+import { identifyUser } from "./lib/analytics";
 
 const AppContent: React.FC = () => {
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.id) {
+      identifyUser(user.id);
+    }
+  }, [user?.id]);
 
   return (
     <Router>

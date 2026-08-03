@@ -6,10 +6,21 @@ import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
+import { trackEvent } from "../lib/analytics";
 
 export const AddToy: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
+
+  // PRD §17 item-listing funnel, step 1: Add-listing form opened. Create
+  // mode only -- this funnel is specifically about publishing a new listing,
+  // not editing an existing one.
+  useEffect(() => {
+    if (!isEditMode) {
+      trackEvent("add_listing_form_opened");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -83,6 +94,13 @@ export const AddToy: React.FC = () => {
     // least one photo, not just once from the initial empty-state picker.
     setImages((prev) => [...prev, ...validFiles]);
 
+    // PRD §17 item-listing funnel, step 2: photo uploaded. Create mode only,
+    // and only when something valid was actually added (not on a picker
+    // cancel or an all-rejected batch).
+    if (!isEditMode && validFiles.length > 0) {
+      trackEvent("listing_photo_uploaded");
+    }
+
     // Generate previews
     const previews = validFiles.map((file) => {
       const reader = new FileReader();
@@ -119,6 +137,16 @@ export const AddToy: React.FC = () => {
         toast.error("Please select at least one image");
         setLoading(false);
         return;
+      }
+
+      // PRD §17 item-listing funnel, step 3: required fields completed.
+      // title/category/condition are already enforced by the form's native
+      // HTML `required` attributes (the browser blocks onSubmit from firing
+      // at all otherwise), so by this point -- past the one field that
+      // isn't declaratively validated (at least one image) -- every
+      // required field is confirmed present. Create mode only.
+      if (!isEditMode) {
+        trackEvent("listing_required_fields_completed");
       }
 
       // estimated_value is entirely optional and defaults to 0 (PRD §2) -- an
@@ -176,6 +204,8 @@ export const AddToy: React.FC = () => {
           toast.error(result.error.message);
         } else {
           toast.success("Item added successfully!");
+          // PRD §17 item-listing funnel, step 4 (final): listing published.
+          trackEvent("listing_published", { itemId: result.data?.id });
           navigate("/my-stuff", { state: { highlightItemId: result.data?.id } });
         }
       }

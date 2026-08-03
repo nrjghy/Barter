@@ -8,6 +8,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { toast } from "react-hot-toast";
 import { TradeCompletionService, NotificationService } from "../services";
 import type { ItemData } from "../services/types";
+import { trackEvent } from "../lib/analytics";
 
 // Step 4a built the item picker + confirmation screen UI, matching the
 // approved mockup exactly (checklists, bottom-sheet confirm, dispute-date
@@ -151,6 +152,8 @@ export const MarkTradeComplete: React.FC = () => {
       }
 
       toast.success("Trade marked complete");
+      // PRD §17 core conversion funnel, step 6 (final): trade marked complete.
+      trackEvent("trade_marked_complete", { connectionId, itemCount: itemIds.length });
       navigate(`/chat/${connectionId}`);
     } finally {
       setSubmitting(false);

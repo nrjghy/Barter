@@ -12,12 +12,18 @@ import { useItems } from "../hooks/useItems";
 import { useSwipes } from "../hooks/useSwipes";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
+import { trackEvent } from "../lib/analytics";
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
+
+  // PRD §17 core conversion funnel, step 1: Discover landing.
+  useEffect(() => {
+    trackEvent("discover_viewed");
+  }, []);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
@@ -132,6 +138,13 @@ export const Dashboard: React.FC = () => {
     // Record swipe in background
     try {
       await recordSwipe({ itemId: swipedItemId, direction });
+
+      // PRD §17 core conversion funnel, step 3: Like. Tracked after genuine
+      // success, not at the optimistic-UI point above, so a swipe that ends
+      // up rolled back (see catch below) isn't counted.
+      if (direction === "right") {
+        trackEvent("item_liked", { itemId: swipedItemId });
+      }
     } catch (error: any) {
       // Rollback optimistic update on error
       setSwipedItems((prev) => {

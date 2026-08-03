@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { SwipeData, SwipeLimitData, SwipeResult, MatchData, ServiceResult, ServiceError } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
+import { trackEvent } from "../lib/analytics";
 
 export class SwipeService {
   /**
@@ -302,7 +303,13 @@ export class SwipeService {
 
       if (result?.matchCreated) {
         console.log("Match created successfully:", result.connectionId);
-        // You could emit an event or update a global state here for real-time updates
+        // PRD §17 core conversion funnel, step 4: match/connection created.
+        // Only for a genuinely new connection -- a repeat mutual like on an
+        // already-existing connection (isNewConnection: false) isn't a new
+        // funnel completion.
+        if (result.isNewConnection) {
+          trackEvent("connection_created", { connectionId: result.connectionId });
+        }
       }
     } catch (error) {
       console.error("Background match check failed:", error);

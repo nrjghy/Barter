@@ -27,6 +27,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ReportDialog } from "../components/ReportDialog";
 import { ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
+import { trackEvent } from "../lib/analytics";
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -104,6 +105,8 @@ export const ItemDetail: React.FC = () => {
       };
 
       setItem(transformedItem);
+      // PRD §17 core conversion funnel, step 2: item detail view.
+      trackEvent("item_detail_viewed", { itemId: transformedItem.id });
     } catch (error) {
       console.error("Error fetching item:", error);
       setError("Failed to load item details");
@@ -124,6 +127,10 @@ export const ItemDetail: React.FC = () => {
 
     if (direction === "right") {
       toast.success("Liked! 💖");
+      // PRD §17 core conversion funnel, step 3: Like -- same event name as
+      // Dashboard's handleSwipe, since a like from either entry point should
+      // roll into the same funnel metric.
+      trackEvent("item_liked", { itemId: item.id });
     } else {
       toast.success("Passed");
     }
