@@ -3,10 +3,43 @@ import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ItemWithUser } from '../hooks/useItems';
 import { supabase } from '../lib/supabase';
+import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle } from 'lucide-react';
+import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag } from 'lucide-react';
+
+type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions';
+
+interface AdminReportRow {
+  id: string;
+  reason: string;
+  description: string | null;
+  status: string;
+  created_at: string;
+  reporter: { username: string } | null;
+  reported_user: { username: string } | null;
+  reported_item: { title: string } | null;
+}
+
+interface AdminIssueRow {
+  id: string;
+  title: string;
+  description: string;
+  issue_type: string;
+  status: string;
+  image_urls: string[] | null;
+  created_at: string;
+  reporter: { username: string } | null;
+}
+
+interface AdminCategorySuggestionRow {
+  id: string;
+  title: string;
+  category_suggestion: string;
+  created_at: string;
+  owner: { username: string } | null;
+}
 
 export const AdminDashboard: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -23,6 +56,20 @@ export const AdminDashboard: React.FC = () => {
   const [filterDemo, setFilterDemo] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDemoListings, setShowDemoListings] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<AdminTab>('listings');
+
+  const [reports, setReports] = useState<AdminReportRow[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
+
+  const [issues, setIssues] = useState<AdminIssueRow[]>([]);
+  const [issuesLoading, setIssuesLoading] = useState(false);
+  const [issuesError, setIssuesError] = useState<string | null>(null);
+
+  const [suggestions, setSuggestions] = useState<AdminCategorySuggestionRow[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
 
   const fetchAdminListings = async () => {
     if (!user || user.role !== 'admin') {
@@ -85,6 +132,102 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [user, authLoading, page, limit, sortBy, sortOrder, filterActive, filterDemo, searchTerm, showDemoListings]);
 
+  const fetchReports = async () => {
+    setReportsLoading(true);
+    setReportsError(null);
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.REPORTS)
+        .select(
+          `
+          id,
+          reason,
+          description,
+          status,
+          created_at,
+          reporter:users!reporter_id ( username ),
+          reported_user:users!reported_user_id ( username ),
+          reported_item:items!reported_item_id ( title )
+        `
+        )
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setReports((data as unknown as AdminReportRow[]) || []);
+    } catch (err) {
+      console.error('Error fetching admin reports:', err);
+      setReportsError(err instanceof Error ? err.message : 'Failed to load reports.');
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const fetchIssues = async () => {
+    setIssuesLoading(true);
+    setIssuesError(null);
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.ISSUES)
+        .select(
+          `
+          id,
+          title,
+          description,
+          issue_type,
+          status,
+          image_urls,
+          created_at,
+          reporter:users!user_id ( username )
+        `
+        )
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setIssues((data as unknown as AdminIssueRow[]) || []);
+    } catch (err) {
+      console.error('Error fetching admin issues:', err);
+      setIssuesError(err instanceof Error ? err.message : 'Failed to load issues.');
+    } finally {
+      setIssuesLoading(false);
+    }
+  };
+
+  const fetchCategorySuggestions = async () => {
+    setSuggestionsLoading(true);
+    setSuggestionsError(null);
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.ITEMS)
+        .select(
+          `
+          id,
+          title,
+          category_suggestion,
+          created_at,
+          owner:users!user_id ( username )
+        `
+        )
+        .eq('category', 'Other')
+        .not('category_suggestion', 'is', null)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSuggestions((data as unknown as AdminCategorySuggestionRow[]) || []);
+    } catch (err) {
+      console.error('Error fetching category suggestions:', err);
+      setSuggestionsError(err instanceof Error ? err.message : 'Failed to load category suggestions.');
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (authLoading || !user || user.role !== 'admin') return;
+    if (activeTab === 'reports') fetchReports();
+    if (activeTab === 'issues') fetchIssues();
+    if (activeTab === 'suggestions') fetchCategorySuggestions();
+  }, [activeTab, user, authLoading]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -137,6 +280,29 @@ export const AdminDashboard: React.FC = () => {
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
       </div>
 
+      {/* Tab Switcher */}
+      <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 gap-1">
+        {([
+          { key: 'listings', label: 'Listings', icon: Eye },
+          { key: 'reports', label: 'Reports', icon: Flag },
+          { key: 'issues', label: 'Issues', icon: MessageSquare },
+          { key: 'suggestions', label: 'Category Suggestions', icon: Tag },
+        ] as { key: AdminTab; label: string; icon: typeof Eye }[]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`flex items-center gap-2 flex-1 justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === key ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'listings' && (
+      <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl shadow-sm p-4">
@@ -413,6 +579,154 @@ export const AdminDashboard: React.FC = () => {
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
           </button>
+        </div>
+      )}
+      </>
+      )}
+
+      {activeTab === 'reports' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {reportsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : reportsError ? (
+            <div className="text-center py-12 text-red-600">{reportsError}</div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No reports</h3>
+              <p className="text-gray-600">Nothing has been reported yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported Item</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {reports.map((report) => (
+                    <tr key={report.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reason}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{report.description || '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          {report.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reporter?.username ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reported_user?.username ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.reported_item?.title ?? 'No item (user report)'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(report.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'issues' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {issuesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : issuesError ? (
+            <div className="text-center py-12 text-red-600">{issuesError}</div>
+          ) : issues.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No issues</h3>
+              <p className="text-gray-600">Nothing has been reported yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {issues.map((issue) => (
+                    <tr key={issue.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {issue.image_urls && issue.image_urls.length > 0 ? (
+                          <img src={issue.image_urls[0]} alt="Attached" className="h-12 w-12 rounded-lg object-cover" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-lg bg-gray-100" />
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{issue.title}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{issue.description}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{issue.issue_type}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          {issue.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{issue.reporter?.username ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(issue.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'suggestions' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {suggestionsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : suggestionsError ? (
+            <div className="text-center py-12 text-red-600">{suggestionsError}</div>
+          ) : suggestions.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No category suggestions</h3>
+              <p className="text-gray-600">Nobody has suggested a new category yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggested Category</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {suggestions.map((suggestion) => (
+                    <tr key={suggestion.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{suggestion.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.category_suggestion}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.owner?.username ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(suggestion.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>
