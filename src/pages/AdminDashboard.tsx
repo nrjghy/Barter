@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { ItemWithUser } from '../hooks/useItems';
 import { supabase } from '../lib/supabase';
 import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
@@ -10,6 +9,29 @@ import { motion } from 'framer-motion';
 import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag } from 'lucide-react';
 
 type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions';
+
+interface AdminListingRow {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  condition: string;
+  image_urls: string[] | null;
+  estimated_value: number | null;
+  is_active: boolean;
+  created_at: string;
+  user_id: string;
+  users: {
+    id: string;
+    username: string;
+    location: string | null;
+    avatar_url: string | null;
+    rating: number | null;
+    is_demo: boolean | null;
+    role: string | null;
+    created_at: string;
+  };
+}
 
 interface AdminReportRow {
   id: string;
@@ -44,7 +66,7 @@ interface AdminCategorySuggestionRow {
 export const AdminDashboard: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [listings, setListings] = useState<ItemWithUser[]>([]);
+  const [listings, setListings] = useState<AdminListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -82,41 +104,57 @@ export const AdminDashboard: React.FC = () => {
     setError(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      
-      if (!token) {
-        throw new Error('No access token found.');
+      let query = supabase
+        .from(TABLES.ITEMS)
+        .select(
+          `
+          id,
+          title,
+          description,
+          category,
+          condition,
+          image_urls,
+          estimated_value,
+          is_active,
+          created_at,
+          user_id,
+          users!inner (
+            id,
+            username,
+            location,
+            avatar_url,
+            rating,
+            is_demo,
+            role,
+            created_at
+          )
+        `,
+          { count: 'exact' }
+        );
+
+      if (filterActive !== null) {
+        query = query.eq('is_active', filterActive);
+      }
+      // Local showDemoListings toggle takes priority, matching the old
+      // Edge Function's filter_demo query param behavior.
+      if (!showDemoListings) {
+        query = query.eq('users.is_demo', false);
+      } else if (filterDemo !== null) {
+        query = query.eq('users.is_demo', filterDemo);
+      }
+      if (searchTerm) {
+        query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
       }
 
-      const queryParams = new URLSearchParams();
-      queryParams.append('page', page.toString());
-      queryParams.append('limit', limit.toString());
-      queryParams.append('sort_by', sortBy);
-      queryParams.append('sort_order', sortOrder);
-      if (filterActive !== null) queryParams.append('filter_active', filterActive.toString());
-      if (filterDemo !== null) queryParams.append('filter_demo', filterDemo.toString());
-      // Use local showDemoListings state for filtering
-      if (!showDemoListings) queryParams.append('filter_demo', 'false');
-      if (searchTerm) queryParams.append('search', searchTerm);
+      const offset = page * limit;
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' }).range(offset, offset + limit - 1);
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-listings?${queryParams.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const { data, error, count } = await query;
 
-      const data = await response.json();
+      if (error) throw error;
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch admin listings');
-      }
-
-      setListings(data.items);
-      setTotal(data.total);
+      setListings((data as unknown as AdminListingRow[]) || []);
+      setTotal(count || 0);
     } catch (err) {
       console.error('Error fetching admin listings:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -458,10 +496,10 @@ export const AdminDashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
-                        {item.image_url && item.image_url.trim() !== '' ? (
+                        {item.image_urls && item.image_urls.length > 0 ? (
                           <img 
                             className="h-12 w-12 rounded-lg object-cover" 
-                            src={item.image_url} 
+                            src={item.image_urls[0]} 
                             alt={item.title}
                             onError={(e) => {
                               e.currentTarget.style.display = 'none';
@@ -478,9 +516,9 @@ export const AdminDashboard: React.FC = () => {
                         <div className="text-sm text-gray-500 max-w-xs truncate">
                           {item.description || 'No description'}
                         </div>
-                        {item.price && (
+                        {item.estimated_value != null && item.estimated_value > 0 && (
                           <div className="text-sm font-medium text-green-600">
-                            ${item.price}
+                            ${item.estimated_value}
                           </div>
                         )}
                       </div>
