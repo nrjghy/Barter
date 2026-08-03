@@ -1,0 +1,11 @@
+-- "Users can read swipes for matching" (USING (true), SELECT) let any
+-- authenticated user read every row in responses, not just their own --
+-- confirmed this was serving the old client-side match-fallback logic
+-- (checkForMatch/recordSwipeLegacy in swipeService.ts), which is dead code:
+-- check_and_create_match is SECURITY DEFINER and bypasses RLS entirely, so it
+-- never needed this policy. Confirmed via full grep that no live client code
+-- reads the responses table directly by name at all today. The remaining
+-- policy ("Users can manage their own swipes", auth.uid() = user_id, ALL
+-- commands) already covers the one legitimate direct-read case
+-- (getSwipedItems reading a user's own responses).
+DROP POLICY "Users can read swipes for matching" ON public.responses;
