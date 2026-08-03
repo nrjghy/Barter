@@ -2,11 +2,12 @@ import { supabase } from "../lib/supabase";
 import { ServiceResult, ServiceError, ReportData } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES, BUSINESS_RULES } from "./config";
 import { ValidationService } from "./validation";
+import { REPORT_REASONS } from "../types";
 
 export interface ReportWithDetails {
   id: string;
   reporterId: string;
-  reportedItemId: string;
+  reportedItemId?: string;
   reportedUserId: string;
   reason: string;
   description?: string;
@@ -26,7 +27,7 @@ export interface ReportWithDetails {
     username: string;
     avatarUrl?: string;
   };
-  reportedItem: {
+  reportedItem?: {
     id: string;
     title: string;
     imageUrl?: string;
@@ -34,7 +35,7 @@ export interface ReportWithDetails {
 }
 
 export interface CreateReportData {
-  reportedItemId: string;
+  reportedItemId?: string;
   reportedUserId: string;
   reason: string;
   description?: string;
@@ -74,26 +75,34 @@ export class ReportService {
         return { error: reporterIdError };
       }
 
-      // Check if user has already reported this item
-      const existingReport = await this.getReportByItemAndUser(reportData.reportedItemId, reporterId);
+      // Check if user has already reported this item (or, for an item-less
+      // report, this same user)
+      const existingReport = await this.getReportByItemAndUser({
+        reporterId,
+        reportedItemId: reportData.reportedItemId,
+        reportedUserId: reportData.reportedUserId,
+      });
       if (existingReport.data) {
         return {
           error: {
             code: ERROR_CODES.VALIDATION_ERROR,
-            message: "You have already reported this item",
+            message: reportData.reportedItemId ? "You have already reported this item" : "You have already reported this user",
           },
         };
       }
 
-      // Check report limit per item
-      const itemReportCount = await this.getItemReportCount(reportData.reportedItemId);
-      if (itemReportCount.data && itemReportCount.data >= BUSINESS_RULES.report.maxReportsPerItem) {
-        return {
-          error: {
-            code: ERROR_CODES.VALIDATION_ERROR,
-            message: "Maximum reports reached for this item",
-          },
-        };
+      // Check report limit per item -- this rule is per-item, so it doesn't
+      // apply to a user-only report.
+      if (reportData.reportedItemId) {
+        const itemReportCount = await this.getItemReportCount(reportData.reportedItemId);
+        if (itemReportCount.data && itemReportCount.data >= BUSINESS_RULES.report.maxReportsPerItem) {
+          return {
+            error: {
+              code: ERROR_CODES.VALIDATION_ERROR,
+              message: "Maximum reports reached for this item",
+            },
+          };
+        }
       }
 
       // Create the report
@@ -102,7 +111,7 @@ export class ReportService {
         .insert([
           {
             reporter_id: reporterId,
-            reported_item_id: reportData.reportedItemId,
+            reported_item_id: reportData.reportedItemId ?? null,
             reported_user_id: reportData.reportedUserId,
             reason: reportData.reason,
             description: reportData.description,
@@ -188,7 +197,7 @@ export class ReportService {
       const transformedData: ReportWithDetails[] = data.map((report: any) => ({
         id: report.id,
         reporterId: report.reporter_id,
-        reportedItemId: report.reported_item_id,
+        reportedItemId: report.reported_item_id ?? undefined,
         reportedUserId: report.reported_user_id,
         reason: report.reason,
         description: report.description,
@@ -208,11 +217,13 @@ export class ReportService {
           username: report.reported_user.username,
           avatarUrl: report.reported_user.avatar_url,
         },
-        reportedItem: {
-          id: report.reported_item.id,
-          title: report.reported_item.title,
-          imageUrl: report.reported_item.image_url,
-        },
+        reportedItem: report.reported_item
+          ? {
+              id: report.reported_item.id,
+              title: report.reported_item.title,
+              imageUrl: report.reported_item.image_url,
+            }
+          : undefined,
       }));
 
       return { data: transformedData };
@@ -275,7 +286,7 @@ export class ReportService {
       const transformedData: ReportWithDetails[] = data.map((report: any) => ({
         id: report.id,
         reporterId: report.reporter_id,
-        reportedItemId: report.reported_item_id,
+        reportedItemId: report.reported_item_id ?? undefined,
         reportedUserId: report.reported_user_id,
         reason: report.reason,
         description: report.description,
@@ -295,11 +306,13 @@ export class ReportService {
           username: report.reported_user.username,
           avatarUrl: report.reported_user.avatar_url,
         },
-        reportedItem: {
-          id: report.reported_item.id,
-          title: report.reported_item.title,
-          imageUrl: report.reported_item.image_url,
-        },
+        reportedItem: report.reported_item
+          ? {
+              id: report.reported_item.id,
+              title: report.reported_item.title,
+              imageUrl: report.reported_item.image_url,
+            }
+          : undefined,
       }));
 
       return { data: transformedData };
@@ -357,7 +370,7 @@ export class ReportService {
       const transformedData: ReportWithDetails[] = data.map((report: any) => ({
         id: report.id,
         reporterId: report.reporter_id,
-        reportedItemId: report.reported_item_id,
+        reportedItemId: report.reported_item_id ?? undefined,
         reportedUserId: report.reported_user_id,
         reason: report.reason,
         description: report.description,
@@ -377,11 +390,13 @@ export class ReportService {
           username: report.reported_user.username,
           avatarUrl: report.reported_user.avatar_url,
         },
-        reportedItem: {
-          id: report.reported_item.id,
-          title: report.reported_item.title,
-          imageUrl: report.reported_item.image_url,
-        },
+        reportedItem: report.reported_item
+          ? {
+              id: report.reported_item.id,
+              title: report.reported_item.title,
+              imageUrl: report.reported_item.image_url,
+            }
+          : undefined,
       }));
 
       return { data: transformedData };
@@ -452,7 +467,7 @@ export class ReportService {
       const transformedData: ReportWithDetails = {
         id: data.id,
         reporterId: data.reporter_id,
-        reportedItemId: data.reported_item_id,
+        reportedItemId: data.reported_item_id ?? undefined,
         reportedUserId: data.reported_user_id,
         reason: data.reason,
         description: data.description,
@@ -472,11 +487,13 @@ export class ReportService {
           username: data.reported_user.username,
           avatarUrl: data.reported_user.avatar_url,
         },
-        reportedItem: {
-          id: data.reported_item.id,
-          title: data.reported_item.title,
-          imageUrl: data.reported_item.image_url,
-        },
+        reportedItem: data.reported_item
+          ? {
+              id: data.reported_item.id,
+              title: data.reported_item.title,
+              imageUrl: data.reported_item.image_url,
+            }
+          : undefined,
       };
 
       return { data: transformedData };
@@ -621,7 +638,7 @@ export class ReportService {
       if (userIdError) return { error: userIdError };
 
       // Check if user has already reported this item
-      const existingReport = await this.getReportByItemAndUser(itemId, userId);
+      const existingReport = await this.getReportByItemAndUser({ reporterId: userId, reportedItemId: itemId });
       if (existingReport.data) {
         return { data: false };
       }
@@ -649,8 +666,10 @@ export class ReportService {
    * Private helper methods
    */
   private static validateReportData(reportData: CreateReportData): ServiceError | null {
-    const itemIdError = ValidationService.validateUUID(reportData.reportedItemId);
-    if (itemIdError) return itemIdError;
+    if (reportData.reportedItemId) {
+      const itemIdError = ValidationService.validateUUID(reportData.reportedItemId);
+      if (itemIdError) return itemIdError;
+    }
 
     const userIdError = ValidationService.validateUUID(reportData.reportedUserId);
     if (userIdError) return userIdError;
@@ -661,7 +680,7 @@ export class ReportService {
     const descriptionError = ValidationService.validateReportDescription(reportData.description);
     if (descriptionError) return descriptionError;
 
-    const validReasons = ["inappropriate_content", "spam", "fake_item", "harassment", "other"];
+    const validReasons: string[] = REPORT_REASONS.map((r) => r.value);
     if (!validReasons.includes(reportData.reason)) {
       return {
         code: ERROR_CODES.VALIDATION_ERROR,
@@ -672,12 +691,21 @@ export class ReportService {
     return null;
   }
 
-  private static async getReportByItemAndUser(
-    itemId: string,
-    userId: string
-  ): Promise<ServiceResult<ReportWithDetails | null>> {
+  /**
+   * Look up an existing report by the same reporter, for a duplicate check.
+   * When reportedItemId is given, matches on that item (the per-item rule).
+   * Otherwise this is a user-only report, so it matches on reportedUserId
+   * with reported_item_id IS NULL instead -- an item-based report and a
+   * user-only report against the same user are different complaints, so
+   * they shouldn't collide.
+   */
+  private static async getReportByItemAndUser(params: {
+    reporterId: string;
+    reportedItemId?: string;
+    reportedUserId?: string;
+  }): Promise<ServiceResult<ReportWithDetails | null>> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from(TABLES.REPORTS)
         .select(
           `
@@ -699,9 +727,13 @@ export class ReportService {
           )
         `
         )
-        .eq("reported_item_id", itemId)
-        .eq("reporter_id", userId)
-        .single();
+        .eq("reporter_id", params.reporterId);
+
+      query = params.reportedItemId
+        ? query.eq("reported_item_id", params.reportedItemId)
+        : query.eq("reported_user_id", params.reportedUserId!).is("reported_item_id", null);
+
+      const { data, error } = await query.single();
 
       if (error && error.code === "PGRST116") {
         return { data: null };
@@ -720,7 +752,7 @@ export class ReportService {
       const transformedData: ReportWithDetails = {
         id: data.id,
         reporterId: data.reporter_id,
-        reportedItemId: data.reported_item_id,
+        reportedItemId: data.reported_item_id ?? undefined,
         reportedUserId: data.reported_user_id,
         reason: data.reason,
         description: data.description,
@@ -740,11 +772,13 @@ export class ReportService {
           username: data.reported_user.username,
           avatarUrl: data.reported_user.avatar_url,
         },
-        reportedItem: {
-          id: data.reported_item.id,
-          title: data.reported_item.title,
-          imageUrl: data.reported_item.image_url,
-        },
+        reportedItem: data.reported_item
+          ? {
+              id: data.reported_item.id,
+              title: data.reported_item.title,
+              imageUrl: data.reported_item.image_url,
+            }
+          : undefined,
       };
 
       return { data: transformedData };

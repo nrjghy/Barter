@@ -234,16 +234,10 @@ export const ChatThread: React.FC = () => {
 
   const handleSubmitReport = async () => {
     if (!reportReason || !connection || !otherUserId) return;
-    // reports.reported_item_id is still NOT NULL at the DB level today
-    // (making it optional for user-only reports is a separate, already
-    // tracked backend task), so this attaches one of the connection's
-    // item interests -- the other person's item, since they're who's
-    // being reported.
+    // Attach one of the connection's item interests when one's available --
+    // the other person's item, since they're who's being reported. Falls
+    // back to a user-only report otherwise.
     const reportedItemId = connection.itemInterests[0]?.theirItem?.id ?? connection.itemInterests[0]?.myItem?.id;
-    if (!reportedItemId) {
-      toast.error("Couldn't submit this report right now. Please try again later.");
-      return;
-    }
     try {
       const { error } = await createReport({
         reportedItemId,
