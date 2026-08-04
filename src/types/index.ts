@@ -71,7 +71,5 @@ export const REPORT_REASONS = [
   { value: "spam", label: "Spam" },
   { value: "fake_listing", label: "Fake Listing" },
   { value: "offensive_language", label: "Offensive Language" },
-  { value: "copyright_violation", label: "Copyright Violation" },
-  { value: "safety_concern", label: "Safety Concern" },
   { value: "other", label: "Other" },
 ] as const;
