@@ -19,17 +19,17 @@
 -- to 30), and not already reminded since its last update, notifies the
 -- owner (type 'listing_expiry_reminder') and stamps
 -- inactivity_reminder_sent_at. Meant to run once daily via cron, not be
--- called by clients -- but unlike send_review_reminders, its EXECUTE
--- grants were left at the SECURITY DEFINER default (public/anon/
--- authenticated all still hold it live) rather than revoked; reproduced
--- as-is, not "corrected" to match send_review_reminders' stricter pattern.
+-- called by clients -- locked down the same way as send_review_reminders
+-- and send_admin_daily_summary: EXECUTE revoked from public/anon/
+-- authenticated, leaving it callable only by its owner (postgres) and
+-- service_role.
 --
 -- archive_inactive_listings: expires (status = 'expired', is_active =
 -- false) any active listing whose reminder was sent, wasn't superseded by
 -- a later update (i.e. wasn't resolved by the owner confirming or editing
 -- the listing), and is now past inactivity_grace_days (app_settings;
 -- falls back to 7) since that reminder. Same SECURITY DEFINER / daily-cron
--- intent as send_inactivity_reminders, same as-is (non-revoked) grants.
+-- intent and same revoked-down grants as send_inactivity_reminders.
 --
 -- Cron jobs run daily at 03:30 and 03:45 UTC respectively -- off-peak for
 -- a Poland-based pilot, and staggered 15 minutes apart so archival always
@@ -38,7 +38,12 @@
 -- Confirmed live via pg_get_functiondef for all three functions,
 -- information_schema.role_routine_grants, and
 -- `SELECT * FROM cron.job WHERE jobname IN (...)` before writing this
--- file; reproduced verbatim below.
+-- file; reproduced verbatim below. send_inactivity_reminders/
+-- archive_inactive_listings originally shipped live with their
+-- SECURITY DEFINER default grants (public/anon/authenticated) still in
+-- place; a follow-up migration tightened both to match
+-- send_review_reminders, and this file was corrected after the fact to
+-- match that final live state rather than the intermediate one.
 -- =============================================================================
 
 CREATE FUNCTION public.confirm_listing_still_available(p_item_id uuid)
@@ -127,6 +132,10 @@ end;
 $function$
 ;
 
+REVOKE ALL ON FUNCTION public.send_inactivity_reminders() FROM public;
+REVOKE ALL ON FUNCTION public.send_inactivity_reminders() FROM anon;
+REVOKE ALL ON FUNCTION public.send_inactivity_reminders() FROM authenticated;
+
 CREATE FUNCTION public.archive_inactive_listings()
 RETURNS void
 LANGUAGE plpgsql
@@ -153,6 +162,10 @@ begin
 end;
 $function$
 ;
+
+REVOKE ALL ON FUNCTION public.archive_inactive_listings() FROM public;
+REVOKE ALL ON FUNCTION public.archive_inactive_listings() FROM anon;
+REVOKE ALL ON FUNCTION public.archive_inactive_listings() FROM authenticated;
 
 SELECT cron.schedule(
   'send-inactivity-reminders-daily',
