@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X, Camera } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
@@ -7,6 +7,12 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
+
+// PRD §2 required fields, in on-screen order -- used both to decide which
+// fields need a touched/error state and, on a failed Save, to find the
+// first invalid one to scroll to.
+type RequiredField = "photos" | "title" | "category" | "condition";
+const REQUIRED_FIELD_ORDER: RequiredField[] = ["photos", "title", "category", "condition"];
 
 export const AddToy: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
@@ -34,8 +40,45 @@ export const AddToy: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
 
+  // Required-field inline validation (PRD §13): each required field tracks
+  // its own touched state, so an error only surfaces once the person has
+  // actually interacted with that field, not on initial render.
+  const [touched, setTouched] = useState<Record<RequiredField, boolean>>({
+    photos: false,
+    title: false,
+    category: false,
+    condition: false,
+  });
+  // Set once Save is attempted while a required field is still invalid --
+  // from that point on, every required field shows its error state
+  // regardless of individual touched status, matching the approved mockup.
+  const [saveAttempted, setSaveAttempted] = useState(false);
+
+  const photosRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const categoryRef = useRef<HTMLDivElement>(null);
+  const conditionRef = useRef<HTMLDivElement>(null);
+
   const { createItem, updateItem, getItem } = useItems();
   const navigate = useNavigate();
+
+  const fieldErrors: Record<RequiredField, boolean> = {
+    photos: existingImageUrls.length + images.length === 0,
+    title: !title.trim(),
+    category: !category,
+    condition: !condition,
+  };
+  const invalidFields = REQUIRED_FIELD_ORDER.filter((field) => fieldErrors[field]);
+
+  const markTouched = (field: RequiredField) => setTouched((prev) => ({ ...prev, [field]: true }));
+  const showError = (field: RequiredField) => (touched[field] || saveAttempted) && fieldErrors[field];
+
+  const fieldRefs: Record<RequiredField, React.RefObject<HTMLDivElement>> = {
+    photos: photosRef,
+    title: titleRef,
+    category: categoryRef,
+    condition: conditionRef,
+  };
 
   // Always called, per Rules of Hooks -- enabled: !!itemId inside the hook
   // itself means this is a no-op query in create mode.
@@ -129,22 +172,23 @@ export const AddToy: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // PRD §13: a failed Save attempt marks every required field touched
+    // (so all their errors show, not just the ones already blurred) and
+    // shows the summary banner, then scrolls to the first invalid field in
+    // on-screen order.
+    if (invalidFields.length > 0) {
+      setSaveAttempted(true);
+      setTouched({ photos: true, title: true, category: true, condition: true });
+      fieldRefs[invalidFields[0]].current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Validate that at least one image is selected, across existing + new
-      if (existingImageUrls.length + images.length === 0) {
-        toast.error("Please select at least one image");
-        setLoading(false);
-        return;
-      }
-
       // PRD §17 item-listing funnel, step 3: required fields completed.
-      // title/category/condition are already enforced by the form's native
-      // HTML `required` attributes (the browser blocks onSubmit from firing
-      // at all otherwise), so by this point -- past the one field that
-      // isn't declaratively validated (at least one image) -- every
-      // required field is confirmed present. Create mode only.
+      // Create mode only.
       if (!isEditMode) {
         trackEvent("listing_required_fields_completed");
       }
@@ -243,8 +287,14 @@ export const AddToy: React.FC = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {saveAttempted && invalidFields.length > 0 && (
+          <div className="px-3.5 py-3 rounded-xl bg-[oklch(93%_0.06_40)] text-[oklch(38%_0.12_35)] text-sm font-bold text-center">
+            {invalidFields.length === 1 ? "1 field needs attention" : `${invalidFields.length} fields need attention`}
+          </div>
+        )}
+
         {/* Image Upload */}
-        <div>
+        <div ref={photosRef} onMouseDown={() => markTouched("photos")}>
           <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
           <div className="relative">
             {existingImageUrls.length > 0 || imagePreviews.length > 0 ? (
@@ -294,10 +344,13 @@ export const AddToy: React.FC = () => {
               </label>
             )}
           </div>
+          {showError("photos") && (
+            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">At least one photo is required</p>
+          )}
         </div>
 
         {/* Title */}
-        <div>
+        <div ref={titleRef}>
           <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
             Title *
           </label>
@@ -306,10 +359,13 @@ export const AddToy: React.FC = () => {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            onBlur={() => markTouched("title")}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+              showError("title") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+            }`}
             placeholder="Enter item title"
-            required
           />
+          {showError("title") && <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Title is required</p>}
         </div>
 
         {/* Description */}
@@ -328,7 +384,7 @@ export const AddToy: React.FC = () => {
         </div>
 
         {/* Category */}
-        <div>
+        <div ref={categoryRef}>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
             Category *
           </label>
@@ -336,8 +392,10 @@ export const AddToy: React.FC = () => {
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            required
+            onBlur={() => markTouched("category")}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+              showError("category") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+            }`}
           >
             <option value="">Select a category</option>
             {ITEM_CATEGORIES.map((cat) => (
@@ -346,6 +404,9 @@ export const AddToy: React.FC = () => {
               </option>
             ))}
           </select>
+          {showError("category") && (
+            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Category is required</p>
+          )}
           {category === "Other" && (
             <div className="mt-3">
               <label htmlFor="categorySuggestion" className="block text-sm font-medium text-gray-700 mb-2">
@@ -365,7 +426,7 @@ export const AddToy: React.FC = () => {
         </div>
 
         {/* Condition */}
-        <div>
+        <div ref={conditionRef}>
           <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
             Condition *
           </label>
@@ -373,8 +434,10 @@ export const AddToy: React.FC = () => {
             id="condition"
             value={condition}
             onChange={(e) => setCondition(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            required
+            onBlur={() => markTouched("condition")}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+              showError("condition") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+            }`}
           >
             <option value="">Select condition</option>
             {ITEM_CONDITIONS.map((cond) => (
@@ -383,6 +446,9 @@ export const AddToy: React.FC = () => {
               </option>
             ))}
           </select>
+          {showError("condition") && (
+            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Condition is required</p>
+          )}
         </div>
 
         {/* Item Value */}
