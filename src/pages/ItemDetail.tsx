@@ -29,6 +29,7 @@ import { ReportDialog } from "../components/ReportDialog";
 import { ItemService, ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
+import { shareItem } from "../utils/share";
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -144,22 +145,8 @@ export const ItemDetail: React.FC = () => {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: item?.title,
-      text: `Check out this item: ${item?.title}`,
-      url: window.location.href,
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (error) {
-        // User cancelled sharing
-      }
-    } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
+    if (item) {
+      await shareItem(item);
     }
     setShowMoreMenu(false);
   };

@@ -4,6 +4,7 @@ import { MapPin, Tag, Clock, MoreVertical, Flag, Heart, X, Star, Eye, Share2, Bo
 import { useNavigate } from "react-router-dom";
 import { ItemWithUser } from "../services/itemService";
 import { ReportDialog } from "./ReportDialog";
+import { shareItem } from "../utils/share";
 
 interface EnhancedItemCardProps {
   item: ItemWithUser;
@@ -53,13 +54,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
     const handleShare = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (navigator.share) {
-          navigator.share({
-            title: item.title,
-            text: item.description,
-            url: window.location.href,
-          });
-        }
+        shareItem(item);
         setShowMenu(false);
       },
       [item]

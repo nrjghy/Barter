@@ -13,7 +13,6 @@ export interface Database {
           rating: number | null;
           total_ratings: number | null;
           rating_sum: number | null;
-          wishlist_categories: string[];
           notification_preferences: any;
         };
         Insert: {
@@ -27,7 +26,6 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
-          wishlist_categories?: string[];
           notification_preferences?: any;
         };
         Update: {
@@ -41,7 +39,6 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
-          wishlist_categories?: string[];
           notification_preferences?: any;
         };
       };
@@ -373,6 +370,44 @@ export interface Database {
           created_at?: string;
         };
       };
+      reports: {
+        Row: {
+          id: string;
+          reporter_id: string;
+          reported_item_id: string | null;
+          reported_user_id: string;
+          reason: string;
+          description: string | null;
+          status: string;
+          admin_notes: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          reporter_id: string;
+          reported_item_id?: string | null;
+          reported_user_id: string;
+          reason: string;
+          description?: string | null;
+          status?: string;
+          admin_notes?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          reporter_id?: string;
+          reported_item_id?: string | null;
+          reported_user_id?: string;
+          reason?: string;
+          description?: string | null;
+          status?: string;
+          admin_notes?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+      };
       app_settings: {
         Row: {
           key: string;
@@ -478,5 +513,6 @@ export type TradeCompletion = Database["public"]["Tables"]["trade_completions"][
 export type TradeCompletionItem = Database["public"]["Tables"]["trade_completion_items"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
+export type Report = Database["public"]["Tables"]["reports"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Issue = Database["public"]["Tables"]["issues"]["Row"];
