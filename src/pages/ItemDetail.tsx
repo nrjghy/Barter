@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft,
   Heart,
   Share2,
   MessageCircle,
@@ -25,6 +24,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { useSwipes } from "../hooks/useSwipes";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { BackBar } from "../components/BackBar";
 import { ReportDialog } from "../components/ReportDialog";
 import { ItemService, ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
@@ -255,18 +255,11 @@ export const ItemDetail: React.FC = () => {
       exit={{ opacity: 0 }}
       className="min-h-screen bg-gray-50"
     >
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button
-            onClick={() => navigate("/")}
-            className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Back</span>
-          </button>
-
-          <div className="flex items-center space-x-2">
+      <BackBar
+        title={item.title}
+        onBack={() => navigate("/")}
+        action={
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <button onClick={handleShare} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
@@ -311,8 +304,8 @@ export const ItemDetail: React.FC = () => {
               </AnimatePresence>
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -5,18 +5,10 @@ import { useAuth } from "../hooks/useAuth";
 import { ReviewService } from "../services";
 import type { ReviewContext } from "../services/reviewService";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { BackBar } from "../components/BackBar";
 import { pickAvatarPalette } from "../utils/avatar";
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
-
-const BackBar: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-  <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
-    <button onClick={onBack} className="p-1 -ml-1 text-2xl leading-none font-semibold text-[oklch(22%_0.02_100)]">
-      ‹
-    </button>
-    <div className="text-base font-bold text-[oklch(22%_0.02_100)]">Write a review</div>
-  </div>
-);
 
 export const ReviewWrite: React.FC = () => {
   const { tradeCompletionId } = useParams<{ tradeCompletionId: string }>();
@@ -110,7 +102,7 @@ export const ReviewWrite: React.FC = () => {
   if (notFound) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
-        <BackBar onBack={() => navigate("/chat")} />
+        <BackBar title="Write a review" onBack={() => navigate("/chat")} />
         <div className="flex-1 flex items-center justify-center text-center px-8">
           <div className="text-sm text-[oklch(45%_0.02_95)]">This trade couldn't be found.</div>
         </div>
@@ -121,7 +113,7 @@ export const ReviewWrite: React.FC = () => {
   if (alreadyReviewed) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
-        <BackBar onBack={handleSkip} />
+        <BackBar title="Write a review" onBack={handleSkip} />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-2">
           <div className="text-sm font-semibold text-[oklch(22%_0.02_100)]">You've already reviewed this trade</div>
           <div className="text-[13px] text-[oklch(45%_0.02_95)]">Thanks for sharing your feedback.</div>
@@ -135,7 +127,7 @@ export const ReviewWrite: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
-      <BackBar onBack={handleSkip} />
+      <BackBar title="Write a review" onBack={handleSkip} />
 
       <div className="flex-1 overflow-y-auto px-5 py-6">
         <div className="flex flex-col items-center gap-2 mb-2">
