@@ -44,7 +44,7 @@ const ItemChecklist: React.FC<{
     <div className="text-[11px] font-bold text-[oklch(45%_0.02_95)] tracking-wide mb-2.5">{label}</div>
     {loading && (
       <div className="py-4">
-        <LoadingSpinner color="barter" />
+        <LoadingSpinner />
       </div>
     )}
     {!loading && items.length === 0 && (
@@ -171,7 +171,7 @@ export const MarkTradeComplete: React.FC = () => {
 
       {connectionLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <LoadingSpinner color="barter" />
+          <LoadingSpinner />
         </div>
       ) : (
         <>

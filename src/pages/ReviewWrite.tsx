@@ -102,7 +102,7 @@ export const ReviewWrite: React.FC = () => {
   if (loading) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex items-center justify-center bg-[oklch(99%_0.006_95)]">
-        <LoadingSpinner color="barter" />
+        <LoadingSpinner />
       </div>
     );
   }

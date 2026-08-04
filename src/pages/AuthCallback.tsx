@@ -36,7 +36,7 @@ export const AuthCallback: React.FC = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
       <div className="text-center">
         <LoadingSpinner />
         <p className="mt-4 text-gray-600">Completing sign in...</p>

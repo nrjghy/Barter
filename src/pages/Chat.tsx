@@ -102,7 +102,7 @@ export const Chat: React.FC = () => {
 
       {loading && (
         <div className="py-16">
-          <LoadingSpinner color="barter" />
+          <LoadingSpinner />
         </div>
       )}
 

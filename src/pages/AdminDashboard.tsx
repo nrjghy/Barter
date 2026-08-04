@@ -337,7 +337,7 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -355,7 +355,7 @@ export const AdminDashboard: React.FC = () => {
           <p className="text-yellow-600 mb-4">You do not have permission to view this page.</p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors"
           >
             Go to Dashboard
           </button>
@@ -369,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-4">
       <div className="flex items-center space-x-3 mb-6">
-        <Shield className="w-8 h-8 text-purple-600" />
+        <Shield className="w-8 h-8 text-barter-600" />
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
       </div>
 
@@ -386,7 +386,7 @@ export const AdminDashboard: React.FC = () => {
             key={key}
             onClick={() => setActiveTab(key)}
             className={`flex items-center gap-2 flex-1 justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === key ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-50'
+              activeTab === key ? 'bg-barter-100 text-barter-700' : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -416,7 +416,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="text-sm text-gray-600">Demo Listings</div>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="text-2xl font-bold text-purple-600">
+          <div className="text-2xl font-bold text-barter-600">
             {new Set(listings.map(item => item.user_id)).size}
           </div>
           <div className="text-sm text-gray-600">Unique Users</div>
@@ -433,14 +433,14 @@ export const AdminDashboard: React.FC = () => {
               placeholder="Search by title or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
             />
           </div>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
           >
             <option value="created_at">Created At</option>
             <option value="title">Title</option>
@@ -450,7 +450,7 @@ export const AdminDashboard: React.FC = () => {
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
           >
             <option value="desc">Newest First</option>
             <option value="asc">Oldest First</option>
@@ -459,7 +459,7 @@ export const AdminDashboard: React.FC = () => {
           <select
             value={filterActive === null ? 'all' : filterActive.toString()}
             onChange={(e) => setFilterActive(e.target.value === 'all' ? null : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
           >
             <option value="all">All Statuses</option>
             <option value="true">Active Only</option>
@@ -469,7 +469,7 @@ export const AdminDashboard: React.FC = () => {
           <select
             value={filterDemo === null ? 'all' : filterDemo.toString()}
             onChange={(e) => setFilterDemo(e.target.value === 'all' ? null : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
           >
             <option value="all">All User Types</option>
             <option value="true">Demo Users Only</option>
@@ -491,7 +491,7 @@ export const AdminDashboard: React.FC = () => {
               type="checkbox"
               checked={showDemoListings}
               onChange={(e) => setShowDemoListings(e.target.checked)}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+              className="rounded border-gray-300 text-barter-600 focus:ring-barter-600"
             />
           </label>
         </div>
@@ -590,7 +590,7 @@ export const AdminDashboard: React.FC = () => {
                         </span>
                       )}
                       {item.users.role === 'admin' && (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-barter-100 text-barter-800">
                           Admin
                         </span>
                       )}
@@ -616,7 +616,7 @@ export const AdminDashboard: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => navigate(`/item/${item.id}`)}
-                        className="text-purple-600 hover:text-purple-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                        className="text-barter-600 hover:text-barter-800 p-1 rounded-md hover:bg-gray-100 transition-colors"
                         title="View Item"
                       >
                         <Eye className="w-4 h-4" />

@@ -77,7 +77,7 @@ export const Register: React.FC = () => {
 
   if (showVerificationMessage) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+      <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -89,13 +89,13 @@ export const Register: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Check Your Email</h2>
             <p className="text-gray-600 mb-6">
-              We've sent a verification link to <strong>{email}</strong>. 
+              We've sent a verification link to <strong>{email}</strong>.
               Please click the link in your email to verify your account before signing in.
             </p>
             <div className="space-y-3">
               <button
                 onClick={() => navigate('/login')}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+                className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200"
               >
                 Go to Sign In
               </button>
@@ -113,21 +113,21 @@ export const Register: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <motion.div 
-            className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+          <motion.div
+            className="w-20 h-20 bg-barter-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <span className="text-white font-bold text-2xl">B</span>
           </motion.div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-barter-600 to-barter-600 bg-clip-text text-transparent mb-2">
             Join Barter
           </h1>
           <p className="text-gray-600">Create your account to start bartering items</p>
@@ -184,7 +184,7 @@ export const Register: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Choose a username"
                   required
                   minLength={3}
@@ -203,7 +203,7 @@ export const Register: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your email"
                   required
                 />
@@ -221,7 +221,7 @@ export const Register: React.FC = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Choose a password"
                   required
                   minLength={6}
@@ -248,7 +248,7 @@ export const Register: React.FC = () => {
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your city"
                 />
               </div>
@@ -270,7 +270,7 @@ export const Register: React.FC = () => {
             <motion.button
               type="submit"
               disabled={loading || socialLoading !== null}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               whileHover={{ scale: loading || socialLoading !== null ? 1 : 1.02 }}
               whileTap={{ scale: loading || socialLoading !== null ? 1 : 0.98 }}
             >
@@ -282,7 +282,7 @@ export const Register: React.FC = () => {
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline">
+            <Link to="/login" className="text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline">
               Sign in
             </Link>
           </p>

@@ -76,7 +76,7 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({ isOpen, onClose 
           className="bg-white rounded-2xl max-w-md w-full overflow-hidden flex flex-col"
         >
           <div className="px-5 pt-6 pb-4 flex flex-col items-center text-center">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mb-3">
+            <div className="w-12 h-12 rounded-full bg-barter-100 flex items-center justify-center text-barter-600 mb-3">
               <MapPin className="w-6 h-6" />
             </div>
             <h2 className="text-base font-bold text-gray-900 mb-1.5">
@@ -91,7 +91,7 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({ isOpen, onClose 
             <button
               onClick={handleShareLocation}
               disabled={sharing}
-              className="w-full py-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold disabled:opacity-50"
+              className="w-full py-3.5 rounded-2xl bg-barter-600 hover:bg-barter-700 text-white text-sm font-bold disabled:opacity-50"
             >
               {sharing ? "Sharing…" : "Share location"}
             </button>

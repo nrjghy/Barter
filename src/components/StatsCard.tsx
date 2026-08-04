@@ -21,8 +21,8 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   color = 'purple'
 }) => {
   const colorClasses = {
-    purple: 'from-purple-500 to-purple-600 bg-purple-100 text-purple-600',
-    pink: 'from-pink-500 to-pink-600 bg-pink-100 text-pink-600',
+    purple: 'from-barter-600 to-barter-600 bg-barter-100 text-barter-600',
+    pink: 'from-barter-600 to-barter-600 bg-barter-100 text-barter-600',
     blue: 'from-blue-500 to-blue-600 bg-blue-100 text-blue-600',
     green: 'from-green-500 to-green-600 bg-green-100 text-green-600',
     orange: 'from-orange-500 to-orange-600 bg-orange-100 text-orange-600',

@@ -147,7 +147,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
           <div className="flex items-start justify-between mb-3">
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-1">{item.title}</h3>
-              <p className="text-purple-600 font-medium">{item.category}</p>
+              <p className="text-barter-600 font-medium">{item.category}</p>
             </div>
             <div className="flex items-center text-gray-500 text-sm">
               <Clock className="w-4 h-4 mr-1" />
@@ -159,7 +159,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-barter-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
               </div>
               <div>
@@ -177,7 +177,7 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-4">
               {item.tags.slice(0, 3).map((tag, index) => (
-                <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span key={index} className="bg-barter-100 text-barter-700 px-2 py-1 rounded-full text-xs font-medium">
                   #{tag}
                 </span>
               ))}

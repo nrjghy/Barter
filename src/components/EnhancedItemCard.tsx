@@ -103,7 +103,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
       variant === "compact"
         ? "bg-white rounded-xl shadow-md overflow-hidden cursor-grab active:cursor-grabbing relative"
         : variant === "featured"
-        ? "bg-white rounded-3xl shadow-xl overflow-hidden cursor-grab active:cursor-grabbing relative border-2 border-gradient-to-r from-pink-200 to-purple-200"
+        ? "bg-white rounded-3xl shadow-xl overflow-hidden cursor-grab active:cursor-grabbing relative border-2 border-gradient-to-r from-barter-200 to-barter-200"
         : "bg-white rounded-2xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing relative";
 
     return (
@@ -205,7 +205,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                           className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
                         >
                           <Bookmark
-                            className={`w-4 h-4 ${isBookmarked ? "fill-current text-purple-600" : "text-gray-600"}`}
+                            className={`w-4 h-4 ${isBookmarked ? "fill-current text-barter-600" : "text-gray-600"}`}
                           />
                           <span>{isBookmarked ? "Saved" : "Save"}</span>
                         </button>
@@ -271,7 +271,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                 >
                   {item.title}
                 </h3>
-                <p className="text-purple-600 font-medium text-sm">{item.category}</p>
+                <p className="text-barter-600 font-medium text-sm">{item.category}</p>
               </div>
               <div className="flex items-center text-gray-500 text-sm ml-4">
                 <Clock className="w-4 h-4 mr-1" />
@@ -289,10 +289,10 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                   <img
                     src={item.user.avatarUrl}
                     alt={item.user.username}
-                    className="w-10 h-10 rounded-full object-cover ring-2 ring-purple-100"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-barter-100"
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center ring-2 ring-purple-100">
+                  <div className="w-10 h-10 bg-barter-600 rounded-full flex items-center justify-center ring-2 ring-barter-100">
                     <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
@@ -321,7 +321,7 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
                 {item.tags.slice(0, variant === "compact" ? 2 : 3).map((tag, index) => (
                   <span
                     key={index}
-                    className="bg-purple-50 text-purple-700 px-2 py-1 rounded-full text-xs font-medium border border-purple-100"
+                    className="bg-barter-50 text-barter-700 px-2 py-1 rounded-full text-xs font-medium border border-barter-100"
                   >
                     #{tag}
                   </span>

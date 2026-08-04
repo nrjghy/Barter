@@ -32,11 +32,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(
           <button
             onClick={onFilter}
             className={`p-2 rounded-lg transition-colors relative ${
-              hasActiveFilters ? "bg-purple-100 text-purple-600" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
+              hasActiveFilters ? "bg-barter-100 text-barter-600" : "bg-gray-100 hover:bg-gray-200 text-gray-600"
             }`}
           >
             <Filter className="w-5 h-5 text-gray-600" />
-            {hasActiveFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full" />}
+            {hasActiveFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-barter-600 rounded-full" />}
           </button>
         </div>
       </div>

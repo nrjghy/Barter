@@ -83,17 +83,17 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
           <motion.div
-            className="w-20 h-20 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+            className="w-20 h-20 bg-barter-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
           >
             <span className="text-white font-bold text-2xl">B</span>
           </motion.div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-barter-600 to-barter-600 bg-clip-text text-transparent mb-2">
             Welcome Back
           </h1>
           <p className="text-gray-600">Sign in to continue bartering items</p>
@@ -150,7 +150,7 @@ export const Login: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your email"
                   required
                 />
@@ -168,7 +168,7 @@ export const Login: React.FC = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
                   placeholder="Enter your password"
                   required
                 />
@@ -200,7 +200,7 @@ export const Login: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleResendVerification}
-                      className="text-sm text-purple-600 hover:text-purple-700 font-medium underline mt-1"
+                      className="text-sm text-barter-600 hover:text-barter-700 font-medium underline mt-1"
                     >
                       Resend verification email
                     </button>
@@ -212,7 +212,7 @@ export const Login: React.FC = () => {
             <motion.button
               type="submit"
               disabled={loading || socialLoading !== null}
-              className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               whileHover={{ scale: loading || socialLoading !== null ? 1 : 1.02 }}
               whileTap={{ scale: loading || socialLoading !== null ? 1 : 0.98 }}
             >
@@ -223,7 +223,7 @@ export const Login: React.FC = () => {
           <div className="mt-6 text-center">
             <Link
               to="/forgot-password"
-              className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline"
+              className="text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline"
             >
               Forgot your password?
             </Link>
@@ -235,7 +235,7 @@ export const Login: React.FC = () => {
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline"
+              className="text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline"
             >
               Sign up
             </Link>

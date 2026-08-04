@@ -35,10 +35,10 @@ export const Header: React.FC = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center shadow-md">
+          <div className="w-8 h-8 bg-barter-600 rounded-full flex items-center justify-center shadow-md">
             <span className="text-white font-bold text-sm">B</span>
           </div>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-barter-600 to-barter-600 bg-clip-text text-transparent">
             Barter
           </h1>
         </motion.div>
@@ -90,7 +90,7 @@ export const Header: React.FC = () => {
                 className="w-6 h-6 rounded-full object-cover"
               />
             ) : (
-              <div className="w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center">
+              <div className="w-6 h-6 bg-barter-200 rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-bold">
                   {user?.username?.charAt(0).toUpperCase()}
                 </span>
@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search items, categories, or users..."
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent bg-white/80"
                   autoFocus
                 />
                 <button

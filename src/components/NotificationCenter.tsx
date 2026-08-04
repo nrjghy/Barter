@@ -80,8 +80,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <Bell className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 bg-barter-100 rounded-full flex items-center justify-center">
+                <Bell className="w-5 h-5 text-barter-600" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Notifications</h2>
@@ -94,7 +94,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  className="text-sm text-barter-600 hover:text-barter-700 font-medium"
                 >
                   Mark all read
                 </button>
@@ -128,7 +128,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className={`p-4 hover:bg-gray-50 transition-colors ${
-                      !notification.is_read ? 'bg-purple-50' : ''
+                      !notification.is_read ? 'bg-barter-50' : ''
                     }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -157,7 +157,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             {!notification.is_read && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
-                                className="p-1 text-purple-600 hover:text-purple-700 transition-colors"
+                                className="p-1 text-barter-600 hover:text-barter-700 transition-colors"
                                 title="Mark as read"
                               >
                                 <Check className="w-4 h-4" />
@@ -175,7 +175,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                       </div>
                     </div>
                     {!notification.is_read && (
-                      <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-purple-600 rounded-full" />
+                      <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-barter-600 rounded-full" />
                     )}
                   </motion.div>
                 ))}

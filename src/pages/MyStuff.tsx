@@ -172,7 +172,7 @@ export const MyStuff: React.FC = () => {
 
       {userItemsLoading && (
         <div className="py-16">
-          <LoadingSpinner color="barter" />
+          <LoadingSpinner />
         </div>
       )}
 

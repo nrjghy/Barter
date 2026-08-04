@@ -116,13 +116,13 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <Filter className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 bg-barter-100 rounded-full flex items-center justify-center">
+              <Filter className="w-5 h-5 text-barter-600" />
             </div>
             <h2 className="text-xl font-bold text-gray-900">Filter Items</h2>
           </div>
           <div className="flex items-center space-x-2">
-            <button onClick={clearAll} className="text-sm text-purple-600 hover:text-purple-700 font-medium">
+            <button onClick={clearAll} className="text-sm text-barter-600 hover:text-barter-700 font-medium">
               Clear All
             </button>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -143,7 +143,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                   onClick={() => toggleCategory(category)}
                   className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
                     localCategories.includes(category)
-                      ? "bg-purple-50 border-purple-200 text-purple-700"
+                      ? "bg-barter-50 border-barter-200 text-barter-700"
                       : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -163,7 +163,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                   onClick={() => toggleCondition(condition)}
                   className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
                     localConditions.includes(condition)
-                      ? "bg-purple-50 border-purple-200 text-purple-700"
+                      ? "bg-barter-50 border-barter-200 text-barter-700"
                       : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -179,7 +179,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             <div className="space-y-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>0 km</span>
-                <span className="font-medium text-purple-600">{localRadius} km</span>
+                <span className="font-medium text-barter-600">{localRadius} km</span>
                 <span>100 km</span>
               </div>
               <input
@@ -204,7 +204,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                   placeholder="0"
                   value={localMinValue}
                   onChange={(e) => setLocalMinValue(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
                 />
               </div>
               <div>
@@ -214,7 +214,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                   placeholder="1000"
                   value={localMaxValue}
                   onChange={(e) => setLocalMaxValue(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             <div className="space-y-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>1 day</span>
-                <span className="font-medium text-purple-600">{localMaxAge} days</span>
+                <span className="font-medium text-barter-600">{localMaxAge} days</span>
                 <span>365 days</span>
               </div>
               <input
@@ -246,7 +246,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             <div className="space-y-4">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>1.0</span>
-                <span className="font-medium text-purple-600">{localMinRating.toFixed(1)}</span>
+                <span className="font-medium text-barter-600">{localMinRating.toFixed(1)}</span>
                 <span>5.0</span>
               </div>
               <input
@@ -266,7 +266,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
         <div className="p-6 border-t bg-gray-50">
           <button
             onClick={handleApply}
-            className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors"
+            className="w-full bg-barter-600 text-white py-3 rounded-xl font-medium hover:bg-barter-700 transition-colors"
           >
             Apply Filters
           </button>

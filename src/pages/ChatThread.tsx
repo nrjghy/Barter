@@ -392,7 +392,7 @@ export const ChatThread: React.FC = () => {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 bg-[oklch(96%_0.014_92)]">
         {(connectionLoading || messagesLoading) && (
           <div className="py-10">
-            <LoadingSpinner color="barter" />
+            <LoadingSpinner />
           </div>
         )}
         {!messagesLoading &&

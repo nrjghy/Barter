@@ -114,7 +114,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">{item.title}</h3>
-                <p className="text-purple-600 font-medium">{item.category}</p>
+                <p className="text-barter-600 font-medium">{item.category}</p>
               </div>
               <div className="flex items-center text-gray-500 text-sm ml-4">
                 <Clock className="w-4 h-4 mr-1" />
@@ -134,7 +134,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-barter-600 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
                 </div>
               )}
@@ -161,7 +161,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {item.tags.slice(0, 3).map((tag, index) => (
-                <span key={index} className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span key={index} className="bg-barter-100 text-barter-700 px-2 py-1 rounded-full text-xs font-medium">
                   #{tag}
                 </span>
               ))}

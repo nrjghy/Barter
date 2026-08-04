@@ -239,7 +239,7 @@ export const ItemDetail: React.FC = () => {
           <p className="text-gray-600 mb-4">{error || "This item may have been removed or is no longer available."}</p>
           <button
             onClick={() => navigate("/")}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors"
           >
             Back to Discover
           </button>
@@ -292,7 +292,7 @@ export const ItemDetail: React.FC = () => {
                       className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
                     >
                       <Bookmark
-                        className={`w-4 h-4 ${isBookmarked ? "fill-current text-purple-600" : "text-gray-600"}`}
+                        className={`w-4 h-4 ${isBookmarked ? "fill-current text-barter-600" : "text-gray-600"}`}
                       />
                       <span>{isBookmarked ? "Saved" : "Save"}</span>
                     </button>
@@ -407,7 +407,7 @@ export const ItemDetail: React.FC = () => {
                     onClick={() => setCurrentImageIndex(index)}
                     className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
                       index === currentImageIndex
-                        ? "border-purple-500 ring-2 ring-purple-200"
+                        ? "border-barter-600 ring-2 ring-barter-200"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -429,7 +429,7 @@ export const ItemDetail: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.title}</h1>
               <div className="flex items-center space-x-3">
-                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-barter-100 text-barter-700 px-3 py-1 rounded-full text-sm font-medium">
                   {item.category}
                 </span>
                 <div className="flex items-center text-gray-500 text-sm">
@@ -508,10 +508,10 @@ export const ItemDetail: React.FC = () => {
                   <img
                     src={item.user.avatarUrl}
                     alt={item.user.username}
-                    className="w-16 h-16 rounded-full object-cover ring-2 ring-purple-100"
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-barter-100"
                   />
                 ) : (
-                  <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center ring-2 ring-purple-100">
+                  <div className="w-16 h-16 bg-barter-600 rounded-full flex items-center justify-center ring-2 ring-barter-100">
                     <span className="text-white font-bold text-xl">{item.user.username.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
@@ -574,7 +574,7 @@ export const ItemDetail: React.FC = () => {
               <div className="space-y-3">
                 <button
                   onClick={handleContact}
-                  className="w-full flex items-center justify-center space-x-2 py-4 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full flex items-center justify-center space-x-2 py-4 bg-barter-600 text-white rounded-xl font-semibold hover:bg-barter-700 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
                   <MessageCircle className="w-5 h-5" />
                   <span>Contact Seller</span>

@@ -9,7 +9,7 @@ export const Layout: React.FC = () => {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
       <Toaster
         position="top-center"
         toastOptions={{

@@ -32,7 +32,7 @@ export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
                   <button
                     onClick={onLoadMore}
                     disabled={loadingMore}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                    className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors disabled:opacity-50"
                   >
                     {loadingMore ? <LoadingSpinner /> : "Load More Items"}
                   </button>

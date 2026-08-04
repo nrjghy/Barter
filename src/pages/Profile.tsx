@@ -203,10 +203,10 @@ export const Profile: React.FC = () => {
             <img
               src={user.avatar_url}
               alt={user.username}
-              className="w-16 h-16 rounded-full object-cover ring-4 ring-purple-100"
+              className="w-16 h-16 rounded-full object-cover ring-4 ring-barter-100"
             />
           ) : (
-            <div className="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center ring-4 ring-purple-100">
+            <div className="w-16 h-16 bg-barter-600 rounded-full flex items-center justify-center ring-4 ring-barter-100">
               <span className="text-white font-bold text-xl">{user?.username.charAt(0).toUpperCase()}</span>
             </div>
           )}
@@ -217,7 +217,7 @@ export const Profile: React.FC = () => {
                   type="text"
                   value={profileData.username}
                   onChange={(e) => setProfileData((prev) => ({ ...prev, username: e.target.value }))}
-                  className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
+                  className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-barter-600 focus:outline-none"
                   placeholder="Username"
                 />
                 <p className="text-gray-600">{user?.email}</p>
@@ -239,13 +239,13 @@ export const Profile: React.FC = () => {
                 type="text"
                 value={profileData.location}
                 onChange={(e) => setProfileData((prev) => ({ ...prev, location: e.target.value }))}
-                className="flex-1 bg-transparent border-b border-gray-300 focus:border-purple-500 focus:outline-none"
+                className="flex-1 bg-transparent border-b border-gray-300 focus:border-barter-600 focus:outline-none"
                 placeholder="Enter your location"
               />
               <button
                 onClick={getCurrentLocation}
                 disabled={locationLoading}
-                className="flex items-center space-x-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors disabled:opacity-50"
+                className="flex items-center space-x-1 px-3 py-1 bg-barter-100 text-barter-700 rounded-lg hover:bg-barter-200 transition-colors disabled:opacity-50"
               >
                 {locationLoading ? (
                   <LoadingSpinner />
@@ -266,7 +266,7 @@ export const Profile: React.FC = () => {
         <div className="mt-4 pt-4 border-t border-gray-200">
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-medium transition-colors hover:underline"
+            className="flex items-center space-x-2 text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline"
           >
             <Lock className="w-4 h-4" />
             <span>Change Password</span>
@@ -289,8 +289,8 @@ export const Profile: React.FC = () => {
             <button
               onClick={handleSaveProfile}
               disabled={!user}
-              className={`flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg transition-all duration-200 ${
-                !user ? "opacity-50 cursor-not-allowed" : "hover:from-pink-600 hover:to-purple-600"
+              className={`flex-1 px-4 py-2 bg-barter-600 text-white rounded-lg transition-all duration-200 ${
+                !user ? "opacity-50 cursor-not-allowed" : "hover:bg-barter-700"
               }`}
             >
               Save
@@ -329,7 +329,7 @@ export const Profile: React.FC = () => {
         <button
           onClick={() => setActiveTab("items")}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "items" ? "bg-white text-purple-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+            activeTab === "items" ? "bg-white text-barter-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
           My Items ({stats.activeItems})
@@ -337,7 +337,7 @@ export const Profile: React.FC = () => {
         <button
           onClick={() => setActiveTab("stats")}
           className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === "stats" ? "bg-white text-purple-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+            activeTab === "stats" ? "bg-white text-barter-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
           }`}
         >
           Analytics
@@ -355,7 +355,7 @@ export const Profile: React.FC = () => {
               <p className="text-gray-600 mb-4">No items added yet</p>
               <button
                 onClick={() => navigate("/add")}
-                className="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+                className="px-6 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-all duration-200"
               >
                 Add Your First Item
               </button>
@@ -400,7 +400,7 @@ export const Profile: React.FC = () => {
               <div key={review.id} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-barter-600 rounded-full flex items-center justify-center">
                       <span className="text-white font-bold text-sm">
                         {review.reviewer.username.charAt(0).toUpperCase()}
                       </span>
@@ -458,8 +458,8 @@ export const Profile: React.FC = () => {
                   <p className="text-xs text-gray-600">5 hours ago</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                <MessageCircle className="w-5 h-5 text-purple-600" />
+              <div className="flex items-center space-x-3 p-3 bg-barter-50 rounded-lg">
+                <MessageCircle className="w-5 h-5 text-barter-600" />
                 <div>
                   <p className="text-sm font-medium text-gray-900">New message received</p>
                   <p className="text-xs text-gray-600">1 day ago</p>
@@ -474,7 +474,7 @@ export const Profile: React.FC = () => {
       <div className="fixed bottom-20 right-4">
         <motion.button
           onClick={() => navigate("/add")}
-          className="w-14 h-14 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200"
+          className="w-14 h-14 bg-barter-600 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
         >
@@ -536,7 +536,7 @@ export const Profile: React.FC = () => {
                   type="password"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData((prev) => ({ ...prev, newPassword: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
                   placeholder="Enter new password"
                   required
                   minLength={6}
@@ -552,7 +552,7 @@ export const Profile: React.FC = () => {
                   type="password"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
                   placeholder="Confirm new password"
                   required
                   minLength={6}
@@ -580,7 +580,7 @@ export const Profile: React.FC = () => {
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-lg hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-all duration-200 disabled:opacity-50"
                 >
                   {passwordLoading ? <LoadingSpinner /> : "Update Password"}
                 </button>

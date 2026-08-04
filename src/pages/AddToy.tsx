@@ -360,7 +360,7 @@ export const AddToy: React.FC = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={() => markTouched("title")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
               showError("title") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
             }`}
             placeholder="Enter item title"
@@ -378,7 +378,7 @@ export const AddToy: React.FC = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
             placeholder="Describe your item..."
           />
         </div>
@@ -393,7 +393,7 @@ export const AddToy: React.FC = () => {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             onBlur={() => markTouched("category")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
               showError("category") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
             }`}
           >
@@ -417,7 +417,7 @@ export const AddToy: React.FC = () => {
                 type="text"
                 value={categorySuggestion}
                 onChange={(e) => setCategorySuggestion(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
                 placeholder="e.g. Board Games"
               />
               <p className="text-xs text-gray-500 mt-1">Your listing will show under Other for now.</p>
@@ -435,7 +435,7 @@ export const AddToy: React.FC = () => {
             value={condition}
             onChange={(e) => setCondition(e.target.value)}
             onBlur={() => markTouched("condition")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
               showError("condition") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
             }`}
           >
@@ -463,7 +463,7 @@ export const AddToy: React.FC = () => {
               type="number"
               value={estimatedValue}
               onChange={(e) => setEstimatedValue(e.target.value)}
-              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
               placeholder="0.00"
               min="0"
               step="0.01"
@@ -475,7 +475,7 @@ export const AddToy: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white py-3 rounded-lg font-medium hover:from-pink-600 hover:to-purple-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? <LoadingSpinner /> : isEditMode ? "Save changes" : "Add Item"}
         </button>
