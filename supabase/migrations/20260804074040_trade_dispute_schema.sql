@@ -43,5 +43,6 @@ ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check
     'item_unavailable'::text,
     'review_reminder'::text,
     'issue_status'::text,
+    'admin_daily_summary'::text,
     'trade_dispute'::text
   ]));
