@@ -28,7 +28,9 @@ section instead of guessing at product intent.
   to edit in place piece by piece. Prefer clean, correct implementations
   over preserving legacy code paths or adding backwards-compatibility
   shims for the pre-rewrite version.
-- No rewrite code has shipped yet.
+- Rewrite code ships incrementally on this branch; `Barter_Project_Plan.md`
+  (linked above) is the source of truth for what's actually shipped vs.
+  pending — don't infer shipped status from this file.
 - Phase 1 design (Claude Design mockups) is approved for all screens.
   Two minor polish items are flagged for the QA pass, not yet fixed:
   a toast overlapping a button on My Stuff, and a notification
@@ -41,18 +43,12 @@ section instead of guessing at product intent.
 
 ## Known issues to keep in mind while coding
 
-- Three orphan database tables with no codebase references:
-  `issues` (repurpose for in-app issue reporting), `system_item_interests`,
-  `profile_views` (both explicitly out of scope, candidates for removal)
-- Fake "Total Views" stat in `Profile.tsx` (randomly generated client-side,
-  not real data) — remove
+- Two orphan database tables with no codebase references, both explicitly
+  out of scope per PRD §6, candidates for removal: `system_item_interests`,
+  `profile_views`. (`issues` was repurposed for in-app issue reporting and
+  is fully wired up — `Header.tsx`, `IssueReportDialog.tsx`,
+  `issuesService.ts`, `AdminDashboard.tsx` — no longer an orphan.)
 - Dead `TradeOfferSelectionModal` component — unused
-- Inconsistent message-type definitions across `services/types.ts` and
-  `messageService.ts` — needs reconciliation
-- Missing `messages`/`reports` table types in `database.ts`
-- Undo button on Discover doesn't actually reverse a response server-side
-- Deployment status of `record_swipe_optimized` / `check_and_create_match`
-  RPCs is unverified
 
 ## What NOT to assume
 
