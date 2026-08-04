@@ -466,6 +466,63 @@ export class ItemService {
   }
 
   /**
+   * Confirms a listing is still available, in response to the "still have
+   * this?" inactivity reminder (PRD §2). Has to be an RPC, not a plain
+   * client update: confirm_listing_still_available is owner-only,
+   * active-status-only, and just touches updated_at rather than clearing
+   * inactivity_reminder_sent_at -- send_inactivity_reminders/
+   * archive_inactive_listings (daily cron) both key their eligibility off
+   * updated_at vs. inactivity_reminder_sent_at, so this is enough to pull
+   * the listing out of the current grace-period countdown.
+   *
+   * Same two-layer error convention as completeTrade/fileDispute.
+   */
+  static async confirmStillAvailable(itemId: string): Promise<ServiceResult<{ itemId: string; confirmedAt: string }>> {
+    try {
+      const itemIdError = ValidationService.validateUUID(itemId);
+      if (itemIdError) return { error: itemIdError };
+
+      const { data: result, error } = await supabase.rpc("confirm_listing_still_available", {
+        p_item_id: itemId,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to confirm listing",
+            details: error,
+          },
+        };
+      }
+
+      if (result?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return {
+        data: {
+          itemId: result.itemId,
+          confirmedAt: result.confirmedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
    * Cancel a listing (one-way for v1, no resume -- PRD §2/§13). Sets both
    * status='cancelled' and is_active=false, keeping the two in sync
    * rather than letting them drift apart. Verifies the requester actually

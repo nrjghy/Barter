@@ -19,13 +19,14 @@ import {
   Clock,
   Package,
   ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { useSwipes } from "../hooks/useSwipes";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { ReportDialog } from "../components/ReportDialog";
-import { ItemWithUser } from "../services/itemService";
+import { ItemService, ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 
@@ -43,6 +44,8 @@ export const ItemDetail: React.FC = () => {
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
+  const [stillAvailableConfirmed, setStillAvailableConfirmed] = useState(false);
+  const [confirmingStillAvailable, setConfirmingStillAvailable] = useState(false);
 
   // Get images from the item data
   const itemImages = item?.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : [];
@@ -92,6 +95,7 @@ export const ItemDetail: React.FC = () => {
         sourceUrl: data.source_url,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
+        inactivityReminderSentAt: data.inactivity_reminder_sent_at,
         user: {
           id: data.users.id,
           username: data.users.username,
@@ -171,6 +175,28 @@ export const ItemDetail: React.FC = () => {
 
     // In a real app, this would create a match or direct message
     toast.success("Contact request sent!");
+  };
+
+  const handleConfirmStillAvailable = async () => {
+    if (!item) return;
+
+    setConfirmingStillAvailable(true);
+    try {
+      const { error } = await ItemService.confirmStillAvailable(item.id);
+      if (error) {
+        toast.error(error.message || "Couldn't confirm this listing. Please try again.");
+        return;
+      }
+      // Confirming doesn't clear inactivityReminderSentAt server-side (the
+      // cron jobs key off updated_at vs. it, not a null check) -- so we
+      // just hide the banner locally rather than refetching the item.
+      setStillAvailableConfirmed(true);
+      toast.success("Thanks — marked as still available");
+    } catch {
+      toast.error("Couldn't confirm this listing. Please try again.");
+    } finally {
+      setConfirmingStillAvailable(false);
+    }
   };
 
   const nextImage = () => {
@@ -425,6 +451,28 @@ export const ItemDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Inactivity reminder banner (PRD §2) */}
+            {user?.id === item.userId && item.inactivityReminderSentAt && !stillAvailableConfirmed && (
+              <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-1">Still have this?</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Let us know it's still available, or this listing will be archived soon.
+                    </p>
+                    <button
+                      onClick={handleConfirmStillAvailable}
+                      disabled={confirmingStillAvailable}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium text-sm disabled:opacity-50"
+                    >
+                      {confirmingStillAvailable ? "Confirming…" : "Yes, still available"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Description */}
             {item.description && (

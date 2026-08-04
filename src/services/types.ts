@@ -45,6 +45,10 @@ export interface ItemData {
   categorySuggestion?: string;
   createdAt: string;
   updatedAt: string;
+  // Set once the daily inactivity-reminder cron nudges the owner (PRD §2);
+  // null/undefined means either no reminder has fired, or it was resolved
+  // by a later update (see confirmStillAvailable in itemService.ts).
+  inactivityReminderSentAt?: string | null;
 }
 
 export interface UserData {
