@@ -13,6 +13,7 @@ import {
   TrendingUp,
   Navigation,
   Lock,
+  Shield,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useItems } from "../hooks/useItems";
@@ -187,6 +188,18 @@ export const Profile: React.FC = () => {
           >
             Account
           </button>
+          {user?.role === "admin" && (
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                navigate("/admin");
+              }}
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+            >
+              <Shield className="w-4 h-4" />
+              <span>Admin console</span>
+            </button>
+          )}
           <button
             onClick={handleSignOut}
             className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
