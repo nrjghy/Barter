@@ -15,6 +15,7 @@ export const useNotifications = () => {
     queryKey: ["notifications", user?.id],
     queryFn: () => NotificationService.getUserNotifications(user!.id),
     enabled: !!user,
+    refetchInterval: 15000,
   });
 
   // Get unread notifications
@@ -48,6 +49,7 @@ export const useNotifications = () => {
     queryKey: ["unreadCount", user?.id],
     queryFn: () => NotificationService.getUnreadCount(user!.id),
     enabled: !!user,
+    refetchInterval: 15000,
   });
 
   // Mark notification as read
