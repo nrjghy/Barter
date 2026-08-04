@@ -95,29 +95,6 @@ export interface Database {
           source_url?: string | null;
         };
       };
-      swipes: {
-        Row: {
-          id: string;
-          user_id: string;
-          item_id: string;
-          direction: "left" | "right" | "super";
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          item_id: string;
-          direction: "left" | "right" | "super";
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          item_id?: string;
-          direction?: "left" | "right" | "super";
-          created_at?: string;
-        };
-      };
       matches: {
         Row: {
           id: string;

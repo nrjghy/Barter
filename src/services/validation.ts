@@ -143,15 +143,15 @@ export class ValidationService {
   }
 
   /**
-   * Validates swipe direction
+   * Validates response direction
    */
-  static validateSwipeDirection(direction: string): ServiceError | null {
-    const validDirections = ["left", "right"] as const;
+  static validateResponseDirection(direction: string): ServiceError | null {
+    const validDirections = ["pass", "like"] as const;
 
     if (!validDirections.includes(direction as any)) {
       return {
-        code: ERROR_CODES.INVALID_SWIPE_DIRECTION,
-        message: ERROR_MESSAGES[ERROR_CODES.INVALID_SWIPE_DIRECTION],
+        code: ERROR_CODES.INVALID_RESPONSE_DIRECTION,
+        message: ERROR_MESSAGES[ERROR_CODES.INVALID_RESPONSE_DIRECTION],
       };
     }
 

@@ -2,7 +2,6 @@ import { AppConfig } from "./types";
 
 // Application configuration
 export const APP_CONFIG: AppConfig = {
-  swipeLimit: 50,
   itemsPerPage: 20,
   maxRetries: 3,
   cacheTimeout: 5 * 60 * 1000, // 5 minutes
@@ -69,11 +68,11 @@ export const BUSINESS_RULES = {
 
 // Error codes
 export const ERROR_CODES = {
-  SWIPE_LIMIT_EXCEEDED: "SWIPE_LIMIT_EXCEEDED",
+  LIKE_LIMIT_EXCEEDED: "LIKE_LIMIT_EXCEEDED",
   ITEM_NOT_FOUND: "ITEM_NOT_FOUND",
   USER_NOT_FOUND: "USER_NOT_FOUND",
   MATCH_ALREADY_EXISTS: "MATCH_ALREADY_EXISTS",
-  INVALID_SWIPE_DIRECTION: "INVALID_SWIPE_DIRECTION",
+  INVALID_RESPONSE_DIRECTION: "INVALID_RESPONSE_DIRECTION",
   DUPLICATE_REVIEW: "DUPLICATE_REVIEW",
   INVALID_RATING: "INVALID_RATING",
   UNAUTHORIZED: "UNAUTHORIZED",
@@ -86,7 +85,6 @@ export const ERROR_CODES = {
 
 // Success messages
 export const SUCCESS_MESSAGES = {
-  SWIPE_RECORDED: "Swipe recorded successfully",
   MATCH_CREATED: "🎉 It's a match! You both liked each other's items!",
   MATCH_UPDATED: "Match updated successfully",
   REVIEW_CREATED: "Review submitted successfully",
@@ -99,11 +97,11 @@ export const SUCCESS_MESSAGES = {
 
 // Error messages
 export const ERROR_MESSAGES = {
-  [ERROR_CODES.SWIPE_LIMIT_EXCEEDED]: "Daily swipe limit reached! Come back tomorrow for more swipes.",
+  [ERROR_CODES.LIKE_LIMIT_EXCEEDED]: "Daily like limit reached! Come back tomorrow for more likes.",
   [ERROR_CODES.ITEM_NOT_FOUND]: "Item not found",
   [ERROR_CODES.USER_NOT_FOUND]: "User not found",
   [ERROR_CODES.MATCH_ALREADY_EXISTS]: "You've already matched on this -- undo isn't available anymore.",
-  [ERROR_CODES.INVALID_SWIPE_DIRECTION]: "Invalid swipe direction",
+  [ERROR_CODES.INVALID_RESPONSE_DIRECTION]: "Invalid response direction",
   [ERROR_CODES.DUPLICATE_REVIEW]: "You have already reviewed this match",
   [ERROR_CODES.INVALID_RATING]: "Rating must be between 1 and 5",
   [ERROR_CODES.UNAUTHORIZED]: "You are not authorized to perform this action",

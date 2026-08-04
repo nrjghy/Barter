@@ -1,14 +1,14 @@
 import { supabase } from "../lib/supabase";
-import { SwipeData, SwipeLimitData, SwipeResult, ServiceResult, ServiceError } from "./types";
+import { ResponseData, LikeLimitData, ResponseResult, ServiceResult, ServiceError } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 import { trackEvent } from "../lib/analytics";
 
-export class SwipeService {
+export class ResponseService {
   /**
-   * Check if a user can swipe (within daily limit)
+   * Check if a user can like (within daily limit)
    */
-  static async checkSwipeLimit(userId: string): Promise<ServiceResult<SwipeLimitData>> {
+  static async checkLikeLimit(userId: string): Promise<ServiceResult<LikeLimitData>> {
     try {
       // Validate input
       const uuidError = ValidationService.validateUUID(userId);
@@ -135,21 +135,20 @@ export class SwipeService {
   }
 
   /**
-   * Record a swipe with optimized performance
+   * Record a response (pass or like) with optimized performance
    */
-  static async recordSwipe(swipeData: SwipeData): Promise<ServiceResult<SwipeResult>> {
+  static async recordResponse(data: ResponseData): Promise<ServiceResult<ResponseResult>> {
     try {
       // Validate input
-      const validationError = this.validateSwipeData(swipeData);
+      const validationError = this.validateResponseData(data);
       if (validationError) {
         return { error: validationError };
       }
 
-      const responseDirection = swipeData.direction === "left" ? "pass" : "like";
       const { data: result, error: rpcError } = await supabase.rpc("record_response_optimized", {
-        user_uuid: swipeData.userId,
-        target_item_id: swipeData.itemId,
-        response_direction: responseDirection,
+        user_uuid: data.userId,
+        target_item_id: data.itemId,
+        response_direction: data.direction,
       });
 
       if (rpcError) {
@@ -167,8 +166,8 @@ export class SwipeService {
         if (result.error.includes("Daily swipe limit reached")) {
           return {
             error: {
-              code: ERROR_CODES.SWIPE_LIMIT_EXCEEDED,
-              message: ERROR_MESSAGES[ERROR_CODES.SWIPE_LIMIT_EXCEEDED],
+              code: ERROR_CODES.LIKE_LIMIT_EXCEEDED,
+              message: ERROR_MESSAGES[ERROR_CODES.LIKE_LIMIT_EXCEEDED],
             },
           };
         }
@@ -183,7 +182,7 @@ export class SwipeService {
       // Handle match checking in background if needed
       if (result?.matchCheckNeeded && result?.targetItemUserId) {
         // Don't await this - let it run in background
-        this.handleBackgroundMatchCheck(swipeData.userId, swipeData.itemId).catch((error) => {
+        this.handleBackgroundMatchCheck(data.userId, data.itemId).catch((error) => {
           console.error("Background match creation failed:", error);
         });
       }
@@ -238,9 +237,9 @@ export class SwipeService {
   }
 
   /**
-   * Get all items a user has swiped on
+   * Get all items a user has responded to
    */
-  static async getSwipedItems(userId: string): Promise<ServiceResult<string[]>> {
+  static async getRespondedItems(userId: string): Promise<ServiceResult<string[]>> {
     try {
       const uuidError = ValidationService.validateUUID(userId);
       if (uuidError) {
@@ -260,7 +259,7 @@ export class SwipeService {
       }
 
       return {
-        data: data.map((swipe) => swipe.item_id),
+        data: data.map((response) => response.item_id),
       };
     } catch (error) {
       return {
@@ -276,14 +275,14 @@ export class SwipeService {
   /**
    * Private helper methods
    */
-  private static validateSwipeData(swipeData: SwipeData): ServiceError | null {
-    const userIdError = ValidationService.validateUUID(swipeData.userId);
+  private static validateResponseData(data: ResponseData): ServiceError | null {
+    const userIdError = ValidationService.validateUUID(data.userId);
     if (userIdError) return userIdError;
 
-    const itemIdError = ValidationService.validateUUID(swipeData.itemId);
+    const itemIdError = ValidationService.validateUUID(data.itemId);
     if (itemIdError) return itemIdError;
 
-    const directionError = ValidationService.validateSwipeDirection(swipeData.direction);
+    const directionError = ValidationService.validateResponseDirection(data.direction);
     if (directionError) return directionError;
 
     return null;

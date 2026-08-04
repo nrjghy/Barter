@@ -2,7 +2,7 @@
 export * from "./types";
 export * from "./config";
 export * from "./validation";
-export * from "./swipeService";
+export * from "./responseService";
 export * from "./itemService";
 export * from "./matchService";
 export * from "./connectionService";
@@ -19,7 +19,7 @@ export * from "./issuesService";
 // Re-export commonly used types and constants
 export { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./config";
 export { ValidationService } from "./validation";
-export { SwipeService } from "./swipeService";
+export { ResponseService } from "./responseService";
 export { ItemService } from "./itemService";
 export { MatchService } from "./matchService";
 export { ConnectionService } from "./connectionService";

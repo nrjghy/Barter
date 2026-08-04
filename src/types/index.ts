@@ -19,11 +19,6 @@ export interface ItemFormData {
   image?: File;
 }
 
-export interface SwipeAction {
-  direction: "left" | "right";
-  itemId: string;
-}
-
 export interface MatchNotification {
   id: string;
   item1: {

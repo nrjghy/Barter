@@ -1,18 +1,18 @@
 // Service layer types and interfaces
 
-export interface SwipeData {
+export interface ResponseData {
   userId: string;
   itemId: string;
-  direction: "left" | "right";
+  direction: "pass" | "like";
 }
 
-export interface SwipeLimitData {
+export interface LikeLimitData {
   canSwipe: boolean;
   dailySwipeCount: number;
   limit: number;
 }
 
-export interface SwipeResult {
+export interface ResponseResult {
   success: boolean;
   dailySwipeCount: number;
   canSwipe: boolean;
@@ -121,20 +121,12 @@ export interface ServiceResult<T> {
 
 // Configuration types
 export interface AppConfig {
-  swipeLimit: number;
   itemsPerPage: number;
   maxRetries: number;
   cacheTimeout: number;
 }
 
 // Event types for real-time updates
-export interface SwipeEvent {
-  userId: string;
-  itemId: string;
-  direction: "left" | "right" | "super";
-  timestamp: string;
-}
-
 export interface MatchEvent {
   matchId: string;
   userId1: string;
