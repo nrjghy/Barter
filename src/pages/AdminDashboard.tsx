@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { BackBar } from '../components/BackBar';
 import { supabase } from '../lib/supabase';
 import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
@@ -367,508 +368,512 @@ export const AdminDashboard: React.FC = () => {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4">
-      <div className="flex items-center space-x-3 mb-6">
-        <Shield className="w-8 h-8 text-barter-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <BackBar title="Admin console" onBack={() => navigate('/profile')} />
 
-      {/* Tab Switcher */}
-      <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 gap-1">
-        {([
-          { key: 'listings', label: 'Listings', icon: Eye },
-          { key: 'reports', label: 'Reports', icon: Flag },
-          { key: 'issues', label: 'Issues', icon: MessageSquare },
-          { key: 'suggestions', label: 'Category Suggestions', icon: Tag },
-          { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
-        ] as { key: AdminTab; label: string; icon: typeof Eye }[]).map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 flex-1 justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeTab === key ? 'bg-barter-100 text-barter-700' : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <Icon className="w-4 h-4" />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'listings' && (
-      <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="text-2xl font-bold text-gray-900">{total}</div>
-          <div className="text-sm text-gray-600">Total Listings</div>
+      <div className="px-4 py-4">
+        <div className="flex items-center space-x-3 mb-6">
+          <Shield className="w-8 h-8 text-barter-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="text-2xl font-bold text-green-600">
-            {listings.filter(item => item.is_active).length}
+  
+        {/* Tab Switcher */}
+        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 gap-1">
+          {([
+            { key: 'listings', label: 'Listings', icon: Eye },
+            { key: 'reports', label: 'Reports', icon: Flag },
+            { key: 'issues', label: 'Issues', icon: MessageSquare },
+            { key: 'suggestions', label: 'Category Suggestions', icon: Tag },
+            { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
+          ] as { key: AdminTab; label: string; icon: typeof Eye }[]).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-2 flex-1 justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeTab === key ? 'bg-barter-100 text-barter-700' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+  
+        {activeTab === 'listings' && (
+        <>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="text-2xl font-bold text-gray-900">{total}</div>
+            <div className="text-sm text-gray-600">Total Listings</div>
           </div>
-          <div className="text-sm text-gray-600">Active Listings</div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="text-2xl font-bold text-blue-600">
-            {listings.filter(item => item.users.is_demo).length}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="text-2xl font-bold text-green-600">
+              {listings.filter(item => item.is_active).length}
+            </div>
+            <div className="text-sm text-gray-600">Active Listings</div>
           </div>
-          <div className="text-sm text-gray-600">Demo Listings</div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
-          <div className="text-2xl font-bold text-barter-600">
-            {new Set(listings.map(item => item.user_id)).size}
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {listings.filter(item => item.users.is_demo).length}
+            </div>
+            <div className="text-sm text-gray-600">Demo Listings</div>
           </div>
-          <div className="text-sm text-gray-600">Unique Users</div>
-        </div>
-      </div>
-
-      {/* Filters and Search */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search by title or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-            />
+          <div className="bg-white rounded-xl shadow-sm p-4">
+            <div className="text-2xl font-bold text-barter-600">
+              {new Set(listings.map(item => item.user_id)).size}
+            </div>
+            <div className="text-sm text-gray-600">Unique Users</div>
           </div>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-          >
-            <option value="created_at">Created At</option>
-            <option value="title">Title</option>
-            <option value="category">Category</option>
-          </select>
-
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-          >
-            <option value="desc">Newest First</option>
-            <option value="asc">Oldest First</option>
-          </select>
-
-          <select
-            value={filterActive === null ? 'all' : filterActive.toString()}
-            onChange={(e) => setFilterActive(e.target.value === 'all' ? null : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-          >
-            <option value="all">All Statuses</option>
-            <option value="true">Active Only</option>
-            <option value="false">Inactive Only</option>
-          </select>
-
-          <select
-            value={filterDemo === null ? 'all' : filterDemo.toString()}
-            onChange={(e) => setFilterDemo(e.target.value === 'all' ? null : e.target.value === 'true')}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-          >
-            <option value="all">All User Types</option>
-            <option value="true">Demo Users Only</option>
-            <option value="false">Regular Users Only</option>
-          </select>
         </div>
-      </div>
-
-      {/* Demo Listings Toggle */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <AlertCircle className="w-5 h-5 text-blue-600" />
-            <span className="text-lg font-semibold text-gray-900">Demo Listings Filter</span>
+  
+        {/* Filters and Search */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="relative lg:col-span-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search by title or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+              />
+            </div>
+  
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+            >
+              <option value="created_at">Created At</option>
+              <option value="title">Title</option>
+              <option value="category">Category</option>
+            </select>
+  
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+            >
+              <option value="desc">Newest First</option>
+              <option value="asc">Oldest First</option>
+            </select>
+  
+            <select
+              value={filterActive === null ? 'all' : filterActive.toString()}
+              onChange={(e) => setFilterActive(e.target.value === 'all' ? null : e.target.value === 'true')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+            >
+              <option value="all">All Statuses</option>
+              <option value="true">Active Only</option>
+              <option value="false">Inactive Only</option>
+            </select>
+  
+            <select
+              value={filterDemo === null ? 'all' : filterDemo.toString()}
+              onChange={(e) => setFilterDemo(e.target.value === 'all' ? null : e.target.value === 'true')}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+            >
+              <option value="all">All User Types</option>
+              <option value="true">Demo Users Only</option>
+              <option value="false">Regular Users Only</option>
+            </select>
           </div>
-          <label className="flex items-center space-x-3 cursor-pointer">
-            <span className="text-sm text-gray-700">Show Demo Listings</span>
-            <input
-              type="checkbox"
-              checked={showDemoListings}
-              onChange={(e) => setShowDemoListings(e.target.checked)}
-              className="rounded border-gray-300 text-barter-600 focus:ring-barter-600"
-            />
-          </label>
         </div>
-        <div className="mt-2 text-sm text-gray-600">
-          {showDemoListings 
-            ? 'Currently showing all listings including demo users' 
-            : 'Currently hiding listings from demo users'
-          }
+  
+        {/* Demo Listings Toggle */}
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="w-5 h-5 text-blue-600" />
+              <span className="text-lg font-semibold text-gray-900">Demo Listings Filter</span>
+            </div>
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <span className="text-sm text-gray-700">Show Demo Listings</span>
+              <input
+                type="checkbox"
+                checked={showDemoListings}
+                onChange={(e) => setShowDemoListings(e.target.checked)}
+                className="rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+              />
+            </label>
+          </div>
+          <div className="mt-2 text-sm text-gray-600">
+            {showDemoListings 
+              ? 'Currently showing all listings including demo users' 
+              : 'Currently hiding listings from demo users'
+            }
+          </div>
         </div>
-      </div>
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : listings.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No listings found</h3>
-          <p className="text-gray-600">Adjust your filters or search terms to see results.</p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Seller
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Condition
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {listings.map((item) => (
-                <motion.tr
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="hover:bg-gray-50"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-12 w-12">
-                        {item.image_urls && item.image_urls.length > 0 ? (
-                          <img 
-                            className="h-12 w-12 rounded-lg object-cover" 
-                            src={item.image_urls[0]} 
-                            alt={item.title}
-                            onError={(e) => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-gray-200" />
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                          {item.title}
+  
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner />
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl shadow-sm">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No listings found</h3>
+            <p className="text-gray-600">Adjust your filters or search terms to see results.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto bg-white rounded-xl shadow-sm">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Item
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Seller
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Condition
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {listings.map((item) => (
+                  <motion.tr
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="hover:bg-gray-50"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-12 w-12">
+                          {item.image_urls && item.image_urls.length > 0 ? (
+                            <img 
+                              className="h-12 w-12 rounded-lg object-cover" 
+                              src={item.image_urls[0]} 
+                              alt={item.title}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-200" />
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500 max-w-xs truncate">
-                          {item.description || 'No description'}
-                        </div>
-                        {item.estimated_value != null && item.estimated_value > 0 && (
-                          <div className="text-sm font-medium text-green-600">
-                            ${item.estimated_value}
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                            {item.title}
                           </div>
+                          <div className="text-sm text-gray-500 max-w-xs truncate">
+                            {item.description || 'No description'}
+                          </div>
+                          {item.estimated_value != null && item.estimated_value > 0 && (
+                            <div className="text-sm font-medium text-green-600">
+                              ${item.estimated_value}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{item.users.username}</div>
+                      <div className="text-sm text-gray-500">{item.users.location || 'No location'}</div>
+                      <div className="flex items-center space-x-2 mt-1">
+                        {item.users.is_demo && (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                            Demo
+                          </span>
+                        )}
+                        {item.users.role === 'admin' && (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-barter-100 text-barter-800">
+                            Admin
+                          </span>
                         )}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.users.username}</div>
-                    <div className="text-sm text-gray-500">{item.users.location || 'No location'}</div>
-                    <div className="flex items-center space-x-2 mt-1">
-                      {item.users.is_demo && (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                          Demo
-                        </span>
-                      )}
-                      {item.users.role === 'admin' && (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-barter-100 text-barter-800">
-                          Admin
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.category}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.condition}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {item.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(item.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => navigate(`/item/${item.id}`)}
-                        className="text-barter-600 hover:text-barter-800 p-1 rounded-md hover:bg-gray-100 transition-colors"
-                        title="View Item"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => toast.info('Edit functionality coming soon')}
-                        className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
-                        title="Edit Item"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => toast.info('Delete functionality coming soon')}
-                        className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
-                        title="Delete Item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6 bg-white rounded-xl shadow-sm p-4">
-          <button
-            onClick={() => setPage(prev => Math.max(0, prev - 1))}
-            disabled={page === 0 || loading}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Previous</span>
-          </button>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-700">
-              Page {page + 1} of {totalPages}
-            </span>
-            <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm flex items-center justify-center">
-              Demo filter above
-            </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.category}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.condition}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        item.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {item.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(item.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => navigate(`/item/${item.id}`)}
+                          className="text-barter-600 hover:text-barter-800 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                          title="View Item"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toast.info('Edit functionality coming soon')}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                          title="Edit Item"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toast.info('Delete functionality coming soon')}
+                          className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                          title="Delete Item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          
-          <button
-            onClick={() => setPage(prev => Math.min(totalPages - 1, prev + 1))}
-            disabled={page === totalPages - 1 || loading}
-            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <span>Next</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-      </>
-      )}
-
-      {activeTab === 'reports' && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {reportsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
+        )}
+  
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-6 bg-white rounded-xl shadow-sm p-4">
+            <button
+              onClick={() => setPage(prev => Math.max(0, prev - 1))}
+              disabled={page === 0 || loading}
+              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous</span>
+            </button>
+            
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">
+                Page {page + 1} of {totalPages}
+              </span>
+              <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm flex items-center justify-center">
+                Demo filter above
+              </div>
             </div>
-          ) : reportsError ? (
-            <div className="text-center py-12 text-red-600">{reportsError}</div>
-          ) : reports.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No reports</h3>
-              <p className="text-gray-600">Nothing has been reported yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported User</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported Item</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {reports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reason}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{report.description || '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          {report.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reporter?.username ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reported_user?.username ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.reported_item?.title ?? 'No item (user report)'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(report.created_at).toLocaleDateString()}</td>
+            
+            <button
+              onClick={() => setPage(prev => Math.min(totalPages - 1, prev + 1))}
+              disabled={page === totalPages - 1 || loading}
+              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <span>Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        </>
+        )}
+  
+        {activeTab === 'reports' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {reportsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : reportsError ? (
+              <div className="text-center py-12 text-red-600">{reportsError}</div>
+            ) : reports.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No reports</h3>
+                <p className="text-gray-600">Nothing has been reported yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported User</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported Item</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'issues' && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {issuesLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : issuesError ? (
-            <div className="text-center py-12 text-red-600">{issuesError}</div>
-          ) : issues.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No issues</h3>
-              <p className="text-gray-600">Nothing has been reported yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {issues.map((issue) => (
-                    <tr key={issue.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {issue.image_urls && issue.image_urls.length > 0 ? (
-                          <img src={issue.image_urls[0]} alt="Attached" className="h-12 w-12 rounded-lg object-cover" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-gray-100" />
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{issue.title}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{issue.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{issue.issue_type}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          {issue.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{issue.reporter?.username ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(issue.created_at).toLocaleDateString()}</td>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {reports.map((report) => (
+                      <tr key={report.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reason}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{report.description || '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            {report.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reporter?.username ?? '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reported_user?.username ?? '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{report.reported_item?.title ?? 'No item (user report)'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(report.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+  
+        {activeTab === 'issues' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {issuesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : issuesError ? (
+              <div className="text-center py-12 text-red-600">{issuesError}</div>
+            ) : issues.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No issues</h3>
+                <p className="text-gray-600">Nothing has been reported yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reporter</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'suggestions' && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {suggestionsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : suggestionsError ? (
-            <div className="text-center py-12 text-red-600">{suggestionsError}</div>
-          ) : suggestions.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No category suggestions</h3>
-              <p className="text-gray-600">Nobody has suggested a new category yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggested Category</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {suggestions.map((suggestion) => (
-                    <tr key={suggestion.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{suggestion.title}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.category_suggestion}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.owner?.username ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(suggestion.created_at).toLocaleDateString()}</td>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {issues.map((issue) => (
+                      <tr key={issue.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {issue.image_urls && issue.image_urls.length > 0 ? (
+                            <img src={issue.image_urls[0]} alt="Attached" className="h-12 w-12 rounded-lg object-cover" />
+                          ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-100" />
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{issue.title}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{issue.description}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{issue.issue_type}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            {issue.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{issue.reporter?.username ?? '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(issue.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+  
+        {activeTab === 'suggestions' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {suggestionsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : suggestionsError ? (
+              <div className="text-center py-12 text-red-600">{suggestionsError}</div>
+            ) : suggestions.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No category suggestions</h3>
+                <p className="text-gray-600">Nobody has suggested a new category yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item Title</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Suggested Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'disputes' && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          {disputesLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <LoadingSpinner />
-            </div>
-          ) : disputesError ? (
-            <div className="text-center py-12 text-red-600">{disputesError}</div>
-          ) : disputes.length === 0 ? (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No disputes</h3>
-              <p className="text-gray-600">No trade completions have been disputed yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connection</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed By</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed By</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispute Deadline</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed At</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {disputes.map((dispute) => (
-                    <tr key={dispute.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {dispute.connection?.user_1?.username ?? '—'} ↔ {dispute.connection?.user_2?.username ?? '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.completed_by_user?.username ?? '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.disputed_by_user?.username ?? '—'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{dispute.dispute_reason || '—'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.dispute_deadline).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.disputed_at).toLocaleDateString()}</td>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {suggestions.map((suggestion) => (
+                      <tr key={suggestion.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{suggestion.title}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.category_suggestion}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.owner?.username ?? '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(suggestion.created_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+  
+        {activeTab === 'disputes' && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {disputesLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : disputesError ? (
+              <div className="text-center py-12 text-red-600">{disputesError}</div>
+            ) : disputes.length === 0 ? (
+              <div className="text-center py-12">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No disputes</h3>
+                <p className="text-gray-600">No trade completions have been disputed yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connection</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed By</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed By</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispute Deadline</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed At</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {disputes.map((dispute) => (
+                      <tr key={dispute.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {dispute.connection?.user_1?.username ?? '—'} ↔ {dispute.connection?.user_2?.username ?? '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.completed_by_user?.username ?? '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.disputed_by_user?.username ?? '—'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{dispute.dispute_reason || '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.dispute_deadline).toLocaleDateString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.disputed_at).toLocaleDateString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

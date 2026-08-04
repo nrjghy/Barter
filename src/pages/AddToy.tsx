@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { BackBar } from "../components/BackBar";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
@@ -263,223 +264,232 @@ export const AddToy: React.FC = () => {
 
   if (isEditMode && existingItemQuery.isLoading) {
     return (
-      <div className="max-w-md mx-auto px-4 py-12 flex justify-center">
-        <LoadingSpinner />
+      <div className="max-w-md mx-auto">
+        <BackBar title="Edit listing" onBack={() => navigate("/my-stuff")} />
+        <div className="px-4 py-12 flex justify-center">
+          <LoadingSpinner />
+        </div>
       </div>
     );
   }
 
   if (isEditMode && existingItemLoadError) {
     return (
-      <div className="max-w-md mx-auto px-4 py-12 text-center text-gray-600">
-        Couldn't load this listing. It may have been removed.
+      <div className="max-w-md mx-auto">
+        <BackBar title="Edit listing" onBack={() => navigate("/my-stuff")} />
+        <div className="px-4 py-12 text-center text-gray-600">
+          Couldn't load this listing. It may have been removed.
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{isEditMode ? "Edit Listing" : "Add New Item"}</h1>
-        <p className="text-gray-600">
-          {isEditMode ? "Update your item's details" : "Share an item you'd like to exchange"}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {saveAttempted && invalidFields.length > 0 && (
-          <div className="px-3.5 py-3 rounded-xl bg-[oklch(93%_0.06_40)] text-[oklch(38%_0.12_35)] text-sm font-bold text-center">
-            {invalidFields.length === 1 ? "1 field needs attention" : `${invalidFields.length} fields need attention`}
-          </div>
-        )}
-
-        {/* Image Upload */}
-        <div ref={photosRef} onMouseDown={() => markTouched("photos")}>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
-          <div className="relative">
-            {existingImageUrls.length > 0 || imagePreviews.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
-                {existingImageUrls.map((url, index) => (
-                  <div key={`existing-${index}`} className="relative">
-                    <img src={url} alt={`Photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExistingImage(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {imagePreviews.map((preview, index) => (
-                  <div key={`new-${index}`} className="relative">
-                    <img src={preview} alt={`New photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-                {existingImageUrls.length + imagePreviews.length < 10 && (
-                  <label className="flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <Camera className="w-5 h-5 mb-1 text-gray-400" />
-                    <span className="text-xs font-semibold text-gray-500">Add more</span>
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} multiple />
-                  </label>
-                )}
-              </div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Camera className="w-8 h-8 mb-4 text-gray-400" />
-                  <p className="mb-2 text-sm text-gray-500">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB each (max 10 images)</p>
-                </div>
-                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} multiple />
-              </label>
-            )}
-          </div>
-          {showError("photos") && (
-            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">At least one photo is required</p>
-          )}
+    <div className="max-w-md mx-auto">
+      <BackBar title={isEditMode ? "Edit listing" : "Add a listing"} onBack={() => navigate("/my-stuff")} />
+      <div className="px-4 py-4">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{isEditMode ? "Edit Listing" : "Add New Item"}</h1>
+          <p className="text-gray-600">
+            {isEditMode ? "Update your item's details" : "Share an item you'd like to exchange"}
+          </p>
         </div>
-
-        {/* Title */}
-        <div ref={titleRef}>
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Title *
-          </label>
-          <input
-            id="title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={() => markTouched("title")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
-              showError("title") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
-            }`}
-            placeholder="Enter item title"
-          />
-          {showError("title") && <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Title is required</p>}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-            placeholder="Describe your item..."
-          />
-        </div>
-
-        {/* Category */}
-        <div ref={categoryRef}>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-            Category *
-          </label>
-          <select
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            onBlur={() => markTouched("category")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
-              showError("category") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
-            }`}
-          >
-            <option value="">Select a category</option>
-            {ITEM_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-          {showError("category") && (
-            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Category is required</p>
-          )}
-          {category === "Other" && (
-            <div className="mt-3">
-              <label htmlFor="categorySuggestion" className="block text-sm font-medium text-gray-700 mb-2">
-                Suggest a category name (optional)
-              </label>
-              <input
-                id="categorySuggestion"
-                type="text"
-                value={categorySuggestion}
-                onChange={(e) => setCategorySuggestion(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-                placeholder="e.g. Board Games"
-              />
-              <p className="text-xs text-gray-500 mt-1">Your listing will show under Other for now.</p>
+  
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {saveAttempted && invalidFields.length > 0 && (
+            <div className="px-3.5 py-3 rounded-xl bg-[oklch(93%_0.06_40)] text-[oklch(38%_0.12_35)] text-sm font-bold text-center">
+              {invalidFields.length === 1 ? "1 field needs attention" : `${invalidFields.length} fields need attention`}
             </div>
           )}
-        </div>
-
-        {/* Condition */}
-        <div ref={conditionRef}>
-          <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
-            Condition *
-          </label>
-          <select
-            id="condition"
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-            onBlur={() => markTouched("condition")}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
-              showError("condition") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
-            }`}
-          >
-            <option value="">Select condition</option>
-            {ITEM_CONDITIONS.map((cond) => (
-              <option key={cond} value={cond}>
-                {cond}
-              </option>
-            ))}
-          </select>
-          {showError("condition") && (
-            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Condition is required</p>
-          )}
-        </div>
-
-        {/* Item Value */}
-        <div>
-          <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
-            Estimated value (optional)
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+  
+          {/* Image Upload */}
+          <div ref={photosRef} onMouseDown={() => markTouched("photos")}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
+            <div className="relative">
+              {existingImageUrls.length > 0 || imagePreviews.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {existingImageUrls.map((url, index) => (
+                    <div key={`existing-${index}`} className="relative">
+                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingImage(index)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {imagePreviews.map((preview, index) => (
+                    <div key={`new-${index}`} className="relative">
+                      <img src={preview} alt={`New photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  {existingImageUrls.length + imagePreviews.length < 10 && (
+                    <label className="flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <Camera className="w-5 h-5 mb-1 text-gray-400" />
+                      <span className="text-xs font-semibold text-gray-500">Add more</span>
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} multiple />
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Camera className="w-8 h-8 mb-4 text-gray-400" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB each (max 10 images)</p>
+                  </div>
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} multiple />
+                </label>
+              )}
+            </div>
+            {showError("photos") && (
+              <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">At least one photo is required</p>
+            )}
+          </div>
+  
+          {/* Title */}
+          <div ref={titleRef}>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+              Title *
+            </label>
             <input
-              id="estimatedValue"
-              type="number"
-              value={estimatedValue}
-              onChange={(e) => setEstimatedValue(e.target.value)}
-              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-              placeholder="0.00"
-              min="0"
-              step="0.01"
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={() => markTouched("title")}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
+                showError("title") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+              }`}
+              placeholder="Enter item title"
+            />
+            {showError("title") && <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Title is required</p>}
+          </div>
+  
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+              Description
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+              placeholder="Describe your item..."
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? <LoadingSpinner /> : isEditMode ? "Save changes" : "Add Item"}
-        </button>
-      </form>
+  
+          {/* Category */}
+          <div ref={categoryRef}>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              Category *
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              onBlur={() => markTouched("category")}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
+                showError("category") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+              }`}
+            >
+              <option value="">Select a category</option>
+              {ITEM_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            {showError("category") && (
+              <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Category is required</p>
+            )}
+            {category === "Other" && (
+              <div className="mt-3">
+                <label htmlFor="categorySuggestion" className="block text-sm font-medium text-gray-700 mb-2">
+                  Suggest a category name (optional)
+                </label>
+                <input
+                  id="categorySuggestion"
+                  type="text"
+                  value={categorySuggestion}
+                  onChange={(e) => setCategorySuggestion(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  placeholder="e.g. Board Games"
+                />
+                <p className="text-xs text-gray-500 mt-1">Your listing will show under Other for now.</p>
+              </div>
+            )}
+          </div>
+  
+          {/* Condition */}
+          <div ref={conditionRef}>
+            <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-2">
+              Condition *
+            </label>
+            <select
+              id="condition"
+              value={condition}
+              onChange={(e) => setCondition(e.target.value)}
+              onBlur={() => markTouched("condition")}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent ${
+                showError("condition") ? "border-[oklch(55%_0.15_30)]" : "border-gray-300"
+              }`}
+            >
+              <option value="">Select condition</option>
+              {ITEM_CONDITIONS.map((cond) => (
+                <option key={cond} value={cond}>
+                  {cond}
+                </option>
+              ))}
+            </select>
+            {showError("condition") && (
+              <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">Condition is required</p>
+            )}
+          </div>
+  
+          {/* Item Value */}
+          <div>
+            <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
+              Estimated value (optional)
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+              <input
+                id="estimatedValue"
+                type="number"
+                value={estimatedValue}
+                onChange={(e) => setEstimatedValue(e.target.value)}
+                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
+          </div>
+  
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-barter-600 text-white py-3 rounded-lg font-medium hover:bg-barter-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? <LoadingSpinner /> : isEditMode ? "Save changes" : "Add Item"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };

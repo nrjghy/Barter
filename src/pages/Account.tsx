@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { AccountService } from "../services";
+import { BackBar } from "../components/BackBar";
 
 // Danger-zone-only for now -- matches the "Account" frame in
 // design/Barter Nav Shell.dc.html, but only the section this pass builds.
@@ -35,15 +36,7 @@ export const Account: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
-      <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
-        <button
-          onClick={() => navigate("/profile")}
-          className="p-1 -ml-1 text-2xl leading-none text-[oklch(22%_0.02_100)]"
-        >
-          ‹
-        </button>
-        <div className="text-base font-bold text-[oklch(22%_0.02_100)]">Account</div>
-      </div>
+      <BackBar title="Account" onBack={() => navigate("/profile")} />
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
         <div className="text-[11px] font-bold text-[oklch(50%_0.15_30)] tracking-wide mb-2.5">DANGER ZONE</div>

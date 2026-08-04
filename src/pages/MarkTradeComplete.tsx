@@ -5,6 +5,7 @@ import { useConnection } from "../hooks/useConnections";
 import { useUserItems } from "../hooks/useItems";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { BackBar } from "../components/BackBar";
 import { toast } from "react-hot-toast";
 import { TradeCompletionService, NotificationService } from "../services";
 import type { ItemData } from "../services/types";
@@ -162,12 +163,7 @@ export const MarkTradeComplete: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
-      <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
-        <button onClick={() => navigate(`/chat/${connectionId}`)} className="p-1 -ml-1 text-2xl leading-none text-[oklch(22%_0.02_100)]">
-          ‹
-        </button>
-        <div className="text-base font-bold text-[oklch(22%_0.02_100)]">Mark trade complete</div>
-      </div>
+      <BackBar title="Mark trade complete" onBack={() => navigate(`/chat/${connectionId}`)} />
 
       {connectionLoading ? (
         <div className="flex-1 flex items-center justify-center">
