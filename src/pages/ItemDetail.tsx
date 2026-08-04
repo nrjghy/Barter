@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
-import { useSwipes } from "../hooks/useSwipes";
+import { useResponses } from "../hooks/useResponses";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { ReportDialog } from "../components/ReportDialog";
@@ -35,7 +35,7 @@ export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { recordSwipe } = useSwipes();
+  const { recordResponse } = useResponses();
 
   const [item, setItem] = useState<ItemWithUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,17 +120,17 @@ export const ItemDetail: React.FC = () => {
     }
   };
 
-  const handleSwipe = async (direction: "left" | "right") => {
+  const handleSwipe = async (direction: "pass" | "like") => {
     if (!item || !user) return;
 
-    const { error } = await recordSwipe({ itemId: item.id, direction });
+    const { error } = await recordResponse({ itemId: item.id, direction });
 
     if (error) {
       toast.error("Failed to record action");
       return;
     }
 
-    if (direction === "right") {
+    if (direction === "like") {
       toast.success("Liked! 💖");
       // PRD §17 core conversion funnel, step 3: Like -- same event name as
       // Dashboard's handleSwipe, since a like from either entry point should
@@ -575,13 +575,13 @@ export const ItemDetail: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => handleSwipe("left")}
+                    onClick={() => handleSwipe("pass")}
                     className="flex items-center justify-center space-x-2 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
                   >
                     <span>Pass</span>
                   </button>
                   <button
-                    onClick={() => handleSwipe("right")}
+                    onClick={() => handleSwipe("like")}
                     className="flex items-center justify-center space-x-2 py-3 bg-green-100 text-green-700 rounded-xl font-medium hover:bg-green-200 transition-colors"
                   >
                     <Heart className="w-4 h-4" />

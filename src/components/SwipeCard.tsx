@@ -6,7 +6,7 @@ import { ItemWithUser } from "../services/itemService";
 
 interface SwipeCardProps {
   item: ItemWithUser;
-  onSwipe: (direction: "left" | "right") => void;
+  onSwipe: (direction: "pass" | "like") => void;
   style?: React.CSSProperties;
 }
 
@@ -31,10 +31,10 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
     // Regular swipes
     if (movement > threshold || velocity > 500) {
       setExitX(1000);
-      onSwipe("right");
+      onSwipe("like");
     } else if (movement < -threshold || velocity < -500) {
       setExitX(-1000);
-      onSwipe("left");
+      onSwipe("pass");
     }
   };
 

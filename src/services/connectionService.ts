@@ -11,7 +11,7 @@ import { ValidationService } from "./validation";
 //
 // NOTE on connection_item_interests ownership: item_id_1 / item_id_2 on that
 // table do NOT correspond to connections.user_id_1 / user_id_2. They're
-// whichever item belonged to whoever performed the swipe that created that
+// whichever item belonged to whoever performed the response that created that
 // specific interest row (see check_and_create_match). So "which item is
 // mine" has to be worked out per-row by comparing each item's owner to the
 // viewing user, not by position. That's what toItemInterestPair below does.

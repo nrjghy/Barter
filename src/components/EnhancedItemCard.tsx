@@ -8,7 +8,7 @@ import { shareItem } from "../utils/share";
 
 interface EnhancedItemCardProps {
   item: ItemWithUser;
-  onSwipe?: (direction: "left" | "right") => void;
+  onSwipe?: (direction: "pass" | "like") => void;
   showActions?: boolean;
   variant?: "default" | "compact" | "featured";
 }
@@ -76,9 +76,9 @@ export const EnhancedItemCard: React.FC<EnhancedItemCardProps> = memo(
         if (!onSwipe) return;
 
         if (info.offset.x > 100) {
-          onSwipe("right");
+          onSwipe("like");
         } else if (info.offset.x < -100) {
-          onSwipe("left");
+          onSwipe("pass");
         }
       },
       [onSwipe]

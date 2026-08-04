@@ -3,10 +3,10 @@ import React from "react";
 interface ItemStatusProps {
   availableItemsCount: number;
   hasMore: boolean;
-  swipesRemaining: number;
+  likesRemaining: number;
 }
 
-export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItemsCount, hasMore, swipesRemaining }) => {
+export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItemsCount, hasMore, likesRemaining }) => {
   return (
     <div className="mt-8 text-center">
       <p className="text-gray-600">
@@ -19,8 +19,8 @@ export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItem
           "No items available"
         )}
       </p>
-      {swipesRemaining <= 0 && (
-        <p className="text-red-600 text-sm mt-2">Daily swipe limit reached! Come back tomorrow for more.</p>
+      {likesRemaining <= 0 && (
+        <p className="text-red-600 text-sm mt-2">Daily like limit reached! Come back tomorrow for more.</p>
       )}
     </div>
   );

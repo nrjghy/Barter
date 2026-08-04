@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Heart, X, RotateCcw } from "lucide-react";
 
 interface SwipeControlsProps {
-  onSwipe: (direction: "left" | "right") => void;
+  onSwipe: (direction: "pass" | "like") => void;
   onUndo: () => void;
   disabled: boolean;
   canUndo: boolean;
@@ -15,7 +15,7 @@ export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(({ onSwipe
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => onSwipe("left")}
+        onClick={() => onSwipe("pass")}
         className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-gray-200 hover:border-red-300 transition-colors"
         disabled={disabled}
       >
@@ -35,7 +35,7 @@ export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(({ onSwipe
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => onSwipe("right")}
+        onClick={() => onSwipe("like")}
         className="w-16 h-16 bg-white rounded-full shadow-lg flex items-center justify-center border-2 border-gray-200 hover:border-green-300 transition-colors"
         disabled={disabled}
       >

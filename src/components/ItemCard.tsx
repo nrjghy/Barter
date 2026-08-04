@@ -7,7 +7,7 @@ import { ReportDialog } from "./ReportDialog";
 
 interface ItemCardProps {
   item: ItemWithUser;
-  onSwipe?: (direction: "left" | "right") => void;
+  onSwipe?: (direction: "pass" | "like") => void;
   showActions?: boolean;
 }
 
@@ -55,9 +55,9 @@ export const ItemCard: React.FC<ItemCardProps> = memo(({ item, onSwipe, showActi
       if (!onSwipe) return;
 
       if (info.offset.x > 100) {
-        onSwipe("right");
+        onSwipe("like");
       } else if (info.offset.x < -100) {
-        onSwipe("left");
+        onSwipe("pass");
       }
     },
     [onSwipe]

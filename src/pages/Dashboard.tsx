@@ -9,7 +9,7 @@ import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
 import { LocationPrompt } from "../components/LocationPrompt";
 import { useItems } from "../hooks/useItems";
-import { useSwipes } from "../hooks/useSwipes";
+import { useResponses } from "../hooks/useResponses";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
@@ -17,7 +17,7 @@ import { trackEvent } from "../lib/analytics";
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipedItems, setSwipedItems] = useState<Set<string>>(new Set());
+  const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
@@ -49,19 +49,19 @@ export const Dashboard: React.FC = () => {
     lat: user?.latitude ?? null,
     lng: user?.longitude ?? null,
   });
-  const { recordSwipe, dailySwipeCount, swipeLimit, getSwipedItems, undoResponse } = useSwipes();
+  const { recordResponse, dailyLikeCount, likeLimit, getRespondedItems, undoResponse } = useResponses();
 
-  // Load previously swiped items
+  // Load previously responded-to items
   useEffect(() => {
-    const loadSwipedItems = async () => {
-      const swiped = await getSwipedItems();
-      setSwipedItems(new Set(swiped));
+    const loadRespondedItems = async () => {
+      const responded = await getRespondedItems();
+      setRespondedItems(new Set(responded));
     };
 
     if (user) {
-      loadSwipedItems();
+      loadRespondedItems();
     }
-  }, [user]); // Remove getSwipedItems from dependencies
+  }, [user]); // Remove getRespondedItems from dependencies
 
   useEffect(() => {
     if (user && user.latitude == null && !user.locationPromptDismissedAt) {
@@ -69,18 +69,18 @@ export const Dashboard: React.FC = () => {
     }
   }, [user]);
 
-  // Filter items based on swiped items - use more efficient filtering
+  // Filter items based on responded items - use more efficient filtering
   const availableItems = React.useMemo(() => {
     // Early return if no items to filter
     if (items.length === 0) {
       return [];
     }
-    // Pre-compute swipedItems size to avoid unnecessary filtering when empty
-    if (swipedItems.size === 0) {
+    // Pre-compute respondedItems size to avoid unnecessary filtering when empty
+    if (respondedItems.size === 0) {
       return items;
     }
-    return items.filter((item) => !swipedItems.has(item.id));
-  }, [items, swipedItems]);
+    return items.filter((item) => !respondedItems.has(item.id));
+  }, [items, respondedItems]);
 
   // Ensure currentIndex is within bounds
   const safeCurrentIndex = Math.min(currentIndex, Math.max(0, availableItems.length - 1));
@@ -112,13 +112,13 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleSwipe = async (direction: "left" | "right") => {
+  const handleSwipe = async (direction: "pass" | "like") => {
     if (!currentItem || !user) return;
 
-    const swipedItemId = currentItem.id;
+    const respondedItemId = currentItem.id;
 
     // Optimistic UI update - update immediately
-    setSwipedItems((prev) => new Set(prev).add(swipedItemId));
+    setRespondedItems((prev) => new Set(prev).add(respondedItemId));
 
     // Move to next item (increment instead of reset to 0)
     setCurrentIndex((prev) => {
@@ -131,57 +131,57 @@ export const Dashboard: React.FC = () => {
     });
 
     // Show immediate feedback
-    if (direction === "right") {
-      toast.success("Right swipe!");
+    if (direction === "like") {
+      toast.success("Liked!");
     }
 
-    // Record swipe in background
+    // Record response in background
     try {
-      await recordSwipe({ itemId: swipedItemId, direction });
+      await recordResponse({ itemId: respondedItemId, direction });
 
       // PRD §17 core conversion funnel, step 3: Like. Tracked after genuine
       // success, not at the optimistic-UI point above, so a swipe that ends
       // up rolled back (see catch below) isn't counted.
-      if (direction === "right") {
-        trackEvent("item_liked", { itemId: swipedItemId });
+      if (direction === "like") {
+        trackEvent("item_liked", { itemId: respondedItemId });
       }
     } catch (error: any) {
       // Rollback optimistic update on error
-      setSwipedItems((prev) => {
+      setRespondedItems((prev) => {
         const newSet = new Set(prev);
-        newSet.delete(swipedItemId);
+        newSet.delete(respondedItemId);
         return newSet;
       });
 
       // Rollback currentIndex
       setCurrentIndex((prev) => Math.max(0, prev - 1));
 
-      if (error.message && error.message.includes("Daily swipe limit reached")) {
-        return; // Toast already shown in useSwipes
+      if (error.message && error.message.includes("Daily like limit reached")) {
+        return; // Toast already shown in useResponses
       }
       toast.error("No connection, please try again.");
     }
   };
 
   const handleUndo = async () => {
-    if (swipedItems.size === 0) return;
-    const lastSwipedItem = Array.from(swipedItems).pop();
-    if (!lastSwipedItem) return;
+    if (respondedItems.size === 0) return;
+    const lastRespondedItem = Array.from(respondedItems).pop();
+    if (!lastRespondedItem) return;
 
     try {
-      const result = await undoResponse(lastSwipedItem);
+      const result = await undoResponse(lastRespondedItem);
 
       if (result.error) {
         // Covers both "already matched, can't undo" and any other server-side
         // refusal -- either way, nothing was actually reversed, so local state
-        // (swipedItems/currentIndex) must not change either.
+        // (respondedItems/currentIndex) must not change either.
         toast.error(result.error.message);
         return;
       }
 
-      setSwipedItems((prev) => {
+      setRespondedItems((prev) => {
         const newSet = new Set(prev);
-        newSet.delete(lastSwipedItem);
+        newSet.delete(lastRespondedItem);
         return newSet;
       });
       if (currentIndex > 0) {
@@ -193,7 +193,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const swipesRemaining = swipeLimit - dailySwipeCount;
+  const likesRemaining = likeLimit - dailyLikeCount;
 
   // Check if any filters are active
   const hasActiveFilters =
@@ -250,11 +250,11 @@ export const Dashboard: React.FC = () => {
       <DashboardHeader
         onRefresh={handleRefresh}
         onFilter={() => setShowFilter(true)}
-        onClearSwipes={() => setSwipedItems(new Set())}
+        onClearResponses={() => setRespondedItems(new Set())}
         hasActiveFilters={hasActiveFilters}
       />
 
-      <SwipeCounter dailySwipeCount={dailySwipeCount} swipeLimit={swipeLimit} swipesRemaining={swipesRemaining} />
+      <SwipeCounter dailyLikeCount={dailyLikeCount} likeLimit={likeLimit} likesRemaining={likesRemaining} />
 
       <SwipeInterface
         currentItem={currentItem}
@@ -267,11 +267,11 @@ export const Dashboard: React.FC = () => {
       <SwipeControls
         onSwipe={handleSwipe}
         onUndo={handleUndo}
-        disabled={!currentItem || swipesRemaining <= 0}
-        canUndo={swipedItems.size > 0}
+        disabled={!currentItem || likesRemaining <= 0}
+        canUndo={respondedItems.size > 0}
       />
 
-      <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} swipesRemaining={swipesRemaining} />
+      <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} likesRemaining={likesRemaining} />
 
       <AnimatePresence>
         {showFilter && (
