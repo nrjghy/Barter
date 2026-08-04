@@ -117,7 +117,6 @@ export const ERROR_MESSAGES = {
 export const TABLES = {
   USERS: "users",
   ITEMS: "items",
-  SWIPES: "swipes",
   RESPONSES: "responses",
   MATCHES: "matches",
   REVIEWS: "reviews",
@@ -139,5 +138,4 @@ export const CHANNELS = {
   MATCHES: "matches",
   MESSAGES: "messages",
   NOTIFICATIONS: "notifications",
-  SWIPES: "swipes",
 } as const;

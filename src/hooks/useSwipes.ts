@@ -97,11 +97,5 @@ export const useSwipes = () => {
     undoResponse: (itemId: string) => undoResponse.mutateAsync({ itemId }),
     checkSwipeLimit: () => SwipeService.checkSwipeLimit(user!.id),
     getSwipedItems: () => refetchSwipedItems().then((res) => res.data?.data ?? []),
-    // Debug function to test match creation
-    testMatchCreation: async (itemId: string) => {
-      if (!user) return;
-      console.log("Testing match creation for item:", itemId);
-      await SwipeService.checkForMatch(user.id, itemId, false);
-    },
   };
 };
