@@ -6,9 +6,9 @@ import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag } from 'lucide-react';
+import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle } from 'lucide-react';
 
-type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions';
+type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes';
 
 interface AdminListingRow {
   id: string;
@@ -63,6 +63,21 @@ interface AdminCategorySuggestionRow {
   owner: { username: string } | null;
 }
 
+interface AdminDisputeRow {
+  id: string;
+  dispute_reason: string | null;
+  completed_at: string;
+  disputed_at: string;
+  dispute_deadline: string;
+  completed_by_user: { username: string } | null;
+  disputed_by_user: { username: string } | null;
+  connection: {
+    id: string;
+    user_1: { username: string } | null;
+    user_2: { username: string } | null;
+  } | null;
+}
+
 export const AdminDashboard: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -92,6 +107,10 @@ export const AdminDashboard: React.FC = () => {
   const [suggestions, setSuggestions] = useState<AdminCategorySuggestionRow[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [suggestionsError, setSuggestionsError] = useState<string | null>(null);
+
+  const [disputes, setDisputes] = useState<AdminDisputeRow[]>([]);
+  const [disputesLoading, setDisputesLoading] = useState(false);
+  const [disputesError, setDisputesError] = useState<string | null>(null);
 
   const fetchAdminListings = async () => {
     if (!user || user.role !== 'admin') {
@@ -259,11 +278,47 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchDisputes = async () => {
+    setDisputesLoading(true);
+    setDisputesError(null);
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.TRADE_COMPLETIONS)
+        .select(
+          `
+          id,
+          dispute_reason,
+          completed_at,
+          disputed_at,
+          dispute_deadline,
+          completed_by_user:users!completed_by ( username ),
+          disputed_by_user:users!disputed_by ( username ),
+          connection:connections!connection_id (
+            id,
+            user_1:users!user_id_1 ( username ),
+            user_2:users!user_id_2 ( username )
+          )
+        `
+        )
+        .not('disputed_at', 'is', null)
+        .order('disputed_at', { ascending: false });
+
+      if (error) throw error;
+      setDisputes((data as unknown as AdminDisputeRow[]) || []);
+    } catch (err) {
+      console.error('Error fetching admin disputes:', err);
+      setDisputesError(err instanceof Error ? err.message : 'Failed to load disputes.');
+    } finally {
+      setDisputesLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !user || user.role !== 'admin') return;
     if (activeTab === 'reports') fetchReports();
     if (activeTab === 'issues') fetchIssues();
     if (activeTab === 'suggestions') fetchCategorySuggestions();
+    if (activeTab === 'disputes') fetchDisputes();
   }, [activeTab, user, authLoading]);
 
   if (authLoading) {
@@ -325,6 +380,7 @@ export const AdminDashboard: React.FC = () => {
           { key: 'reports', label: 'Reports', icon: Flag },
           { key: 'issues', label: 'Issues', icon: MessageSquare },
           { key: 'suggestions', label: 'Category Suggestions', icon: Tag },
+          { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
         ] as { key: AdminTab; label: string; icon: typeof Eye }[]).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -759,6 +815,52 @@ export const AdminDashboard: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.category_suggestion}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.owner?.username ?? '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(suggestion.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'disputes' && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {disputesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : disputesError ? (
+            <div className="text-center py-12 text-red-600">{disputesError}</div>
+          ) : disputes.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No disputes</h3>
+              <p className="text-gray-600">No trade completions have been disputed yet.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connection</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed By</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed By</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dispute Deadline</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disputed At</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {disputes.map((dispute) => (
+                    <tr key={dispute.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {dispute.connection?.user_1?.username ?? '—'} ↔ {dispute.connection?.user_2?.username ?? '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.completed_by_user?.username ?? '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{dispute.disputed_by_user?.username ?? '—'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{dispute.dispute_reason || '—'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.dispute_deadline).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(dispute.disputed_at).toLocaleDateString()}</td>
                     </tr>
                   ))}
                 </tbody>

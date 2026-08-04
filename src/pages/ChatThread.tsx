@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, MapPin, Send, MoreVertical, X } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Camera, MapPin, Send, MoreVertical, X, AlertTriangle } from "lucide-react";
 import { useConnection, useConnections } from "../hooks/useConnections";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../hooks/useAuth";
 import { useUserBlocks } from "../hooks/useUserBlocks";
 import { useReports } from "../hooks/useReports";
-import { ConnectionService } from "../services";
+import { useTradeCompletionsByIds } from "../hooks/useTradeCompletions";
+import { ConnectionService, TradeCompletionService } from "../services";
+import type { TradeCompletionDisputeInfo } from "../services/tradeCompletionService";
 import { storageService } from "../services/storageService";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -19,13 +22,37 @@ import type { MessageWithDetails } from "../services/messageService";
 // built now even though their composer buttons are still disabled --
 // rendering is cheap and self-contained; the send-side (upload,
 // geolocation) is separately scoped work.
-const MessageBubble: React.FC<{ message: MessageWithDetails; isMine: boolean }> = ({ message, isMine }) => {
+const MessageBubble: React.FC<{
+  message: MessageWithDetails;
+  isMine: boolean;
+  currentUserId?: string;
+  tradeCompletionsById: Record<string, TradeCompletionDisputeInfo>;
+  onDispute: (tradeCompletionId: string) => void;
+}> = ({ message, isMine, currentUserId, tradeCompletionsById, onDispute }) => {
   if (message.messageType === "system") {
+    const tradeCompletionId = (message.data as { tradeCompletionId?: string } | undefined)?.tradeCompletionId;
+    const tradeCompletion = tradeCompletionId ? tradeCompletionsById[tradeCompletionId] : undefined;
+    const canDispute =
+      !!tradeCompletion &&
+      !!currentUserId &&
+      tradeCompletion.completedBy !== currentUserId &&
+      tradeCompletion.disputedAt === null &&
+      new Date() < new Date(tradeCompletion.disputeDeadline);
+
     return (
-      <div className="flex justify-center">
+      <div className="flex flex-col items-center gap-1.5">
         <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
           {message.content}
         </div>
+        {canDispute && (
+          <button
+            onClick={() => onDispute(tradeCompletionId!)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[oklch(50%_0.15_30_/_0.3)] text-[oklch(50%_0.15_30)] text-[11px] font-bold"
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Dispute this trade
+          </button>
+        )}
       </div>
     );
   }
@@ -124,6 +151,7 @@ const MessageBubble: React.FC<{ message: MessageWithDetails; isMine: boolean }> 
 export const ChatThread: React.FC = () => {
   const { connectionId } = useParams<{ connectionId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { connection, loading: connectionLoading } = useConnection(connectionId);
   const { user } = useAuth();
   const { markConnectionOpened } = useConnections();
@@ -139,9 +167,46 @@ export const ChatThread: React.FC = () => {
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState<string | null>(null);
   const [reportText, setReportText] = useState("");
+  const [disputeTradeCompletionId, setDisputeTradeCompletionId] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState("");
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
+
+  const tradeCompletionIds = Array.from(
+    new Set(
+      messages
+        .filter((m) => m.messageType === "system")
+        .map((m) => (m.data as { tradeCompletionId?: string } | undefined)?.tradeCompletionId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const { tradeCompletionsById } = useTradeCompletionsByIds(tradeCompletionIds);
+
+  const handleConfirmDispute = async () => {
+    if (!disputeTradeCompletionId) return;
+    setDisputeSubmitting(true);
+    try {
+      const { error } = await TradeCompletionService.fileDispute(
+        disputeTradeCompletionId,
+        disputeReason.trim() || undefined
+      );
+      if (error) {
+        toast.error(error.message || "Couldn't file the dispute. Please try again.");
+        return;
+      }
+      toast.success("Dispute filed — a moderator will review it");
+      setDisputeTradeCompletionId(null);
+      setDisputeReason("");
+      if (connectionId) queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["tradeCompletionsByIds"] });
+    } catch {
+      toast.error("Couldn't file the dispute. Please try again.");
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (connectionId && !hasMarkedOpened.current) {
@@ -332,7 +397,14 @@ export const ChatThread: React.FC = () => {
         )}
         {!messagesLoading &&
           orderedMessages.map((message) => (
-            <MessageBubble key={message.id} message={message} isMine={message.senderId === user?.id} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isMine={message.senderId === user?.id}
+              currentUserId={user?.id}
+              tradeCompletionsById={tradeCompletionsById}
+              onDispute={setDisputeTradeCompletionId}
+            />
           ))}
         <div ref={bottomRef} />
       </div>
@@ -462,6 +534,41 @@ export const ChatThread: React.FC = () => {
               className="w-full py-3.5 rounded-2xl bg-[oklch(50%_0.15_30)] text-white text-sm font-bold disabled:opacity-50"
             >
               {createReportLoading ? "Submitting…" : "Submit report"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {disputeTradeCompletionId && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
+            onClick={() => !disputeSubmitting && setDisputeTradeCompletionId(null)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Dispute this trade?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] mb-4">
+              A moderator will review this trade completion. Let them know what went wrong (optional).
+            </div>
+            <textarea
+              value={disputeReason}
+              onChange={(e) => setDisputeReason(e.target.value)}
+              placeholder="What happened? (optional)"
+              className="w-full min-h-[80px] px-3.5 py-3 rounded-2xl border border-[oklch(88%_0.015_90)] text-[13.5px] text-[oklch(22%_0.02_100)] resize-y mb-4"
+            />
+            <button
+              onClick={handleConfirmDispute}
+              disabled={disputeSubmitting}
+              className="w-full py-3.5 rounded-xl bg-[oklch(50%_0.15_30)] text-white text-sm font-bold mb-2 disabled:opacity-50"
+            >
+              {disputeSubmitting ? "Filing dispute…" : "Dispute this trade"}
+            </button>
+            <button
+              onClick={() => setDisputeTradeCompletionId(null)}
+              disabled={disputeSubmitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
+            >
+              Cancel
             </button>
           </div>
         </div>

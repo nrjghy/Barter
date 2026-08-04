@@ -24,3 +24,24 @@ export const useTradeCompletions = () => {
     error: error || completedTradeCountData?.error,
   };
 };
+
+/**
+ * Dispute-relevant fields (completedBy/disputeDeadline/disputedAt) for a set
+ * of trade_completions rows, keyed by id. Used by ChatThread to decide
+ * whether to show a "Dispute this trade" action on a system message.
+ */
+export const useTradeCompletionsByIds = (ids: string[]) => {
+  const sortedIds = [...ids].sort();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["tradeCompletionsByIds", sortedIds],
+    queryFn: () => TradeCompletionService.getTradeCompletionsByIds(sortedIds),
+    enabled: sortedIds.length > 0,
+  });
+
+  return {
+    tradeCompletionsById: data?.data ?? {},
+    loading: isLoading,
+    error: error || data?.error,
+  };
+};

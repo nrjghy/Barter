@@ -8,6 +8,17 @@ export interface TradeCompletionResult {
   disputeDeadline: string;
 }
 
+export interface DisputeResult {
+  tradeCompletionId: string;
+  disputedAt: string;
+}
+
+export interface TradeCompletionDisputeInfo {
+  completedBy: string;
+  disputeDeadline: string;
+  disputedAt: string | null;
+}
+
 export class TradeCompletionService {
   /**
    * Marks a trade complete via the complete_trade RPC. This has to be an
@@ -70,6 +81,108 @@ export class TradeCompletionService {
           disputeDeadline: result.disputeDeadline,
         },
       };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Disputes a completed trade via the file_trade_dispute RPC. This has to
+   * be an RPC, not a plain client update, since trade_completions no longer
+   * has an open UPDATE policy -- only the participant who is NOT
+   * completed_by may dispute, only within dispute_deadline, only once, and
+   * that's enforced server-side rather than trusted from the client.
+   *
+   * Same two-layer error convention as completeTrade above.
+   */
+  static async fileDispute(tradeCompletionId: string, reason?: string): Promise<ServiceResult<DisputeResult>> {
+    try {
+      const idError = ValidationService.validateUUID(tradeCompletionId);
+      if (idError) return { error: idError };
+
+      const { data: result, error } = await supabase.rpc("file_trade_dispute", {
+        p_trade_completion_id: tradeCompletionId,
+        p_reason: reason ?? null,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to file dispute",
+            details: error,
+          },
+        };
+      }
+
+      if (result?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return {
+        data: {
+          tradeCompletionId: result.tradeCompletionId,
+          disputedAt: result.disputedAt,
+        },
+      };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Fetches dispute-relevant fields for a set of trade_completions rows,
+   * keyed by id. Used by ChatThread to decide whether to show a "Dispute
+   * this trade" action on a given system message.
+   */
+  static async getTradeCompletionsByIds(
+    ids: string[]
+  ): Promise<ServiceResult<Record<string, TradeCompletionDisputeInfo>>> {
+    try {
+      if (!ids || ids.length === 0) return { data: {} };
+
+      const { data, error } = await supabase
+        .from(TABLES.TRADE_COMPLETIONS)
+        .select("id, completed_by, dispute_deadline, disputed_at")
+        .in("id", ids);
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to fetch trade completions",
+            details: error,
+          },
+        };
+      }
+
+      const byId: Record<string, TradeCompletionDisputeInfo> = {};
+      for (const row of data || []) {
+        byId[row.id] = {
+          completedBy: row.completed_by,
+          disputeDeadline: row.dispute_deadline,
+          disputedAt: row.disputed_at,
+        };
+      }
+
+      return { data: byId };
     } catch (error) {
       return {
         error: {
