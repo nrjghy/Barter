@@ -95,11 +95,6 @@ export const Chat: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-[oklch(22%_0.02_100)] mb-1">Chat</h1>
-        <p className="text-[oklch(45%_0.02_95)] text-sm">Your item exchange connections</p>
-      </div>
-
       {loading && (
         <div className="py-16">
           <LoadingSpinner />

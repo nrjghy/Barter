@@ -139,11 +139,6 @@ export const MyStuff: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold text-[oklch(22%_0.02_100)] mb-1">My Stuff</h1>
-        <p className="text-[oklch(45%_0.02_95)] text-sm">Manage everything you've posted</p>
-      </div>
-
       <button
         onClick={() => navigate("/add")}
         className="w-full py-3.5 rounded-2xl bg-barter-600 text-white text-[15px] font-bold mb-4"
