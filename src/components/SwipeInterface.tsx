@@ -16,7 +16,7 @@ interface SwipeInterfaceProps {
 export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
   ({ currentItem, hasMore, loadingMore, onLoadMore, onSwipe }) => {
     return (
-      <div className="relative h-[600px] mb-6">
+      <div className="relative flex-1 min-h-[280px] mb-6">
         <AnimatePresence mode="wait">
           {currentItem ? (
             <SwipeCard key={currentItem.id} item={currentItem} onSwipe={onSwipe} />

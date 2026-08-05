@@ -244,7 +244,7 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto px-4 py-4">
+    <div className="max-w-md mx-auto px-4 py-4 flex flex-col discover-viewport">
       <SwipeInterface
         currentItem={currentItem}
         hasMore={hasMore}
