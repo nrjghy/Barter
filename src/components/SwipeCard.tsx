@@ -85,37 +85,37 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
         </motion.div>
 
         {/* Image */}
-        <div className="h-2/3 bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-barter-50 to-barter-100 overflow-hidden">
           {item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]?.trim() !== "" ? (
             <img src={item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
-
-          {/* Condition Badge */}
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-            <span className="text-sm font-medium text-gray-700">{item.condition}</span>
-          </div>
         </div>
 
-        {/* Content */}
-        <div className="h-1/3 p-6 flex flex-col justify-between">
-          <div>
+        {/* Condition Badge */}
+        <div className="absolute top-4 right-4 bg-white/40 backdrop-blur-md border border-white/30 rounded-full px-3 py-1">
+          <span className="text-sm font-medium text-barter-800">{item.condition}</span>
+        </div>
+
+        {/* Content overlay */}
+        <div className="absolute inset-x-0 bottom-0 h-2/3 flex flex-col justify-end p-6 bg-gradient-to-t from-barter-800 via-[rgba(1,51,15,0.7)] to-transparent">
+          <div className="mb-3">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1">{item.title}</h3>
-                <p className="text-barter-600 font-medium">{item.category}</p>
+                <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">{item.title}</h3>
+                <p className="text-barter-200 font-medium">{item.category}</p>
               </div>
-              <div className="flex items-center text-gray-500 text-sm ml-4">
+              <div className="flex items-center text-white/70 text-sm ml-4">
                 <Clock className="w-4 h-4 mr-1" />
                 {formattedDate}
               </div>
             </div>
 
-            {item.description && <p className="text-gray-600 text-sm line-clamp-2 mb-3">{item.description}</p>}
+            {item.description && <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>}
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-3 border-t border-white/20">
             <div className="flex items-center space-x-3">
               {item.user.avatarUrl ? (
                 <img
@@ -124,22 +124,22 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
                   className="w-10 h-10 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-10 h-10 bg-barter-600 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-white/15 border border-white/30 rounded-full flex items-center justify-center">
                   <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
                 </div>
               )}
               <div>
-                <p className="font-medium text-gray-900">{item.user.username}</p>
+                <p className="font-medium text-white">{item.user.username}</p>
                 <div className="flex items-center space-x-2">
                   {item.user.location && (
-                    <div className="flex items-center text-gray-500 text-xs">
+                    <div className="flex items-center text-white/65 text-xs">
                       <MapPin className="w-3 h-3 mr-1" />
                       {item.user.location}
                     </div>
                   )}
                   {item.user.rating && (
-                    <div className="flex items-center text-gray-500 text-xs">
-                      <Star className="w-3 h-3 mr-1 fill-current text-yellow-400" />
+                    <div className="flex items-center text-white/65 text-xs">
+                      <Star className="w-3 h-3 mr-1 fill-current text-amber-400" />
                       <span>{item.user.rating}</span>
                     </div>
                   )}
@@ -151,11 +151,14 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {item.tags.slice(0, 3).map((tag, index) => (
-                <span key={index} className="bg-barter-100 text-barter-700 px-2 py-1 rounded-full text-xs font-medium">
+                <span
+                  key={index}
+                  className="bg-white/15 text-white border border-white/20 px-2 py-1 rounded-full text-xs font-medium"
+                >
                   #{tag}
                 </span>
               ))}
-              {item.tags.length > 3 && <span className="text-gray-500 text-xs">+{item.tags.length - 3} more</span>}
+              {item.tags.length > 3 && <span className="text-white/70 text-xs">+{item.tags.length - 3} more</span>}
             </div>
           )}
         </div>
