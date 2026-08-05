@@ -11,7 +11,16 @@ export const Layout: React.FC = () => {
   const isTopLevel = TOP_LEVEL_PATHS.includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-barter-50 via-barter-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-barter-50 via-barter-100 to-barter-200 relative overflow-hidden">
+      <div
+        className="fixed -top-12 -right-10 w-36 h-36 rounded-full bg-barter-200 opacity-25 pointer-events-none blur-2xl"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed -bottom-8 -left-5 w-24 h-24 rounded-full bg-barter-600 opacity-10 pointer-events-none blur-2xl"
+        aria-hidden="true"
+      />
+
       <Toaster
         position="top-center"
         toastOptions={{

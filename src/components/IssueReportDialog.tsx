@@ -94,14 +94,14 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-[oklch(20%_0.02_100_/_0.4)] z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-[oklch(20%_0.02_100_/_0.4)] z-50 overflow-y-auto p-4"
         onClick={handleClose}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
+          className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col mx-auto my-8"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-[oklch(88%_0.015_90)]">

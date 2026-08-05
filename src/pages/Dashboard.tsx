@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
-import { DashboardHeader } from "../components/DashboardHeader";
 import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
@@ -64,9 +63,7 @@ export const Dashboard: React.FC = () => {
   }, [user]); // Remove getRespondedItems from dependencies
 
   useEffect(() => {
-    if (user && user.latitude == null && !user.locationPromptDismissedAt) {
-      setShowLocationPrompt(true);
-    }
+    setShowLocationPrompt(!!user && user.latitude == null && !user.locationPromptDismissedAt);
   }, [user]);
 
   // Filter items based on responded items - use more efficient filtering
@@ -248,12 +245,6 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
-      <DashboardHeader
-        onRefresh={handleRefresh}
-        onFilter={() => setShowFilter(true)}
-        hasActiveFilters={hasActiveFilters}
-      />
-
       <SwipeInterface
         currentItem={currentItem}
         hasMore={hasMore}
@@ -267,6 +258,9 @@ export const Dashboard: React.FC = () => {
         onUndo={handleUndo}
         disabled={!currentItem || likesRemaining <= 0}
         canUndo={respondedItems.size > 0}
+        onRefresh={handleRefresh}
+        onFilter={() => setShowFilter(true)}
+        hasActiveFilters={hasActiveFilters}
       />
 
       <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} />
