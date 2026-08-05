@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Heart,
   Share2,
-  MessageCircle,
   MapPin,
   Calendar,
   Tag,
@@ -154,13 +153,6 @@ export const ItemDetail: React.FC = () => {
     setIsBookmarked(!isBookmarked);
     toast.success(isBookmarked ? "Removed from saved" : "Saved to bookmarks");
     setShowMoreMenu(false);
-  };
-
-  const handleContact = () => {
-    if (!item || !user) return;
-
-    // In a real app, this would create a match or direct message
-    toast.success("Contact request sent!");
   };
 
   const handleConfirmStillAvailable = async () => {
@@ -481,7 +473,7 @@ export const ItemDetail: React.FC = () => {
 
             {/* Seller Information */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">About the Seller</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Listed by</h3>
               <div className="flex items-start space-x-4">
                 {item.user.avatarUrl ? (
                   <img
@@ -551,14 +543,6 @@ export const ItemDetail: React.FC = () => {
             {/* Action Buttons */}
             {user && user.id !== item.userId && (
               <div className="space-y-3">
-                <button
-                  onClick={handleContact}
-                  className="w-full flex items-center justify-center space-x-2 py-4 bg-barter-600 text-white rounded-xl font-semibold hover:bg-barter-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>Contact Seller</span>
-                </button>
-
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => handleSwipe("pass")}
