@@ -4,12 +4,11 @@ import { Filter, RefreshCw } from "lucide-react";
 interface DashboardHeaderProps {
   onRefresh: () => void;
   onFilter: () => void;
-  onClearResponses: () => void;
   hasActiveFilters: boolean;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(
-  ({ onRefresh, onFilter, onClearResponses, hasActiveFilters }) => {
+  ({ onRefresh, onFilter, hasActiveFilters }) => {
     return (
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Discover Items</h2>
@@ -21,14 +20,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = React.memo(
           >
             <RefreshCw className="w-4 h-4 text-gray-600" />
           </button>
-          <button
-            onClick={onClearResponses}
-            className="p-2 text-xs bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
-            title="Clear responded items (debug)"
-          >
-            Clear Responses
-          </button>
-
           <button
             onClick={onFilter}
             className={`p-2 rounded-lg transition-colors relative ${

@@ -92,16 +92,6 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
             <div className="w-full h-full bg-gray-100" />
           )}
 
-          {/* Price Badge */}
-          {item.estimatedValue && (
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-              <span className="text-lg font-bold text-green-600">
-                {item.valueCurrency || "$"}
-                {item.estimatedValue}
-              </span>
-            </div>
-          )}
-
           {/* Condition Badge */}
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
             <span className="text-sm font-medium text-gray-700">{item.condition}</span>

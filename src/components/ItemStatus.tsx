@@ -3,10 +3,9 @@ import React from "react";
 interface ItemStatusProps {
   availableItemsCount: number;
   hasMore: boolean;
-  likesRemaining: number;
 }
 
-export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItemsCount, hasMore, likesRemaining }) => {
+export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItemsCount, hasMore }) => {
   return (
     <div className="mt-8 text-center">
       <p className="text-gray-600">
@@ -19,9 +18,6 @@ export const ItemStatus: React.FC<ItemStatusProps> = React.memo(({ availableItem
           "No items available"
         )}
       </p>
-      {likesRemaining <= 0 && (
-        <p className="text-red-600 text-sm mt-2">Daily like limit reached! Come back tomorrow for more.</p>
-      )}
     </div>
   );
 });

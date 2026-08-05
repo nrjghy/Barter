@@ -3,7 +3,6 @@ import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { DashboardHeader } from "../components/DashboardHeader";
-import { SwipeCounter } from "../components/SwipeCounter";
 import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
@@ -13,6 +12,7 @@ import { useResponses } from "../hooks/useResponses";
 import { useAuth } from "../hooks/useAuth";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
+import { ERROR_CODES, ERROR_MESSAGES } from "../services/config";
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -157,7 +157,8 @@ export const Dashboard: React.FC = () => {
       setCurrentIndex((prev) => Math.max(0, prev - 1));
 
       if (error.message && error.message.includes("Daily like limit reached")) {
-        return; // Toast already shown in useResponses
+        toast.error(ERROR_MESSAGES[ERROR_CODES.LIKE_LIMIT_EXCEEDED]);
+        return;
       }
       toast.error("No connection, please try again.");
     }
@@ -250,11 +251,8 @@ export const Dashboard: React.FC = () => {
       <DashboardHeader
         onRefresh={handleRefresh}
         onFilter={() => setShowFilter(true)}
-        onClearResponses={() => setRespondedItems(new Set())}
         hasActiveFilters={hasActiveFilters}
       />
-
-      <SwipeCounter dailyLikeCount={dailyLikeCount} likeLimit={likeLimit} likesRemaining={likesRemaining} />
 
       <SwipeInterface
         currentItem={currentItem}
@@ -271,7 +269,7 @@ export const Dashboard: React.FC = () => {
         canUndo={respondedItems.size > 0}
       />
 
-      <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} likesRemaining={likesRemaining} />
+      <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} />
 
       <AnimatePresence>
         {showFilter && (
