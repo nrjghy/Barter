@@ -14,7 +14,6 @@ import {
   ChevronRight,
   MoreVertical,
   Flag,
-  Eye,
   Clock,
   Package,
   ExternalLink,
@@ -374,19 +373,6 @@ export const ItemDetail: React.FC = () => {
                   )}`}
                 >
                   {item.condition}
-                </div>
-                {item.estimatedValue && (
-                  <div className="bg-green-500/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-bold">
-                    ${item.estimatedValue}
-                  </div>
-                )}
-              </div>
-
-              {/* View Count */}
-              <div className="absolute top-4 right-4">
-                <div className="flex items-center space-x-1 bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs">
-                  <Eye className="w-3 h-3" />
-                  <span>{Math.floor(Math.random() * 100) + 20}</span>
                 </div>
               </div>
             </div>
