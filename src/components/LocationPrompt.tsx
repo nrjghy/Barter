@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 
 interface LocationPromptProps {
   isOpen: boolean;
@@ -28,7 +29,14 @@ export const LocationPrompt: React.FC<LocationPromptProps> = ({ isOpen, onClose 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+        const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
+          body: { lat: latitude, lng: longitude },
+        });
+        const locationString =
+          geocodeError || !geocodeData?.location
+            ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+            : geocodeData.location;
 
         const { error } = await updateProfile({
           location: locationString,

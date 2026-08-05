@@ -15,6 +15,7 @@ import {
   Lock,
   Shield,
 } from "lucide-react";
+import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { useItems } from "../hooks/useItems";
 import { useTradeCompletions } from "../hooks/useTradeCompletions";
@@ -82,9 +83,15 @@ export const Profile: React.FC = () => {
         const { latitude, longitude } = position.coords;
 
         try {
-          // Try to get a human-readable address using reverse geocoding
-          // For now, we'll just use coordinates, but in production you'd use a geocoding service
-          const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          // Reverse geocode to a human-readable address via the reverse-geocode
+          // Edge Function, falling back to raw coordinates if that call fails.
+          const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
+            body: { lat: latitude, lng: longitude },
+          });
+          const locationString =
+            geocodeError || !geocodeData?.location
+              ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              : geocodeData.location;
 
           const { error } = await updateProfile({
             ...profileData,
