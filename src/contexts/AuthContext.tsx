@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
-import { AuthUser } from "../types";
+import { AuthUser, ProfileUpdate } from "../types";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -13,7 +13,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any }>;
   updatePassword: (newPassword: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
-  updateProfile: (updates: Partial<AuthUser>) => Promise<{ error: any }>;
+  updateProfile: (updates: ProfileUpdate) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -186,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const updateProfile = async (updates: Partial<AuthUser>) => {
+  const updateProfile = async (updates: ProfileUpdate) => {
     if (!user) return { error: new Error("No user logged in") };
 
     try {
@@ -235,7 +235,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq("id", user.id);
 
       if (!error) {
-        setUser({ ...user, ...updates });
+        setUser({
+          ...user,
+          ...updates,
+          latitude: "latitude" in updates ? updates.latitude ?? undefined : user.latitude,
+          longitude: "longitude" in updates ? updates.longitude ?? undefined : user.longitude,
+        });
       }
 
       return { error };

@@ -10,6 +10,11 @@ export interface AuthUser {
   locationPromptDismissedAt?: string;
 }
 
+export type ProfileUpdate = Partial<Omit<AuthUser, "latitude" | "longitude">> & {
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
 export interface ItemFormData {
   title: string;
   description: string;

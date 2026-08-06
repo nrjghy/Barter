@@ -133,11 +133,7 @@ export const Profile: React.FC = () => {
     }
 
     try {
-      const { error } = await updateProfile({
-        ...profileData,
-        latitude: profileData.latitude ?? undefined,
-        longitude: profileData.longitude ?? undefined,
-      });
+      const { error } = await updateProfile(profileData);
       if (error) {
         console.error("Profile update error:", error);
         toast.error("Failed to update profile");
