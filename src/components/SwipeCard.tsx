@@ -87,7 +87,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
         {/* Image */}
         <div className="absolute inset-0 bg-gradient-to-br from-barter-50 to-barter-100 overflow-hidden">
           {item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]?.trim() !== "" ? (
-            <img src={item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover" draggable={false} />
+            <img src={item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover object-top" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
