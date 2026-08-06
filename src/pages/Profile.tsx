@@ -94,7 +94,7 @@ export const Profile: React.FC = () => {
             console.error("Location update error:", error);
             toast.error("Failed to update location");
           } else {
-            setProfileData((prev) => ({ ...prev, location: locationString }));
+            setProfileData((prev) => ({ ...prev, location: locationString, latitude, longitude }));
             toast.success("Location updated successfully!");
           }
         } catch (error) {
