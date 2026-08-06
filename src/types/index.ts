@@ -8,6 +8,8 @@ export interface AuthUser {
   avatar_url?: string;
   role?: string;
   locationPromptDismissedAt?: string;
+  rating?: number;
+  createdAt?: string;
 }
 
 export type ProfileUpdate = Partial<Omit<AuthUser, "latitude" | "longitude">> & {

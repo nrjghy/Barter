@@ -45,6 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar_url: data.avatar_url || undefined,
         role: data.role || "user",
         locationPromptDismissedAt: data.location_prompt_dismissed_at ?? undefined,
+        rating: data.rating ?? undefined,
+        createdAt: data.created_at ?? undefined,
       });
     } catch (error) {
       console.error("[AuthContext] Error in fetchUserProfile (catch):", error);
