@@ -29,6 +29,7 @@ The current codebase does not include an active scraper. Items do support a
 - Storage: Supabase Storage for multi-image uploads; bucket from `VITE_SUPABASE_STORAGE_BUCKET` (defaults to `barter_user_item_media`)
 - Analytics/monitoring: PostHog (product analytics, session recording) and Sentry (frontend errors/performance) — both no-op gracefully until real keys are configured
 - Email: Resend, triggered by a Supabase Database Webhook on `notifications` inserts, via the `send-notification-email` Edge Function
+- Location: reverse geocoding and manual-entry autocomplete both proxy LocationIQ server-side via Edge Functions (`reverse-geocode`, `places-autocomplete`), since the underlying APIs require a server-held key/User-Agent the browser can't reliably provide
 
 Project structure (high level):
 
@@ -42,7 +43,7 @@ src/
 ├─ services/               # Business logic (SOA) used by hooks/components
 ├─ types/                  # Generated/handwritten types
 supabase/
-├─ functions/               # Edge functions (item-preview, send-notification-email)
+├─ functions/               # Edge functions (item-preview, send-notification-email, reverse-geocode, places-autocomplete)
 ├─ migrations/              # SQL migrations
 ```
 
@@ -137,6 +138,8 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 ### OAuth Providers
 
 - Google, Facebook, and Apple
+- Google is configured and working (Client ID/Secret set in Supabase's Auth Providers dashboard, tested end to end)
+- Facebook is not yet configured — same setup shape as Google, needs a Meta for Developers app with a Client ID/Secret added to Supabase
 - Apple sign-in is code-complete but functionally inert until Sign in with Apple is configured with real credentials in the Apple Developer Portal and connected in Supabase's Auth Providers dashboard (see Pending Tasks)
 
 ## Setup
@@ -160,17 +163,15 @@ Google, Facebook, and Apple providers are configured in the Supabase dashboard u
 ## Pending Tasks
 
 Per `Barter_Project_Plan.md`, the rewrite itself is code-complete for Phase 1
-scope — what's left is manual, Neeraj-only setup in external dashboards that
-Claude can't do (entering API keys/credentials into third-party consoles):
+scope. What's left:
 
-- **Email delivery (Resend)**: create a Resend account, verify a real sending domain, add the API key + from-address as Edge Function secrets, and connect a Supabase Database Webhook (table `notifications`, event `INSERT`, target `send-notification-email`) — the Edge Function itself is deployed, but the pipeline isn't active end to end without these steps
-- **Analytics/monitoring**: create real PostHog and Sentry accounts and set `VITE_POSTHOG_KEY` / `VITE_SENTRY_DSN`; also enable "Record user sessions" once in the PostHog project dashboard
+- **Email delivery (Resend)**: account created, sending domain verified, API key/from-address/`FRONTEND_URL` all set as Edge Function secrets — but the Supabase Database Webhook (table `notifications`, event `INSERT`, target `send-notification-email`) can't be created yet. Root cause: Barter2 was restored from a pg_dump backup, and the `supabase_functions` schema Database Webhooks depend on is platform-managed infrastructure, not part of a database dump, so it's missing entirely. A support ticket is filed with Supabase; nothing further to do here until that's resolved.
+- **Facebook OAuth**: not yet configured — same setup shape as Google (already done), needs a Meta for Developers app with a Client ID/Secret added to Supabase's Auth Providers dashboard
 - **Apple Sign-In**: configure real credentials (Services ID, private key, Team ID) in the Apple Developer Portal and connect them in Supabase's Auth Providers dashboard
-- **`FRONTEND_URL`**: set as a secret for the `item-preview` and `send-notification-email` Edge Functions once a real deployed domain exists
 
 Everything else — the connection model, Chat, Mark Trade Complete, account
 deletion, in-app issue reporting, the admin console tabs, the daily like
-limit, filters, the visual reskin — is built and verified against the live
-Barter2 database. Two known Phase 1 design polish items from QA are still
-open (a toast overlapping a button on My Stuff, a notification timestamp sort
-bug) — see `CLAUDE.md`.
+limit, filters, the visual reskin, PostHog/Sentry analytics, and Google OAuth
+— is built, configured, and verified against the live Barter2 database. Two
+known Phase 1 design polish items from QA are still open (a toast overlapping
+a button on My Stuff, a notification timestamp sort bug) — see `CLAUDE.md`.

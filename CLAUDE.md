@@ -37,9 +37,12 @@ section instead of guessing at product intent.
   timestamp sort bug.
 - Required local `.env` variables: see `.env.example` in the repo root
   for names (never commit actual values)
-- Backend also includes Supabase Edge Functions — currently one
-  (`admin-listings`) in `supabase/functions/`. More may be added as
-  email-sending and other server-side logic get built.
+- Backend also includes Supabase Edge Functions in `supabase/functions/`:
+  `item-preview` (public OG-tag metadata for shared listings),
+  `send-notification-email` (Resend integration), and `reverse-geocode` /
+  `places-autocomplete` (LocationIQ proxies for location display and
+  manual-entry autocomplete). An earlier `admin-listings` function was
+  confirmed dead (never actually deployed) and removed.
 
 ## Known issues to keep in mind while coding
 
