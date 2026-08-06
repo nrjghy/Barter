@@ -221,7 +221,7 @@ export const AddToy: React.FC = () => {
             imageUrls: combinedImageUrls,
             estimatedValue: finalEstimatedValue,
             valueCurrency: "USD",
-            sourceUrl: sourceUrl.trim() || undefined,
+            sourceUrl: sourceUrl.trim() || null,
             categorySuggestion: finalCategorySuggestion,
           },
         })) as ServiceResult<ItemData>;
@@ -242,7 +242,7 @@ export const AddToy: React.FC = () => {
           isActive: true,
           estimatedValue: finalEstimatedValue,
           valueCurrency: "USD",
-          sourceUrl: sourceUrl.trim() || undefined,
+          sourceUrl: sourceUrl.trim() || null,
           categorySuggestion: finalCategorySuggestion,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
