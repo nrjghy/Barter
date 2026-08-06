@@ -158,7 +158,7 @@ The Storage bucket is set by `VITE_SUPABASE_STORAGE_BUCKET` (default `barter_use
 
 ### OAuth
 
-Google, Facebook, and Apple providers are configured in the Supabase dashboard under Auth Providers.
+See "OAuth Providers" above for current per-provider status.
 
 ## Pending Tasks
 
