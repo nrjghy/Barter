@@ -137,10 +137,8 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 
 ### OAuth Providers
 
-- Google, Facebook, and Apple
-- Google is configured and working (Client ID/Secret set in Supabase's Auth Providers dashboard, tested end to end)
-- Facebook is not yet configured — same setup shape as Google, needs a Meta for Developers app with a Client ID/Secret added to Supabase
-- Apple sign-in is code-complete but functionally inert until Sign in with Apple is configured with real credentials in the Apple Developer Portal and connected in Supabase's Auth Providers dashboard (see Pending Tasks)
+- Google is the only provider shown in the Login/Register UI for now — configured and working (Client ID/Secret set in Supabase's Auth Providers dashboard, tested end to end)
+- Facebook and Apple support exists in the code (`OAuthProviderButton`, `AuthContext`) but their buttons are deliberately removed from `Login.tsx`/`Register.tsx` for the pilot — Facebook would need Meta Business Verification to serve anyone beyond manually-added Testers, which doesn't fit a no-business-entity community app; Apple would need a paid Developer Program enrollment and Apple Developer Portal setup. Both are easy to re-add (just re-insert the `OAuthProviderButton` block) if that changes later.
 
 ## Setup
 
@@ -166,8 +164,6 @@ Per `Barter_Project_Plan.md`, the rewrite itself is code-complete for Phase 1
 scope. What's left:
 
 - **Email delivery (Resend)**: account created, sending domain verified, API key/from-address/`FRONTEND_URL` all set as Edge Function secrets — but the Supabase Database Webhook (table `notifications`, event `INSERT`, target `send-notification-email`) can't be created yet. Root cause: Barter2 was restored from a pg_dump backup, and the `supabase_functions` schema Database Webhooks depend on is platform-managed infrastructure, not part of a database dump, so it's missing entirely. A support ticket is filed with Supabase; nothing further to do here until that's resolved.
-- **Facebook OAuth**: not yet configured — same setup shape as Google (already done), needs a Meta for Developers app with a Client ID/Secret added to Supabase's Auth Providers dashboard
-- **Apple Sign-In**: configure real credentials (Services ID, private key, Team ID) in the Apple Developer Portal and connect them in Supabase's Auth Providers dashboard
 
 Everything else — the connection model, Chat, Mark Trade Complete, account
 deletion, in-app issue reporting, the admin console tabs, the daily like

@@ -113,20 +113,6 @@ export const Login: React.FC = () => {
               loading={socialLoading === "google"}
               disabled={socialLoading !== null}
             />
-
-            <OAuthProviderButton
-              provider="facebook"
-              onClick={() => handleSocialLogin("facebook")}
-              loading={socialLoading === "facebook"}
-              disabled={socialLoading !== null}
-            />
-
-            <OAuthProviderButton
-              provider="apple"
-              onClick={() => handleSocialLogin("apple")}
-              loading={socialLoading === "apple"}
-              disabled={socialLoading !== null}
-            />
           </div>
 
           <div className="relative mb-6">
