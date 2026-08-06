@@ -332,10 +332,26 @@ export const Profile: React.FC = () => {
                       <button
                         key={`${suggestion.label}-${index}`}
                         type="button"
-                        onMouseDown={() => {
+                        onMouseDown={async () => {
+                          // Reverse geocode the suggestion's coordinates through the same
+                          // Edge Function the GPS path uses, so a selected suggestion is
+                          // normalized to city-level location text instead of storing the
+                          // raw (often neighborhood-level) suggestion label.
+                          let locationString = suggestion.label;
+                          try {
+                            const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke(
+                              "reverse-geocode",
+                              { body: { lat: suggestion.lat, lng: suggestion.lng } }
+                            );
+                            if (!geocodeError && geocodeData?.location) {
+                              locationString = geocodeData.location;
+                            }
+                          } catch (err) {
+                            // fall back to suggestion.label already set above
+                          }
                           setProfileData((prev) => ({
                             ...prev,
-                            location: suggestion.label,
+                            location: locationString,
                             latitude: suggestion.lat,
                             longitude: suggestion.lng,
                           }));
