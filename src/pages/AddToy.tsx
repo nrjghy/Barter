@@ -38,6 +38,7 @@ export const AddToy: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Base64 previews of `images`, same order
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // Pre-existing storage URLs, edit mode only
   const [estimatedValue, setEstimatedValue] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
 
@@ -101,6 +102,7 @@ export const AddToy: React.FC = () => {
         ? ""
         : String(existingItem.estimatedValue)
     );
+    setSourceUrl(existingItem.sourceUrl ?? "");
     setPrefilled(true);
   }, [isEditMode, existingItem, prefilled]);
 
@@ -219,6 +221,7 @@ export const AddToy: React.FC = () => {
             imageUrls: combinedImageUrls,
             estimatedValue: finalEstimatedValue,
             valueCurrency: "USD",
+            sourceUrl: sourceUrl.trim() || undefined,
             categorySuggestion: finalCategorySuggestion,
           },
         })) as ServiceResult<ItemData>;
@@ -239,7 +242,7 @@ export const AddToy: React.FC = () => {
           isActive: true,
           estimatedValue: finalEstimatedValue,
           valueCurrency: "USD",
-          sourceUrl: null,
+          sourceUrl: sourceUrl.trim() || undefined,
           categorySuggestion: finalCategorySuggestion,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -480,7 +483,23 @@ export const AddToy: React.FC = () => {
             </div>
             <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
           </div>
-  
+
+          {/* More info link */}
+          <div>
+            <label htmlFor="sourceUrl" className="block text-sm font-medium text-gray-700 mb-2">
+              More info link (optional)
+            </label>
+            <input
+              id="sourceUrl"
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+              placeholder="https://..."
+            />
+            <p className="text-xs text-gray-500 mt-1">Link to the original listing, if this item came from somewhere else.</p>
+          </div>
+
           <button
             type="submit"
             disabled={loading}

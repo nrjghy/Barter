@@ -13,6 +13,7 @@ import {
   ChevronRight,
   MoreVertical,
   Flag,
+  Pencil,
   Clock,
   Package,
   ExternalLink,
@@ -271,25 +272,40 @@ export const ItemDetail: React.FC = () => {
                     exit={{ opacity: 0, scale: 0.9, y: -10 }}
                     className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg border py-2 min-w-[160px] z-20"
                   >
-                    <button
-                      onClick={handleBookmark}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
-                    >
-                      <Bookmark
-                        className={`w-4 h-4 ${isBookmarked ? "fill-current text-barter-600" : "text-gray-600"}`}
-                      />
-                      <span>{isBookmarked ? "Saved" : "Save"}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowReportDialog(true);
-                        setShowMoreMenu(false);
-                      }}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
-                    >
-                      <Flag className="w-4 h-4" />
-                      <span>Report</span>
-                    </button>
+                    {user?.id === item.userId ? (
+                      <button
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          navigate(`/edit/${item.id}`);
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4 text-gray-600" />
+                        <span>Edit</span>
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleBookmark}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                        >
+                          <Bookmark
+                            className={`w-4 h-4 ${isBookmarked ? "fill-current text-barter-600" : "text-gray-600"}`}
+                          />
+                          <span>{isBookmarked ? "Saved" : "Save"}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowReportDialog(true);
+                            setShowMoreMenu(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
+                        >
+                          <Flag className="w-4 h-4" />
+                          <span>Report</span>
+                        </button>
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
