@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Settings,
@@ -40,7 +40,12 @@ export const Profile: React.FC = () => {
   const [profileData, setProfileData] = useState({
     username: user?.username || "",
     location: user?.location || "",
+    latitude: user?.latitude ?? (null as number | null),
+    longitude: user?.longitude ?? (null as number | null),
   });
+  const [locationSuggestions, setLocationSuggestions] = useState<{ label: string; lat: number; lng: number }[]>([]);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const locationSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -122,8 +127,17 @@ export const Profile: React.FC = () => {
   };
 
   const handleSaveProfile = async () => {
+    if (profileData.location.trim() && (profileData.latitude === null || profileData.longitude === null)) {
+      toast.error("Please select a location from the suggestions");
+      return;
+    }
+
     try {
-      const { error } = await updateProfile(profileData);
+      const { error } = await updateProfile({
+        ...profileData,
+        latitude: profileData.latitude ?? undefined,
+        longitude: profileData.longitude ?? undefined,
+      });
       if (error) {
         console.error("Profile update error:", error);
         toast.error("Failed to update profile");
@@ -184,6 +198,8 @@ export const Profile: React.FC = () => {
                 setProfileData({
                   username: user?.username || "",
                   location: user?.location || "",
+                  latitude: user?.latitude ?? (null as number | null),
+                  longitude: user?.longitude ?? (null as number | null),
                 });
               }}
               className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
@@ -258,11 +274,51 @@ export const Profile: React.FC = () => {
           <div className="flex items-center text-gray-600 mb-2">
             <MapPin className="w-4 h-4 mr-2" />
             {editingProfile ? (
-              <div className="flex-1 flex items-center space-x-2">
+              <div className="flex-1 flex items-center space-x-2 relative">
                 <input
                   type="text"
                   value={profileData.location}
-                  onChange={(e) => setProfileData((prev) => ({ ...prev, location: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setProfileData((prev) => ({ ...prev, location: value, latitude: null, longitude: null }));
+
+                    if (locationSearchTimeoutRef.current) {
+                      clearTimeout(locationSearchTimeoutRef.current);
+                    }
+
+                    const trimmed = value.trim();
+                    if (trimmed.length < 3) {
+                      setLocationSuggestions([]);
+                      setShowLocationDropdown(false);
+                      return;
+                    }
+
+                    locationSearchTimeoutRef.current = setTimeout(async () => {
+                      try {
+                        const { data, error } = await supabase.functions.invoke("places-autocomplete", {
+                          body: { query: trimmed },
+                        });
+                        if (error) {
+                          toast.error("Failed to search locations");
+                          setLocationSuggestions([]);
+                          setShowLocationDropdown(false);
+                          return;
+                        }
+                        setLocationSuggestions(data?.suggestions || []);
+                        setShowLocationDropdown(true);
+                      } catch (err) {
+                        toast.error("Failed to search locations");
+                        setLocationSuggestions([]);
+                        setShowLocationDropdown(false);
+                      }
+                    }, 350);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowLocationDropdown(false);
+                    }
+                  }}
+                  onBlur={() => setShowLocationDropdown(false)}
                   className="flex-1 bg-transparent border-b border-gray-300 focus:border-barter-600 focus:outline-none"
                   placeholder="Enter your location"
                 />
@@ -280,6 +336,29 @@ export const Profile: React.FC = () => {
                     </>
                   )}
                 </button>
+                {showLocationDropdown && locationSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-56 overflow-y-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.label}-${index}`}
+                        type="button"
+                        onMouseDown={() => {
+                          setProfileData((prev) => ({
+                            ...prev,
+                            location: suggestion.label,
+                            latitude: suggestion.lat,
+                            longitude: suggestion.lng,
+                          }));
+                          setShowLocationDropdown(false);
+                          setLocationSuggestions([]);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <span>{user?.location || "No location set"}</span>
