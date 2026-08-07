@@ -13,7 +13,6 @@ export interface Database {
           rating: number | null;
           total_ratings: number | null;
           rating_sum: number | null;
-          notification_preferences: any;
         };
         Insert: {
           id: string;
@@ -26,7 +25,6 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
-          notification_preferences?: any;
         };
         Update: {
           id?: string;
@@ -39,7 +37,6 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
-          notification_preferences?: any;
         };
       };
       items: {
