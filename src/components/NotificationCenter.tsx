@@ -43,6 +43,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         return '🚫';
       case 'issue_status':
         return '📋';
+      case 'review_reminder':
+        return '📝';
+      case 'trade_dispute':
+        return '⚠️';
+      case 'listing_expiry_reminder':
+        return '⏰';
       default:
         return '📢';
     }
