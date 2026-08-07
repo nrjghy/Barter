@@ -92,47 +92,6 @@ export interface Database {
           source_url?: string | null;
         };
       };
-      matches: {
-        Row: {
-          id: string;
-          item_id_1: string;
-          item_id_2: string;
-          user_id_1: string;
-          user_id_2: string;
-          status: "pending" | "accepted" | "rejected";
-          created_at: string;
-          updated_at: string;
-          completed_at: string | null;
-          completed_by: string | null;
-          is_super_like: boolean;
-        };
-        Insert: {
-          id?: string;
-          item_id_1: string;
-          item_id_2: string;
-          user_id_1: string;
-          user_id_2: string;
-          status?: "pending" | "accepted" | "rejected";
-          created_at?: string;
-          updated_at?: string;
-          completed_at?: string | null;
-          completed_by?: string | null;
-          is_super_like?: boolean;
-        };
-        Update: {
-          id?: string;
-          item_id_1?: string;
-          item_id_2?: string;
-          user_id_1?: string;
-          user_id_2?: string;
-          status?: "pending" | "accepted" | "rejected";
-          created_at?: string;
-          updated_at?: string;
-          completed_at?: string | null;
-          completed_by?: string | null;
-          is_super_like?: boolean;
-        };
-      };
       connections: {
         Row: {
           id: string;
@@ -478,7 +437,6 @@ export interface Database {
 
 export type User = Database["public"]["Tables"]["users"]["Row"];
 export type Item = Database["public"]["Tables"]["items"]["Row"];
-export type Match = Database["public"]["Tables"]["matches"]["Row"];
 export type Connection = Database["public"]["Tables"]["connections"]["Row"];
 export type ConnectionItemInterest = Database["public"]["Tables"]["connection_item_interests"]["Row"];
 export type ConnectionRead = Database["public"]["Tables"]["connection_reads"]["Row"];
