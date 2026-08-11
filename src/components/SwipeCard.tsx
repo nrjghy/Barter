@@ -98,6 +98,12 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           <span className="text-sm font-medium text-barter-800">{item.condition}</span>
         </div>
 
+        {item.listingType === "giveaway" && (
+          <div className="absolute top-4 left-4 bg-barter-600 rounded-full px-3 py-1">
+            <span className="text-sm font-medium text-white">Giveaway</span>
+          </div>
+        )}
+
         {/* Content overlay */}
         <div className="absolute inset-x-0 bottom-0 h-2/3 flex flex-col justify-end p-6 bg-gradient-to-t from-barter-800 via-[rgba(1,51,15,0.7)] to-transparent">
           <div className="mb-3">

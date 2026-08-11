@@ -332,7 +332,11 @@ export const ChatThread: React.FC = () => {
   const itemLabel = connection
     ? Array.from(
         new Set(
-          connection.itemInterests.flatMap((i) => [i.myItem?.title, i.theirItem?.title].filter(Boolean) as string[])
+          connection.itemInterests.flatMap((i) =>
+            [i.myItem, i.theirItem]
+              .filter(Boolean)
+              .map((item) => (item!.listingType === "giveaway" ? `${item!.title} (Giveaway)` : item!.title))
+          )
         )
       ).join(" · ")
     : "";

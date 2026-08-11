@@ -10,10 +10,10 @@ import type { ConnectionItemInterestPair, ConnectionLastMessage, ConnectionSumma
 function buildItemLabel(itemInterests: ConnectionItemInterestPair[]): string {
   const seen = new Set<string>();
   const titles: string[] = [];
-  const addItem = (item: { id: string; title: string } | null) => {
+  const addItem = (item: { id: string; title: string; listingType?: "trade" | "giveaway" } | null) => {
     if (item && !seen.has(item.id)) {
       seen.add(item.id);
-      titles.push(item.title);
+      titles.push(item.listingType === "giveaway" ? `${item.title} (Giveaway)` : item.title);
     }
   };
   itemInterests.forEach((interest) => addItem(interest.myItem));

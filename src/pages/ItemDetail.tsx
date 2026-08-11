@@ -375,6 +375,11 @@ export const ItemDetail: React.FC = () => {
 
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col space-y-2">
+                {item.listingType === "giveaway" && (
+                  <div className="px-3 py-1 rounded-full text-sm font-medium bg-barter-600 text-white">
+                    Giveaway
+                  </div>
+                )}
                 <div
                   className={`px-3 py-1 rounded-full text-sm font-medium border backdrop-blur-sm ${getConditionColor(
                     item.condition
@@ -457,7 +462,7 @@ export const ItemDetail: React.FC = () => {
             )}
 
             {/* Value Information */}
-            {item.estimatedValue && (
+            {Boolean(item.estimatedValue) && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Value Information</h3>
                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">

@@ -27,6 +27,7 @@ export interface ConnectionItemSummary {
   id: string;
   title: string;
   imageUrl?: string;
+  listingType?: "trade" | "giveaway";
 }
 
 export interface ConnectionItemInterestPair {
@@ -335,8 +336,8 @@ export class ConnectionService {
         `
         id,
         connection_id,
-        item1:items!item_id_1 ( id, title, image_urls, user_id ),
-        item2:items!item_id_2 ( id, title, image_urls, user_id )
+        item1:items!item_id_1 ( id, title, image_urls, user_id, listing_type ),
+        item2:items!item_id_2 ( id, title, image_urls, user_id, listing_type )
       `
       )
       .in("connection_id", connectionIds);
@@ -422,6 +423,7 @@ export class ConnectionService {
       id: item.id,
       title: item.title,
       imageUrl: item.image_urls && item.image_urls.length > 0 ? item.image_urls[0] : undefined,
+      listingType: item.listing_type,
     };
   }
 
@@ -435,6 +437,21 @@ export class ConnectionService {
     const otherUserRaw = row.user_id_1 === userId ? row.user2 : row.user1;
 
     const itemInterests: ConnectionItemInterestPair[] = interestRows.map((interest) => {
+      if (!interest.item1) {
+        // Giveaway interest: item_id_1 is null (no reciprocal item), so there's
+        // nothing to match ownership against the usual way. item2 is the
+        // giveaway item itself -- "mine" if the viewer is its owner (the
+        // lister), otherwise "theirs" (the recipient's view). Without this
+        // branch, the item silently disappears from the recipient's Chat
+        // list and thread header, since neither of the checks below can
+        // ever match when item1 doesn't exist.
+        const item2IsMine = interest.item2?.user_id === userId;
+        return {
+          id: interest.id,
+          myItem: item2IsMine ? this.toItemSummary(interest.item2) : null,
+          theirItem: item2IsMine ? null : this.toItemSummary(interest.item2),
+        };
+      }
       const item1IsMine = interest.item1?.user_id === userId;
       const item2IsMine = interest.item2?.user_id === userId;
       const mine = item1IsMine ? interest.item1 : item2IsMine ? interest.item2 : null;
