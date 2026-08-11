@@ -138,14 +138,14 @@ export interface Database {
         Insert: {
           id?: string;
           connection_id: string;
-          item_id_1: string;
+          item_id_1?: string | null;
           item_id_2: string;
           created_at?: string;
         };
         Update: {
           id?: string;
           connection_id?: string;
-          item_id_1?: string;
+          item_id_1?: string | null;
           item_id_2?: string;
           created_at?: string;
         };
