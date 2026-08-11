@@ -17,6 +17,7 @@ export interface ResponseResult {
   dailySwipeCount: number;
   canSwipe: boolean;
   matchCheckNeeded: boolean;
+  giveawayConnectionNeeded: boolean;
 }
 
 export interface MatchData {

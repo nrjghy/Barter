@@ -73,8 +73,8 @@ export const useResponses = () => {
         queryClient.invalidateQueries({ queryKey: ["likeLimit", user?.id] });
 
         // Only invalidate connections if this was a like that might create one
-        if (variables.direction === "like" && result.data.matchCheckNeeded) {
-          // Invalidate connections after a short delay to allow background match creation
+        if (variables.direction === "like" && (result.data.matchCheckNeeded || result.data.giveawayConnectionNeeded)) {
+          // Invalidate connections after a short delay to allow background match/connection creation
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ["connections", user?.id] });
           }, 1000);

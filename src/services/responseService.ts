@@ -187,12 +187,21 @@ export class ResponseService {
         });
       }
 
+      // Giveaway likes skip the mutual-like gate entirely -- record_response_optimized
+      // routes them here instead of setting matchCheckNeeded (see its branching logic).
+      if (result?.giveawayConnectionNeeded && result?.targetItemUserId) {
+        this.handleGiveawayConnectionCreation(data.userId, data.itemId).catch((error) => {
+          console.error("Background giveaway connection creation failed:", error);
+        });
+      }
+
       return {
         data: {
           success: true,
           dailySwipeCount: result?.dailySwipeCount || 0,
           canSwipe: result?.canSwipe || false,
           matchCheckNeeded: result?.matchCheckNeeded || false,
+          giveawayConnectionNeeded: result?.giveawayConnectionNeeded || false,
         },
       };
     } catch (error) {
@@ -233,6 +242,36 @@ export class ResponseService {
       }
     } catch (error) {
       console.error("Background match check failed:", error);
+    }
+  }
+
+  /**
+   * Mirror of handleBackgroundMatchCheck for the giveaway path -- a giveaway
+   * like doesn't wait on a reciprocal like, so create_giveaway_connection
+   * fires immediately in the background rather than through
+   * check_and_create_match's mutual-like gate.
+   */
+  private static async handleGiveawayConnectionCreation(userId: string, itemId: string): Promise<void> {
+    try {
+      const { data: result, error } = await supabase.rpc("create_giveaway_connection", {
+        interested_user_id: userId,
+        giveaway_item_id: itemId,
+      });
+
+      if (error) {
+        console.error("Giveaway connection creation RPC error:", error);
+        return;
+      }
+
+      if (result?.connectionCreated && result?.isNewConnection) {
+        console.log("Giveaway connection created successfully:", result.connectionId);
+        // Reuses the same funnel event as a regular match -- a connection was
+        // created either way, matching PRD §7's decision that giveaway
+        // connections reuse existing types/events rather than getting their own.
+        trackEvent("connection_created", { connectionId: result.connectionId });
+      }
+    } catch (error) {
+      console.error("Background giveaway connection creation failed:", error);
     }
   }
 
