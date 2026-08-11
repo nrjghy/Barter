@@ -13,10 +13,18 @@ export interface DisputeResult {
   disputedAt: string;
 }
 
+export interface ApproveGiveawayResult {
+  tradeCompletionId: string;
+  status: string;
+  disputeDeadline: string;
+  supersededCount: number;
+}
+
 export interface TradeCompletionDisputeInfo {
   completedBy: string;
   disputeDeadline: string;
   disputedAt: string | null;
+  status: string;
 }
 
 export class TradeCompletionService {
@@ -148,6 +156,63 @@ export class TradeCompletionService {
   }
 
   /**
+   * Approves a pending giveaway claim via approve_giveaway_completion. Only
+   * the lister can call this -- the RPC itself re-validates that server-side.
+   * Unlike fileDispute, this RPC requires the caller's own user id explicitly
+   * (not just auth.uid() implicitly), so it's passed through here.
+   */
+  static async approveGiveawayCompletion(
+    userId: string,
+    tradeCompletionId: string
+  ): Promise<ServiceResult<ApproveGiveawayResult>> {
+    try {
+      const idError = ValidationService.validateUUID(tradeCompletionId);
+      if (idError) return { error: idError };
+
+      const { data: result, error } = await supabase.rpc("approve_giveaway_completion", {
+        lister_user_id: userId,
+        for_trade_completion_id: tradeCompletionId,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to approve giveaway claim",
+            details: error,
+          },
+        };
+      }
+
+      if (result?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return {
+        data: {
+          tradeCompletionId: result.tradeCompletionId,
+          status: result.status,
+          disputeDeadline: result.disputeDeadline,
+          supersededCount: result.supersededCount,
+        },
+      };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
    * Fetches dispute-relevant fields for a set of trade_completions rows,
    * keyed by id. Used by ChatThread to decide whether to show a "Dispute
    * this trade" action on a given system message.
@@ -160,7 +225,7 @@ export class TradeCompletionService {
 
       const { data, error } = await supabase
         .from(TABLES.TRADE_COMPLETIONS)
-        .select("id, completed_by, dispute_deadline, disputed_at")
+        .select("id, completed_by, dispute_deadline, disputed_at, status")
         .in("id", ids);
 
       if (error) {
@@ -179,6 +244,7 @@ export class TradeCompletionService {
           completedBy: row.completed_by,
           disputeDeadline: row.dispute_deadline,
           disputedAt: row.disputed_at,
+          status: row.status,
         };
       }
 

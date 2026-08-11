@@ -29,7 +29,8 @@ const MessageBubble: React.FC<{
   currentUserId?: string;
   tradeCompletionsById: Record<string, TradeCompletionDisputeInfo>;
   onDispute: (tradeCompletionId: string) => void;
-}> = ({ message, isMine, currentUserId, tradeCompletionsById, onDispute }) => {
+  onApprove: (tradeCompletionId: string) => void;
+}> = ({ message, isMine, currentUserId, tradeCompletionsById, onDispute, onApprove }) => {
   if (message.messageType === "system") {
     const tradeCompletionId = (message.data as { tradeCompletionId?: string } | undefined)?.tradeCompletionId;
     const tradeCompletion = tradeCompletionId ? tradeCompletionsById[tradeCompletionId] : undefined;
@@ -39,12 +40,27 @@ const MessageBubble: React.FC<{
       tradeCompletion.completedBy !== currentUserId &&
       tradeCompletion.disputedAt === null &&
       new Date() < new Date(tradeCompletion.disputeDeadline);
+    // Only the lister can approve -- completedBy on a giveaway claim is
+    // whoever claimed it (the recipient), never the lister themselves.
+    const canApprove =
+      !!tradeCompletion &&
+      !!currentUserId &&
+      tradeCompletion.status === "pending_approval" &&
+      tradeCompletion.completedBy !== currentUserId;
 
     return (
       <div className="flex flex-col items-center gap-1.5">
         <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
           {message.content}
         </div>
+        {canApprove && (
+          <button
+            onClick={() => onApprove(tradeCompletionId!)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-barter-600 text-white text-[11px] font-bold"
+          >
+            Approve claim
+          </button>
+        )}
         {canDispute && (
           <button
             onClick={() => onDispute(tradeCompletionId!)}
@@ -171,6 +187,8 @@ export const ChatThread: React.FC = () => {
   const [disputeTradeCompletionId, setDisputeTradeCompletionId] = useState<string | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+  const [approveTradeCompletionId, setApproveTradeCompletionId] = useState<string | null>(null);
+  const [approveSubmitting, setApproveSubmitting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
@@ -206,6 +224,26 @@ export const ChatThread: React.FC = () => {
       toast.error("Couldn't file the dispute. Please try again.");
     } finally {
       setDisputeSubmitting(false);
+    }
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!approveTradeCompletionId || !user) return;
+    setApproveSubmitting(true);
+    try {
+      const { error } = await TradeCompletionService.approveGiveawayCompletion(user.id, approveTradeCompletionId);
+      if (error) {
+        toast.error(error.message || "Couldn't approve this claim. Please try again.");
+        return;
+      }
+      toast.success("Claim approved!");
+      setApproveTradeCompletionId(null);
+      if (connectionId) queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["tradeCompletionsByIds"] });
+    } catch {
+      toast.error("Couldn't approve this claim. Please try again.");
+    } finally {
+      setApproveSubmitting(false);
     }
   };
 
@@ -407,6 +445,7 @@ export const ChatThread: React.FC = () => {
               currentUserId={user?.id}
               tradeCompletionsById={tradeCompletionsById}
               onDispute={setDisputeTradeCompletionId}
+              onApprove={setApproveTradeCompletionId}
             />
           ))}
         <div ref={bottomRef} />
@@ -569,6 +608,35 @@ export const ChatThread: React.FC = () => {
             <button
               onClick={() => setDisputeTradeCompletionId(null)}
               disabled={disputeSubmitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {approveTradeCompletionId && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
+            onClick={() => !approveSubmitting && setApproveTradeCompletionId(null)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Approve this claim?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] mb-4">
+              This finalizes the giveaway and can't be undone. If anyone else claimed the same item, their claim will
+              be closed out automatically.
+            </div>
+            <button
+              onClick={handleConfirmApprove}
+              disabled={approveSubmitting}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-50"
+            >
+              {approveSubmitting ? "Approving…" : "Approve claim"}
+            </button>
+            <button
+              onClick={() => setApproveTradeCompletionId(null)}
+              disabled={approveSubmitting}
               className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
             >
               Cancel
