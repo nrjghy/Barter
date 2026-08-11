@@ -198,7 +198,10 @@ export class TradeCompletionService {
    * Counts completed trades for a user: trade_completions rows whose
    * connection_id belongs to one of this user's connections. Two-step
    * read (connection ids, then count) since Supabase-js can't cleanly
-   * express an OR-through-a-join in one call.
+   * express an OR-through-a-join in one call. Only counts rows with
+   * status completed or approved, excluding pending_approval (an
+   * unresolved giveaway claim) and superseded (a giveaway claim that
+   * lost to another).
    */
   static async getCompletedTradeCount(userId: string): Promise<ServiceResult<number>> {
     try {
@@ -228,7 +231,8 @@ export class TradeCompletionService {
       const { count, error: countError } = await supabase
         .from(TABLES.TRADE_COMPLETIONS)
         .select("id", { count: "exact", head: true })
-        .in("connection_id", connectionIds);
+        .in("connection_id", connectionIds)
+        .in("status", ["completed", "approved"]);
 
       if (countError) {
         return {
