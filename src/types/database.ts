@@ -51,6 +51,7 @@ export interface Database {
           tags: string[];
           is_active: boolean;
           status: "active" | "cancelled" | "traded" | "expired";
+          listing_type: string;
           created_at: string;
           updated_at: string;
           estimated_value: number | null;
@@ -68,6 +69,7 @@ export interface Database {
           tags?: string[];
           is_active?: boolean;
           status?: "active" | "cancelled" | "traded" | "expired";
+          listing_type?: string;
           created_at?: string;
           updated_at?: string;
           estimated_value?: number | null;
@@ -85,6 +87,7 @@ export interface Database {
           tags?: string[];
           is_active?: boolean;
           status?: "active" | "cancelled" | "traded" | "expired";
+          listing_type?: string;
           created_at?: string;
           updated_at?: string;
           estimated_value?: number | null;
@@ -128,7 +131,7 @@ export interface Database {
         Row: {
           id: string;
           connection_id: string;
-          item_id_1: string;
+          item_id_1: string | null;
           item_id_2: string;
           created_at: string;
         };
