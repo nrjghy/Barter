@@ -63,6 +63,7 @@ export class ItemService {
         tags: item.tags,
         userId: item.user_id,
         isActive: item.is_active,
+        listingType: item.listing_type,
         estimatedValue: item.estimated_value,
         valueCurrency: item.value_currency,
         sourceUrl: item.source_url,
@@ -141,6 +142,7 @@ export class ItemService {
         userId: item.user_id,
         isActive: item.is_active,
         status: item.status,
+        listingType: item.listing_type,
         // Update to use correct fields:
         estimatedValue: item.estimated_value,
         valueCurrency: item.value_currency,
@@ -228,6 +230,7 @@ export class ItemService {
         userId: data.user_id,
         isActive: data.is_active,
         status: data.status,
+        listingType: data.listing_type,
         // Update to use correct fields:
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
@@ -280,6 +283,7 @@ export class ItemService {
             tags: itemData.tags,
             user_id: userId,
             is_active: itemData.isActive,
+            listing_type: itemData.listingType,
             // Update field mappings to match database schema:
             estimated_value: itemData.estimatedValue,
             value_currency: itemData.valueCurrency,
@@ -334,6 +338,7 @@ export class ItemService {
         userId: data.user_id,
         isActive: data.is_active,
         status: data.status,
+        listingType: data.listing_type,
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
@@ -412,6 +417,7 @@ export class ItemService {
           image_urls: finalImageUrls, // ✅ Updated to use imageUrls array
           tags: updates.tags,
           is_active: updates.isActive,
+          listing_type: updates.listingType,
           // Update to use correct fields:
           estimated_value: updates.estimatedValue,
           value_currency: updates.valueCurrency,
@@ -444,6 +450,7 @@ export class ItemService {
         userId: data.user_id,
         isActive: data.is_active,
         status: data.status,
+        listingType: data.listing_type,
         // Update to use correct fields:
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
@@ -608,6 +615,7 @@ export class ItemService {
         userId: data.user_id,
         isActive: data.is_active,
         status: data.status,
+        listingType: data.listing_type,
         estimatedValue: data.estimated_value,
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,

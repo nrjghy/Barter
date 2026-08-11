@@ -38,6 +38,7 @@ export interface ItemData {
   userId: string;
   isActive: boolean;
   status?: "active" | "cancelled" | "traded" | "expired";
+  listingType?: "trade" | "giveaway";
   // Update fields to match database schema:
   estimatedValue?: number | null;
   valueCurrency?: string;
