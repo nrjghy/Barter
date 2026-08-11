@@ -176,6 +176,11 @@ export interface Database {
           dispute_deadline: string;
           disputed_at: string | null;
           disputed_by: string | null;
+          review_reminder_sent_at: string | null;
+          dispute_reason: string | null;
+          status: "completed" | "pending_approval" | "approved" | "superseded";
+          approved_at: string | null;
+          approved_by: string | null;
         };
         Insert: {
           id?: string;
@@ -185,6 +190,11 @@ export interface Database {
           dispute_deadline: string;
           disputed_at?: string | null;
           disputed_by?: string | null;
+          review_reminder_sent_at?: string | null;
+          dispute_reason?: string | null;
+          status?: "completed" | "pending_approval" | "approved" | "superseded";
+          approved_at?: string | null;
+          approved_by?: string | null;
         };
         Update: {
           id?: string;
@@ -194,6 +204,11 @@ export interface Database {
           dispute_deadline?: string;
           disputed_at?: string | null;
           disputed_by?: string | null;
+          review_reminder_sent_at?: string | null;
+          dispute_reason?: string | null;
+          status?: "completed" | "pending_approval" | "approved" | "superseded";
+          approved_at?: string | null;
+          approved_by?: string | null;
         };
       };
       trade_completion_items: {
