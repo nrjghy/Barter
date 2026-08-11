@@ -38,6 +38,7 @@ export const AddToy: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Base64 previews of `images`, same order
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // Pre-existing storage URLs, edit mode only
   const [estimatedValue, setEstimatedValue] = useState("");
+  const [listingType, setListingType] = useState<"trade" | "giveaway">("trade");
   const [sourceUrl, setSourceUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
@@ -96,6 +97,7 @@ export const AddToy: React.FC = () => {
     setCategory(existingItem.category ?? "");
     setCategorySuggestion(existingItem.categorySuggestion ?? "");
     setCondition(existingItem.condition ?? "");
+    setListingType(existingItem.listingType ?? "trade");
     setExistingImageUrls(existingItem.imageUrls ?? []);
     setEstimatedValue(
       existingItem.estimatedValue === null || existingItem.estimatedValue === undefined
@@ -199,7 +201,10 @@ export const AddToy: React.FC = () => {
       // estimated_value is entirely optional and defaults to 0 (PRD §2) -- an
       // empty field means "no value entered," not "free," so it submits as 0
       // rather than requiring the person to pick between a Free/Set-Value toggle.
-      const finalEstimatedValue = estimatedValue.trim() === "" ? 0 : parseFloat(estimatedValue);
+      // Giveaways force this to 0 outright, matching the backend's own
+      // min/max-value-filter exemption for listing_type = 'giveaway'.
+      const finalEstimatedValue =
+        listingType === "giveaway" ? 0 : estimatedValue.trim() === "" ? 0 : parseFloat(estimatedValue);
 
       // Only carries a category suggestion when Other is actually selected, so a
       // suggestion typed in earlier doesn't linger after switching to a different category.
@@ -238,6 +243,7 @@ export const AddToy: React.FC = () => {
           description,
           category,
           condition,
+          listingType,
           imageUrls: combinedImageUrls, // Pass base64 previews - service will convert to files
           isActive: true,
           estimatedValue: finalEstimatedValue,
@@ -305,6 +311,44 @@ export const AddToy: React.FC = () => {
             </div>
           )}
   
+          {/* Listing type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Listing type</label>
+            {isEditMode ? (
+              <>
+                <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+                  {listingType === "giveaway" ? "Giveaway" : "Trade"}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Listing type can't be changed after an item is created.</p>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setListingType("trade")}
+                  className={`px-3 py-2 rounded-lg border font-medium transition-colors ${
+                    listingType === "trade"
+                      ? "bg-barter-600 text-white border-barter-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  Trade
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setListingType("giveaway")}
+                  className={`px-3 py-2 rounded-lg border font-medium transition-colors ${
+                    listingType === "giveaway"
+                      ? "bg-barter-600 text-white border-barter-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  Giveaway
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Image Upload */}
           <div ref={photosRef} onMouseDown={() => markTouched("photos")}>
             <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
@@ -464,25 +508,27 @@ export const AddToy: React.FC = () => {
           </div>
   
           {/* Item Value */}
-          <div>
-            <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
-              Estimated value (optional)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-              <input
-                id="estimatedValue"
-                type="number"
-                value={estimatedValue}
-                onChange={(e) => setEstimatedValue(e.target.value)}
-                className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-              />
+          {listingType !== "giveaway" && (
+            <div>
+              <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
+                Estimated value (optional)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                <input
+                  id="estimatedValue"
+                  type="number"
+                  value={estimatedValue}
+                  onChange={(e) => setEstimatedValue(e.target.value)}
+                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
-          </div>
+          )}
 
           {/* More info link */}
           <div>
