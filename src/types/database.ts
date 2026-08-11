@@ -418,7 +418,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "trade_dispute" | "listing_expiry_reminder";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
           title: string;
           content: string;
           data: any;
@@ -429,7 +429,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "trade_dispute" | "listing_expiry_reminder";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
           title: string;
           content: string;
           data?: any;
@@ -440,7 +440,7 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "trade_dispute" | "listing_expiry_reminder";
+          type?: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
           title?: string;
           content?: string;
           data?: any;
