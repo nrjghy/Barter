@@ -608,7 +608,7 @@ export const AddEditItem: React.FC = () => {
           >
             {loading ? <LoadingSpinner /> : isEditMode ? "Save changes" : "Add Item"}
           </button>
-          {isEditMode && (
+          {isEditMode && (existingItem?.status ?? "active") === "active" && (
             <button
               type="button"
               onClick={() => setConfirmingCancel(true)}

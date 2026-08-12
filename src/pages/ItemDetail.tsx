@@ -24,6 +24,7 @@ import { useResponses } from "../hooks/useResponses";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { ReportDialog } from "../components/ReportDialog";
+import { InfoTooltip } from "../components/InfoTooltip";
 import { ItemService, ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
@@ -238,16 +239,22 @@ export const ItemDetail: React.FC = () => {
                           <span>Edit</span>
                         </button>
                         {(item.status === "cancelled" || item.status === "traded" || item.status === "expired") && (
-                          <button
-                            onClick={() => {
-                              setShowMoreMenu(false);
-                              navigate("/add", { state: { relistFrom: item } });
-                            }}
-                            className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
-                          >
-                            <RefreshCw className="w-4 h-4 text-gray-600" />
-                            <span>Relist</span>
-                          </button>
+                          <div className="flex items-center justify-between px-4 py-2">
+                            <button
+                              onClick={() => {
+                                setShowMoreMenu(false);
+                                navigate("/add", { state: { relistFrom: item } });
+                              }}
+                              className="flex-1 flex items-center space-x-3 text-left hover:bg-gray-50 transition-colors"
+                            >
+                              <RefreshCw className="w-4 h-4 text-gray-600" />
+                              <span>Relist</span>
+                            </button>
+                            <InfoTooltip
+                              text="Creates a new listing pre-filled with this item's details. The original stays as-is."
+                              label="Relist"
+                            />
+                          </div>
                         )}
                       </>
                     ) : (
