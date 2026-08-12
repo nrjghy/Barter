@@ -25,7 +25,7 @@ export const BottomNavigation: React.FC = () => {
             <motion.button
               key={path}
               onClick={() => navigate(path)}
-              className={`flex flex-col items-center space-y-1 px-2 py-2 rounded-xl transition-all duration-200 ${
+              className={`flex-1 flex flex-col items-center space-y-1 px-2 py-2 rounded-xl transition-all duration-200 ${
                 isActive
                   ? 'bg-gradient-to-br from-barter-600 to-barter-700 text-white'
                   : 'text-[oklch(45%_0.02_95)] hover:text-barter-600 hover:bg-gray-50'
