@@ -203,7 +203,7 @@ export const MarkTradeComplete: React.FC = () => {
       )}
 
       {step === "confirm" && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => !submitting && setStep("select")} />
           <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
             <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Confirm trade complete</div>

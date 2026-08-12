@@ -165,32 +165,38 @@ export const Discover: React.FC = () => {
 
   const handleUndo = async () => {
     if (respondedItems.size === 0) return;
-    const lastRespondedItem = Array.from(respondedItems).pop();
-    if (!lastRespondedItem) return;
+    const candidates = Array.from(respondedItems).reverse(); // most recent first
 
-    try {
-      const result = await undoResponse(lastRespondedItem);
+    for (const candidateItemId of candidates) {
+      try {
+        const result = await undoResponse(candidateItemId);
 
-      if (result.error) {
-        // Covers both "already matched, can't undo" and any other server-side
-        // refusal -- either way, nothing was actually reversed, so local state
-        // (respondedItems/currentIndex) must not change either.
-        toast.error(result.error.message);
+        if (result.error) {
+          if (result.error.code === ERROR_CODES.MATCH_ALREADY_EXISTS) {
+            // Already matched, can't undo this one -- try the next most recent instead.
+            continue;
+          }
+          toast.error(result.error.message);
+          return;
+        }
+
+        setRespondedItems((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(candidateItemId);
+          return newSet;
+        });
+        if (currentIndex > 0) {
+          setCurrentIndex((prev) => prev - 1);
+        }
+        toast.success("Undo successful!");
+        return;
+      } catch (error) {
+        toast.error("Couldn't undo, please try again.");
         return;
       }
-
-      setRespondedItems((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(lastRespondedItem);
-        return newSet;
-      });
-      if (currentIndex > 0) {
-        setCurrentIndex((prev) => prev - 1);
-      }
-      toast.success("Undo successful!");
-    } catch (error) {
-      toast.error("Couldn't undo, please try again.");
     }
+
+    toast("Nothing left to undo right now.");
   };
 
   const likesRemaining = likeLimit - dailyLikeCount;

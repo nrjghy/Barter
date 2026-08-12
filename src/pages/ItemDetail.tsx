@@ -8,7 +8,6 @@ import {
   Calendar,
   Tag,
   Star,
-  Bookmark,
   ChevronLeft,
   ChevronRight,
   MoreVertical,
@@ -39,7 +38,6 @@ export const ItemDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [showReportDialog, setShowReportDialog] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -107,12 +105,6 @@ export const ItemDetail: React.FC = () => {
     if (item) {
       await shareItem(item);
     }
-    setShowMoreMenu(false);
-  };
-
-  const handleBookmark = () => {
-    setIsBookmarked(!isBookmarked);
-    toast.success(isBookmarked ? "Removed from saved" : "Saved to bookmarks");
     setShowMoreMenu(false);
   };
 
@@ -244,27 +236,16 @@ export const ItemDetail: React.FC = () => {
                         <span>Edit</span>
                       </button>
                     ) : (
-                      <>
-                        <button
-                          onClick={handleBookmark}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
-                        >
-                          <Bookmark
-                            className={`w-4 h-4 ${isBookmarked ? "fill-current text-barter-600" : "text-gray-600"}`}
-                          />
-                          <span>{isBookmarked ? "Saved" : "Save"}</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowReportDialog(true);
-                            setShowMoreMenu(false);
-                          }}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
-                        >
-                          <Flag className="w-4 h-4" />
-                          <span>Report</span>
-                        </button>
-                      </>
+                      <button
+                        onClick={() => {
+                          setShowReportDialog(true);
+                          setShowMoreMenu(false);
+                        }}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
+                      >
+                        <Flag className="w-4 h-4" />
+                        <span>Report</span>
+                      </button>
                     )}
                   </motion.div>
                 )}

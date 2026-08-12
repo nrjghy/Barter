@@ -369,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto pt-16">
-      <BackBar title="Admin console" onBack={() => navigate('/profile')} />
+      <BackBar title="Admin console" onBack={() => navigate(-1)} />
 
       <div className="px-4 py-4">
         <div className="flex items-center space-x-3 mb-6">

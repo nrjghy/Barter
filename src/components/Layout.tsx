@@ -32,6 +32,26 @@ export const Layout: React.FC = () => {
             borderRadius: '12px',
             padding: '12px 16px',
           },
+          success: {
+            iconTheme: { primary: '#16a34a', secondary: '#F9FAFB' },
+            style: {
+              background: '#1F2937',
+              color: '#F9FAFB',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              borderLeft: '3px solid #16a34a',
+            },
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#F9FAFB' },
+            style: {
+              background: '#1F2937',
+              color: '#F9FAFB',
+              borderRadius: '12px',
+              padding: '12px 16px',
+              borderLeft: '3px solid #ef4444',
+            },
+          },
         }}
       />
 

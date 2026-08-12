@@ -586,7 +586,7 @@ export const ChatThread: React.FC = () => {
       </div>
 
       {blockConfirmOpen && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]" onClick={() => setBlockConfirmOpen(false)} />
           <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
             <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-4">Block {otherUsername}?</div>
@@ -608,7 +608,7 @@ export const ChatThread: React.FC = () => {
       )}
 
       {reportOpen && (
-        <div className="fixed inset-0 z-30 bg-[oklch(99%_0.006_95)] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-[oklch(99%_0.006_95)] flex flex-col">
           <div className="flex-shrink-0 flex items-center gap-3 px-5 py-3.5 border-b border-[oklch(88%_0.015_90)]">
             <button onClick={() => setReportOpen(false)} className="p-1 -ml-1">
               <X className="w-5 h-5 text-[oklch(22%_0.02_100)]" />
@@ -663,7 +663,7 @@ export const ChatThread: React.FC = () => {
       )}
 
       {disputeTradeCompletionId && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
             className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
             onClick={() => !disputeSubmitting && setDisputeTradeCompletionId(null)}
@@ -697,7 +697,7 @@ export const ChatThread: React.FC = () => {
         </div>
       )}
       {approveTradeCompletionId && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
             className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
             onClick={() => !approveSubmitting && setApproveTradeCompletionId(null)}
@@ -726,7 +726,7 @@ export const ChatThread: React.FC = () => {
         </div>
       )}
       {claimModalOpen && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
             className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
             onClick={() => !claimSubmitting && setClaimModalOpen(false)}

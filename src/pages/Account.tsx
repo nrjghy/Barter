@@ -55,7 +55,7 @@ export const Account: React.FC = () => {
       </div>
 
       {confirmOpen && (
-        <div className="fixed inset-0 z-30 flex items-end justify-center">
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div
             className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
             onClick={() => !deleting && setConfirmOpen(false)}

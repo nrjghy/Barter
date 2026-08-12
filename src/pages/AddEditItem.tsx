@@ -45,6 +45,7 @@ export const AddEditItem: React.FC = () => {
   const [sourceUrl, setSourceUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
 
   // Required-field inline validation (PRD §13): each required field tracks
   // its own touched state, so an error only surfaces once the person has
@@ -65,7 +66,7 @@ export const AddEditItem: React.FC = () => {
   const categoryRef = useRef<HTMLDivElement>(null);
   const conditionRef = useRef<HTMLDivElement>(null);
 
-  const { createItem, updateItem, getItem } = useItems();
+  const { createItem, updateItem, getItem, cancelItem, cancelItemLoading } = useItems();
   const navigate = useNavigate();
 
   const fieldErrors: Record<RequiredField, boolean> = {
@@ -201,6 +202,16 @@ export const AddEditItem: React.FC = () => {
 
   const handleRemoveExistingImage = (index: number) => {
     setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!itemId) return;
+    try {
+      await cancelItem(itemId);
+      navigate("/my-stuff");
+    } finally {
+      setConfirmingCancel(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -597,8 +608,42 @@ export const AddEditItem: React.FC = () => {
           >
             {loading ? <LoadingSpinner /> : isEditMode ? "Save changes" : "Add Item"}
           </button>
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={() => setConfirmingCancel(true)}
+              className="w-full py-3 text-sm font-bold text-[oklch(50%_0.15_30)] mt-2"
+            >
+              Cancel listing
+            </button>
+          )}
         </form>
       </div>
+
+      {confirmingCancel && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setConfirmingCancel(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Cancel this listing?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+              This can't be undone. Anyone you're chatting with about it will be notified it's no longer available.
+            </div>
+            <button
+              onClick={() => setConfirmingCancel(false)}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+            >
+              Keep listing
+            </button>
+            <button
+              onClick={handleConfirmCancel}
+              disabled={cancelItemLoading}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-50"
+            >
+              {cancelItemLoading ? "Cancelling…" : "Cancel listing"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

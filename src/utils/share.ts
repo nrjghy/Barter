@@ -14,7 +14,7 @@ import { toast } from "react-hot-toast";
  * surface in the app).
  */
 export async function shareItem(item: { id: string; title: string }): Promise<void> {
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/item-preview/${item.id}`;
+  const url = `${window.location.origin}/listing/${item.id}`;
 
   if (navigator.share) {
     try {
