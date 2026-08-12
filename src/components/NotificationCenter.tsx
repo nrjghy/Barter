@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, Trash2 } from 'lucide-react';
@@ -11,20 +11,43 @@ interface NotificationCenterProps {
   onClose: () => void;
 }
 
+const CONNECTION_NOTIFICATION_TYPES = new Set([
+  'match',
+  'trade_completed',
+  'item_unavailable',
+  'pending_approval',
+  'trade_dispute',
+]);
+
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
   const { notifications, notificationsLoading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const navigate = useNavigate();
 
-  // Tap-to-navigate is only wired up for review_reminder so far -- every
-  // other type's tap behavior (just mark-as-read/delete, no navigation)
-  // is a pre-existing, already-tracked gap ("wire up in-app + email
-  // notifications"), not something this pass fixes.
+  useEffect(() => {
+    if (isOpen && unreadCount > 0) {
+      markAllAsRead();
+    }
+    // Deliberately only re-runs when the panel's open state changes, not
+    // on every unreadCount fluctuation the mutation itself causes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   const handleNotificationClick = (notification: NotificationWithDetails) => {
-    if (notification.type !== 'review_reminder') return;
-    const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
-    if (!tradeCompletionId) return;
-    onClose();
-    navigate(`/trade-completion/${tradeCompletionId}/review`);
+    if (notification.type === 'review_reminder') {
+      const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
+      if (!tradeCompletionId) return;
+      onClose();
+      navigate(`/trade-completion/${tradeCompletionId}/review`);
+      return;
+    }
+
+    if (CONNECTION_NOTIFICATION_TYPES.has(notification.type)) {
+      const connectionId = (notification.data as { connectionId?: string } | undefined)?.connectionId;
+      if (!connectionId) return;
+      onClose();
+      navigate(`/chat/${connectionId}`);
+      return;
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -144,7 +167,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between">
                           <div
-                            className={`flex-1 ${notification.type === 'review_reminder' ? 'cursor-pointer' : ''}`}
+                            className={`flex-1 ${
+                              notification.type === 'review_reminder' || CONNECTION_NOTIFICATION_TYPES.has(notification.type)
+                                ? 'cursor-pointer'
+                                : ''
+                            }`}
                             onClick={() => handleNotificationClick(notification)}
                           >
                             <h4 className={`text-sm font-medium ${
