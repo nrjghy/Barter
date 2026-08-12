@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Bell, X, Check, Trash2, BookMarked as MarkAsRead } from 'lucide-react';
+import { Bell, X, Check, Trash2 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { NotificationWithDetails } from '../services/notificationService';
@@ -12,7 +12,7 @@ interface NotificationCenterProps {
 }
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
-  const { notifications, loading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { notifications, notificationsLoading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const navigate = useNavigate();
 
   // Tap-to-navigate is only wired up for review_reminder so far -- every
@@ -99,7 +99,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
             <div className="flex items-center space-x-2">
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllAsRead}
+                  onClick={() => markAllAsRead()}
                   className="text-sm text-barter-600 hover:text-barter-700 font-medium"
                 >
                   Mark all read
@@ -116,7 +116,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
 
           {/* Notifications List */}
           <div className="overflow-y-auto max-h-96">
-            {loading && notifications.length === 0 ? (
+            {notificationsLoading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <LoadingSpinner />
               </div>
@@ -134,7 +134,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     className={`p-4 hover:bg-gray-50 transition-colors ${
-                      !notification.is_read ? 'bg-barter-50' : ''
+                      !notification.isRead ? 'bg-barter-50' : ''
                     }`}
                   >
                     <div className="flex items-start space-x-3">
@@ -148,7 +148,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             onClick={() => handleNotificationClick(notification)}
                           >
                             <h4 className={`text-sm font-medium ${
-                              !notification.is_read ? 'text-gray-900' : 'text-gray-700'
+                              !notification.isRead ? 'text-gray-900' : 'text-gray-700'
                             }`}>
                               {notification.title}
                             </h4>
@@ -156,11 +156,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                               {notification.content}
                             </p>
                             <p className="text-xs text-gray-500 mt-2">
-                              {formatTimeAgo(notification.created_at)}
+                              {formatTimeAgo(notification.createdAt)}
                             </p>
                           </div>
                           <div className="flex items-center space-x-1 ml-2">
-                            {!notification.is_read && (
+                            {!notification.isRead && (
                               <button
                                 onClick={() => markAsRead(notification.id)}
                                 className="p-1 text-barter-600 hover:text-barter-700 transition-colors"
@@ -180,7 +180,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                         </div>
                       </div>
                     </div>
-                    {!notification.is_read && (
+                    {!notification.isRead && (
                       <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-barter-600 rounded-full" />
                     )}
                   </motion.div>

@@ -32,9 +32,6 @@ section instead of guessing at product intent.
   (linked above) is the source of truth for what's actually shipped vs.
   pending — don't infer shipped status from this file.
 - Phase 1 design (Claude Design mockups) is approved for all screens.
-  Two minor polish items are flagged for the QA pass, not yet fixed:
-  a toast overlapping a button on My Stuff, and a notification
-  timestamp sort bug.
 - Required local `.env` variables: see `.env.example` in the repo root
   for names (never commit actual values)
 - Backend also includes Supabase Edge Functions in `supabase/functions/`:
@@ -43,15 +40,6 @@ section instead of guessing at product intent.
   `places-autocomplete` (LocationIQ proxies for location display and
   manual-entry autocomplete). An earlier `admin-listings` function was
   confirmed dead (never actually deployed) and removed.
-
-## Known issues to keep in mind while coding
-
-- Two orphan database tables with no codebase references, both explicitly
-  out of scope per PRD §6, candidates for removal: `system_item_interests`,
-  `profile_views`. (`issues` was repurposed for in-app issue reporting and
-  is fully wired up — `Header.tsx`, `IssueReportDialog.tsx`,
-  `issuesService.ts`, `AdminDashboard.tsx` — no longer an orphan.)
-- Dead `TradeOfferSelectionModal` component — unused
 
 ## What NOT to assume
 

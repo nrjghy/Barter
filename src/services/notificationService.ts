@@ -6,7 +6,7 @@ import { ValidationService } from "./validation";
 export interface NotificationWithDetails {
   id: string;
   userId: string;
-  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "trade_dispute" | "listing_expiry_reminder";
+  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
   title: string;
   content: string;
   data?: Record<string, unknown>;
@@ -18,7 +18,7 @@ export interface NotificationWithDetails {
 
 export interface CreateNotificationData {
   userId: string;
-  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "trade_dispute" | "listing_expiry_reminder";
+  type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
   title: string;
   content: string;
   data?: Record<string, unknown>;

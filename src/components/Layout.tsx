@@ -23,7 +23,7 @@ export const Layout: React.FC = () => {
 
       <Toaster
         position="top-center"
-        containerStyle={{ top: 80 }}
+        containerStyle={{ top: 140 }}
         toastOptions={{
           duration: 3000,
           style: {
