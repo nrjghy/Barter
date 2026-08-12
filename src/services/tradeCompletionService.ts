@@ -20,6 +20,11 @@ export interface ApproveGiveawayResult {
   supersededCount: number;
 }
 
+export interface ClaimGiveawayResult {
+  tradeCompletionId: string;
+  status: string;
+}
+
 export interface TradeCompletionDisputeInfo {
   completedBy: string;
   disputeDeadline: string;
@@ -199,6 +204,67 @@ export class TradeCompletionService {
           status: result.status,
           disputeDeadline: result.disputeDeadline,
           supersededCount: result.supersededCount,
+        },
+      };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Claims a giveaway item on behalf of the recipient via
+   * claim_giveaway_completion. Doesn't finalize anything -- the item stays
+   * active and visible until the lister approves (see
+   * approveGiveawayCompletion). Requires the connection to already have a
+   * registered interest in this item (created by create_giveaway_connection
+   * when the like was recorded) -- the RPC re-validates that server-side.
+   */
+  static async claimGiveawayCompletion(
+    recipientUserId: string,
+    connectionId: string,
+    itemId: string
+  ): Promise<ServiceResult<ClaimGiveawayResult>> {
+    try {
+      const connectionIdError = ValidationService.validateUUID(connectionId);
+      if (connectionIdError) return { error: connectionIdError };
+      const itemIdError = ValidationService.validateUUID(itemId);
+      if (itemIdError) return { error: itemIdError };
+
+      const { data: result, error } = await supabase.rpc("claim_giveaway_completion", {
+        recipient_user_id: recipientUserId,
+        for_connection_id: connectionId,
+        for_item_id: itemId,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to claim giveaway",
+            details: error,
+          },
+        };
+      }
+
+      if (result?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return {
+        data: {
+          tradeCompletionId: result.tradeCompletionId,
+          status: result.status,
         },
       };
     } catch (error) {

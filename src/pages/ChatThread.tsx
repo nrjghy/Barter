@@ -189,6 +189,9 @@ export const ChatThread: React.FC = () => {
   const [disputeSubmitting, setDisputeSubmitting] = useState(false);
   const [approveTradeCompletionId, setApproveTradeCompletionId] = useState<string | null>(null);
   const [approveSubmitting, setApproveSubmitting] = useState(false);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [selectedClaimItemId, setSelectedClaimItemId] = useState<string | null>(null);
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
@@ -367,6 +370,37 @@ export const ChatThread: React.FC = () => {
     if (connectionId) navigate(`/chat/${connectionId}/trade-complete`);
   };
 
+  const handleOpenClaimModal = () => {
+    setMenuOpen(false);
+    setSelectedClaimItemId(eligibleGiveawayItems.length === 1 ? eligibleGiveawayItems[0].id : null);
+    setClaimModalOpen(true);
+  };
+
+  const handleConfirmClaim = async () => {
+    if (!selectedClaimItemId || !connectionId || !user) return;
+    setClaimSubmitting(true);
+    try {
+      const { error } = await TradeCompletionService.claimGiveawayCompletion(
+        user.id,
+        connectionId,
+        selectedClaimItemId
+      );
+      if (error) {
+        toast.error(error.message || "Couldn't claim this item. Please try again.");
+        return;
+      }
+      toast.success("Claimed! Waiting for the lister to approve.");
+      setClaimModalOpen(false);
+      setSelectedClaimItemId(null);
+      if (connectionId) queryClient.invalidateQueries({ queryKey: ["messages", connectionId] });
+      queryClient.invalidateQueries({ queryKey: ["tradeCompletionsByIds"] });
+    } catch {
+      toast.error("Couldn't claim this item. Please try again.");
+    } finally {
+      setClaimSubmitting(false);
+    }
+  };
+
   const itemLabel = connection
     ? Array.from(
         new Set(
@@ -378,6 +412,20 @@ export const ChatThread: React.FC = () => {
         )
       ).join(" · ")
     : "";
+
+  // A giveaway item only ever shows as theirItem from the non-owner's
+  // perspective (see connectionService.ts's mine/theirs fix) -- so this
+  // filter alone is sufficient to mean "I'm the recipient, not the lister."
+  const eligibleGiveawayItems = connection
+    ? Array.from(
+        new Map(
+          connection.itemInterests
+            .map((i) => i.theirItem)
+            .filter((item): item is NonNullable<typeof item> => !!item && item.listingType === "giveaway")
+            .map((item) => [item.id, item])
+        ).values()
+      )
+    : [];
 
   // Messages come back newest-first from getConnectionMessages; the
   // thread reads top-to-bottom oldest-first.
@@ -405,6 +453,14 @@ export const ChatThread: React.FC = () => {
                   >
                     Mark trade complete
                   </button>
+                  {eligibleGiveawayItems.length > 0 && (
+                    <button
+                      onClick={handleOpenClaimModal}
+                      className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700 border-b border-[oklch(88%_0.015_90)]"
+                    >
+                      Claim giveaway
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setMenuOpen(false);
@@ -637,6 +693,51 @@ export const ChatThread: React.FC = () => {
             <button
               onClick={() => setApproveTradeCompletionId(null)}
               disabled={approveSubmitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {claimModalOpen && (
+        <div className="fixed inset-0 z-30 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
+            onClick={() => !claimSubmitting && setClaimModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Claim this giveaway?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] mb-4">
+              The lister will need to approve your claim before it's final.
+            </div>
+            {eligibleGiveawayItems.length > 1 && (
+              <div className="space-y-2 mb-4">
+                {eligibleGiveawayItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setSelectedClaimItemId(item.id)}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl border text-[13px] font-semibold ${
+                      selectedClaimItemId === item.id
+                        ? "border-barter-600 bg-barter-50 text-barter-800"
+                        : "border-[oklch(88%_0.015_90)] text-[oklch(22%_0.02_100)]"
+                    }`}
+                  >
+                    {item.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              onClick={handleConfirmClaim}
+              disabled={claimSubmitting || !selectedClaimItemId}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-50"
+            >
+              {claimSubmitting ? "Claiming…" : "Claim giveaway"}
+            </button>
+            <button
+              onClick={() => setClaimModalOpen(false)}
+              disabled={claimSubmitting}
               className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
             >
               Cancel
