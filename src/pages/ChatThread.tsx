@@ -15,6 +15,7 @@ import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { InfoTooltip } from "../components/InfoTooltip";
+import { LocationSharePicker } from "../components/LocationSharePicker";
 import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
 
@@ -106,6 +107,7 @@ const MessageBubble: React.FC<{
   if (message.messageType === "location") {
     const lat = (message.data as { lat?: number })?.lat;
     const lng = (message.data as { lng?: number })?.lng;
+    const label = (message.data as { label?: string })?.label;
     const hasCoords = lat != null && lng != null;
 
     const inner = (
@@ -121,7 +123,7 @@ const MessageBubble: React.FC<{
             </div>
             {hasCoords && (
               <div className={`text-[11px] truncate ${isMine ? "text-[oklch(90%_0.02_145)]" : "text-[oklch(45%_0.02_95)]"}`}>
-                {lat!.toFixed(4)}, {lng!.toFixed(4)} · Tap to open in Maps
+                {label ? label : `${lat!.toFixed(4)}, ${lng!.toFixed(4)}`} · Tap to open in Maps
               </div>
             )}
           </div>
@@ -179,6 +181,7 @@ export const ChatThread: React.FC = () => {
   const [draft, setDraft] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
   const [locationSharing, setLocationSharing] = useState(false);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const [blockSubmitting, setBlockSubmitting] = useState(false);
@@ -290,6 +293,7 @@ export const ChatThread: React.FC = () => {
 
   const handleShareLocation = () => {
     if (!connectionId) return;
+    setLocationPickerOpen(false);
 
     if (!("geolocation" in navigator)) {
       toast.error("Location sharing isn't supported on this device.");
@@ -319,6 +323,19 @@ export const ChatThread: React.FC = () => {
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
     );
+  };
+
+  const handleSelectSearchedPlace = (place: { lat: number; lng: number; label: string }) => {
+    if (!connectionId) return;
+    setLocationPickerOpen(false);
+    sendMessage({
+      messageData: {
+        connectionId,
+        content: "",
+        messageType: "location",
+        data: { lat: place.lat, lng: place.lng, label: place.label },
+      },
+    });
   };
 
   const otherUserId = connection?.otherUser.id;
@@ -553,9 +570,9 @@ export const ChatThread: React.FC = () => {
           )}
         </button>
         <button
-          onClick={handleShareLocation}
+          onClick={() => setLocationPickerOpen(true)}
           disabled={locationSharing}
-          title="Share your location"
+          title="Share a location"
           className="w-8 h-8 rounded-full flex items-center justify-center text-[oklch(45%_0.02_95)] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40 flex-shrink-0"
         >
           {locationSharing ? (
@@ -770,6 +787,14 @@ export const ChatThread: React.FC = () => {
           </div>
         </div>
       )}
+
+      <LocationSharePicker
+        isOpen={locationPickerOpen}
+        onClose={() => setLocationPickerOpen(false)}
+        onShareCurrent={handleShareLocation}
+        currentLocationSharing={locationSharing}
+        onSelectPlace={handleSelectSearchedPlace}
+      />
     </div>
   );
 };
