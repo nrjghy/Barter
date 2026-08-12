@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { MoreVertical, Package } from "lucide-react";
 import { useItems } from "../hooks/useItems";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { InfoTooltip } from "../components/InfoTooltip";
 import { shareItem } from "../utils/share";
 import type { ItemData } from "../services/types";
 
@@ -88,26 +89,38 @@ const ListingRow: React.FC<{
                 >
                   Edit
                 </button>
+                <div className="flex items-center justify-between px-3.5 py-2.5">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onCancel();
+                    }}
+                    className="flex-1 text-left text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+                  >
+                    Cancel listing
+                  </button>
+                  <InfoTooltip
+                    text="Removes this listing from Discover. This can't be undone, you'd need to create a new listing to relist it."
+                    label="Cancel listing"
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-between px-3.5 py-2.5">
                 <button
                   onClick={() => {
                     setMenuOpen(false);
-                    onCancel();
+                    onRelist();
                   }}
-                  className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+                  className="flex-1 text-left text-[13px] font-bold text-barter-700"
                 >
-                  Cancel listing
+                  Relist
                 </button>
-              </>
-            ) : (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  onRelist();
-                }}
-                className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700"
-              >
-                Relist
-              </button>
+                <InfoTooltip
+                  text="Creates a new listing pre-filled with this item's details. The original stays as-is."
+                  label="Relist"
+                />
+              </div>
             )}
           </div>
         </>

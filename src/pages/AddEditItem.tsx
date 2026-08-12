@@ -5,6 +5,7 @@ import { useItems } from "../hooks/useItems";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
+import { InfoTooltip } from "../components/InfoTooltip";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
@@ -350,28 +351,44 @@ export const AddEditItem: React.FC = () => {
               </>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setListingType("trade")}
-                  className={`px-3 py-2 rounded-lg border font-medium transition-colors ${
-                    listingType === "trade"
-                      ? "bg-barter-600 text-white border-barter-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  Trade
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setListingType("giveaway")}
-                  className={`px-3 py-2 rounded-lg border font-medium transition-colors ${
-                    listingType === "giveaway"
-                      ? "bg-barter-600 text-white border-barter-600"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  Giveaway
-                </button>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setListingType("trade")}
+                    className={`w-full px-3 py-2 rounded-lg border font-medium transition-colors ${
+                      listingType === "trade"
+                        ? "bg-barter-600 text-white border-barter-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Trade
+                  </button>
+                  <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full">
+                    <InfoTooltip
+                      text="You'll exchange this item for something else the other person offers."
+                      label="Trade"
+                    />
+                  </div>
+                </div>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setListingType("giveaway")}
+                    className={`w-full px-3 py-2 rounded-lg border font-medium transition-colors ${
+                      listingType === "giveaway"
+                        ? "bg-barter-600 text-white border-barter-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    Giveaway
+                  </button>
+                  <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full">
+                    <InfoTooltip
+                      text="You're giving this item away for free, no exchange expected."
+                      label="Giveaway"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>

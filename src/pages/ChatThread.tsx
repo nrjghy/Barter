@@ -14,6 +14,7 @@ import { storageService } from "../services/storageService";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
+import { InfoTooltip } from "../components/InfoTooltip";
 import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
 
@@ -447,38 +448,62 @@ export const ChatThread: React.FC = () => {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div className="absolute top-full right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-[oklch(88%_0.015_90)] overflow-hidden z-20">
-                  <button
-                    onClick={handleOpenTradeComplete}
-                    className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700 border-b border-[oklch(88%_0.015_90)]"
-                  >
-                    Mark trade complete
-                  </button>
-                  {eligibleGiveawayItems.length > 0 && (
+                  <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
                     <button
-                      onClick={handleOpenClaimModal}
-                      className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700 border-b border-[oklch(88%_0.015_90)]"
+                      onClick={handleOpenTradeComplete}
+                      className="flex-1 text-left text-[13px] font-bold text-barter-700"
                     >
-                      Claim giveaway
+                      Mark trade complete
                     </button>
+                    <InfoTooltip
+                      text="Record that you've exchanged items in person. The other person gets 7 days to dispute it before it's final."
+                      label="Mark trade complete"
+                    />
+                  </div>
+                  {eligibleGiveawayItems.length > 0 && (
+                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
+                      <button
+                        onClick={handleOpenClaimModal}
+                        className="flex-1 text-left text-[13px] font-bold text-barter-700"
+                      >
+                        Claim giveaway
+                      </button>
+                      <InfoTooltip
+                        text="Let the lister know you'd like this item. They'll need to approve your claim before it's yours."
+                        label="Claim giveaway"
+                      />
+                    </div>
                   )}
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setBlockConfirmOpen(true);
-                    }}
-                    className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)] border-b border-[oklch(88%_0.015_90)]"
-                  >
-                    Block {otherUsername}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setReportOpen(true);
-                    }}
-                    className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
-                  >
-                    Report
-                  </button>
+                  <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setBlockConfirmOpen(true);
+                      }}
+                      className="flex-1 text-left text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+                    >
+                      Block {otherUsername}
+                    </button>
+                    <InfoTooltip
+                      text="Stops this person from messaging you or seeing your listings, and removes their listings from your feed."
+                      label="Block"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between px-3.5 py-2.5">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setReportOpen(true);
+                      }}
+                      className="flex-1 text-left text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+                    >
+                      Report
+                    </button>
+                    <InfoTooltip
+                      text="Flag this person or their listing for a moderator to review."
+                      label="Report"
+                    />
+                  </div>
                 </div>
               </>
             )}

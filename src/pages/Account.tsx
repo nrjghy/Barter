@@ -43,7 +43,7 @@ export const Account: React.FC = () => {
         <div className="p-4 rounded-2xl bg-[oklch(97%_0.02_30)] border border-[oklch(90%_0.05_30)]">
           <div className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)] mb-1">Delete account</div>
           <div className="text-[12.5px] text-[oklch(45%_0.02_95)] leading-relaxed mb-3">
-            Permanently deletes your profile, listings, and messages. This can't be undone.
+            Permanently removes your account. Your past messages and trade history stay visible to others you traded with, but your profile is anonymized.
           </div>
           <button
             onClick={() => setConfirmOpen(true)}
