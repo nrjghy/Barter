@@ -25,7 +25,7 @@ The current codebase does not include an active scraper. Items do support a
 - Backend: Supabase project "Barter2" (Auth, Postgres, Storage, Edge Functions)
 - Service layer: stateless TypeScript services in `src/services` with validation, typed results, and consistent error handling
 - Auth state: centralized `AuthContext`, backfilled shortly after initial paint from the live `users` row (role, username, avatar, location) rather than only trusting signup-time JWT metadata
-- Connection model: a match is a user-to-user `connections` row, not an item pairing — `connection_item_interests` tracks which item pair(s) sparked it. RPCs (`record_response_optimized`, `check_and_create_match`, `complete_trade`) handle the flows that need to write across both participants' rows, since RLS scopes updates to each user's own data
+- Connection model: a match is a user-to-user `connections` row, not an item pairing — `connection_item_interests` tracks which item pair(s) sparked it; for a giveaway interest `item_id_1` is null (the recipient has no reciprocal item). RPCs (`record_response_optimized`, `check_and_create_match`, `complete_trade`, `create_giveaway_connection`, `claim_giveaway_completion`, `approve_giveaway_completion`) handle the flows that need to write across both participants' rows, since RLS scopes updates to each user's own data
 - Storage: Supabase Storage for multi-image uploads; bucket from `VITE_SUPABASE_STORAGE_BUCKET` (defaults to `barter_user_item_media`)
 - Analytics/monitoring: PostHog (product analytics, session recording) and Sentry (frontend errors/performance) — both no-op gracefully until real keys are configured
 - Email: Resend, triggered by a Supabase Database Webhook on `notifications` inserts, via the `send-notification-email` Edge Function
@@ -49,9 +49,9 @@ supabase/
 
 ### Data model highlights
 
-- Items include: `image_urls` (TEXT[]), `source_url`, `status` (`active` / `cancelled` / `traded` / `expired`, kept in sync with the legacy `is_active` flag), `estimated_value`, `value_currency`, timestamps, and `user_id`
+- Items include: `image_urls` (TEXT[]), `source_url`, `status` (`active` / `cancelled` / `traded` / `expired`, kept in sync with the legacy `is_active` flag), `listing_type` (`trade` / `giveaway`, set at creation and not editable afterward — see Pages below), `estimated_value` (always 0 for giveaways, exempt from `get_items_browse`'s min/max value filters), `value_currency`, timestamps, and `user_id`
 - `connections` (`user_id_1` < `user_id_2` by constraint, `status`: `active` / `ended`), `connection_item_interests`, `connection_reads` (drives the Chat list's "New" marker) replace the old `matches`/`swipes` tables, which no longer exist in the live database
-- `trade_completions` / `trade_completion_items` capture what was actually exchanged when a trade is marked complete, including the 7-day dispute window (`disputed_at`, `dispute_deadline`)
+- `trade_completions` / `trade_completion_items` capture what was actually exchanged when a trade is marked complete, including the 7-day dispute window (`disputed_at`, `dispute_deadline`). `status` (`completed` / `pending_approval` / `approved` / `superseded`) plus `approved_at`/`approved_by` support the giveaway two-step completion model — a regular trade goes straight to `completed`; a giveaway claim starts `pending_approval` and only becomes `approved` (with `dispute_deadline` reset to start from that moment, not the claim) once the lister approves. A `pending_approval` claim beaten by another approved claim on the same item becomes `superseded`, with its own notification wording distinct from the generic "item unavailable" case.
 - `messages.message_type`: `text` / `photo` / `location` / `system` — `system` is reserved for server-inserted messages (e.g. the Mark Trade Complete confirmation)
 - `issues` (in-app bug/issue reports, separate from item/user reports), `app_settings` (tunable config, e.g. the daily like limit), `login_history` (data capture only — no user-facing screen yet, per Phase 1 scope)
 
@@ -66,12 +66,12 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 
 ### Pages
 
-- `Dashboard.tsx`: Discover — the browse/response experience, with the full filter set (category, condition, radius, value range, listing age, rating) wired to `get_items_browse`
-- `MyStuff.tsx`: the user's listings hub — add-listing entry point, All/Active filter, status badges, share, cancel
-- `AddToy.tsx`: create/edit items with validation and multi-image upload
-- `ItemDetail.tsx`: item details, images, share, and the "Original Listing" link (from `sourceUrl`) when present
+- `Discover.tsx`: the browse/response experience, with the full filter set (category, condition, radius, value range, listing age, rating) wired to `get_items_browse`; giveaway items show a badge and are exempt from the value filters
+- `MyStuff.tsx`: the user's listings hub — add-listing entry point, All/Active filter, status badges, share, cancel, and Relist (Cancelled/Traded/Expired rows only — creates a new listing pre-filled from the old one via `location.state`, original row untouched)
+- `AddEditItem.tsx`: create/edit items with validation and multi-image upload; a listing-type toggle (Trade/Giveaway) is interactive on create and read-only on edit (`listing_type` is immutable after creation — see Data model above), with Estimated Value hidden entirely for giveaways
+- `ItemDetail.tsx`: item details, images, share, a giveaway badge, and the "Original Listing" link (from `sourceUrl`) when present
 - `Chat.tsx`: connection list — item-context line, last-message preview, "New" marker for unopened connections
-- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete entry point, Block, Report)
+- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete, Claim giveaway — shown when the connection has an unclaimed giveaway item, Block, Report). The recipient's claim posts a system message with an Approve action for the lister, reusing the same tradeCompletionId-keyed pattern already used for trade disputes
 - `MarkTradeComplete.tsx`: select which items on each side were exchanged and confirm, via the `complete_trade` RPC
 - `ReviewWrite.tsx`: post-trade review screen at `/trade-completion/:tradeCompletionId/review`, surfaced by the review-reminder notification after the dispute window closes
 - `Profile.tsx`: stats (items, trades completed, average rating), reviews received, settings menu
@@ -83,11 +83,10 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 ### Components (selected)
 
 - Layout/nav: `Layout`, `Header`, `BackBar`, `BottomNavigation`, `LoadingSpinner`, `StatsCard`
-- Items/response: `EnhancedItemCard`, `ItemCard`, `SwipeCard`, `SwipeInterface`, `SwipeControls`, `SwipeCounter`, `ItemStatus`, `CategoryFilter`
+- Items/response: `SwipeCard`, `SwipeInterface`, `SwipeControls`, `SwipeCounter`, `ItemStatus`, `CategoryFilter`
   (these gesture-layer names — `SwipeCard`/`SwipeInterface`/`SwipeControls`/`SwipeCounter`, and the `onSwipe` prop — are intentionally unchanged; only the data layer was renamed swipe→response)
 - Dialogs: `IssueReportDialog` (wired up, reachable from `Header`'s help icon), `NotificationCenter`
 - Auth: `OAuthProviderButton` (Google, Facebook, Apple)
-- Dead code, not wired up anywhere: `TradeOfferSelectionModal`, `ReviewDialog`
 
 ### Context
 
@@ -99,21 +98,19 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 - `useResponses.ts`: records likes/passes via `ResponseService`, tracks the daily like limit and responded items, and supports a real server-side undo
 - `useConnections.ts`: wraps `ConnectionService` for the Chat list and thread
 - `useTradeCompletions.ts`, `useMessages.ts`, `useNotifications.ts`, `useReports.ts`, `useReviews.ts`, `useUserBlocks.ts`: feature-specific data hooks backed by services
-- `useMatches.ts`: dead code — no remaining callers; the old `matches` table it queries no longer exists in the live database
 
 ### Services
 
 - `config.ts`, `types.ts`, `validation.ts`: shared business rules, types (`ServiceResult<T>`, etc.), and input validation
 - `itemService.ts`: item CRUD, filtering (via `get_items_browse`), pagination, cancel
-- `responseService.ts`: records likes/passes via `record_response_optimized` (background match check via `check_and_create_match`), plus server-side undo
-- `connectionService.ts`: connection list/detail/read-state, replaces `matchService.ts` for the connection model
+- `responseService.ts`: records likes/passes via `record_response_optimized`, which branches into a background match check (`check_and_create_match`) or, for a giveaway item, a background connection creation (`create_giveaway_connection`) — the frontend just checks which flag came back, `matchCheckNeeded` or `giveawayConnectionNeeded`. Plus server-side undo
+- `connectionService.ts`: connection list/detail/read-state for the connection model. For a giveaway interest (`item_id_1` null), the usual mine/theirs ownership matching can't apply — there's a dedicated branch so the item still surfaces correctly in the recipient's Chat list and thread header
 - `messageService.ts`: text/photo/location/system messages, polling-based
-- `tradeCompletionService.ts`: wraps `complete_trade`
+- `tradeCompletionService.ts`: wraps `complete_trade`, plus the giveaway completion pair `claimGiveawayCompletion`/`approveGiveawayCompletion` (`claim_giveaway_completion`/`approve_giveaway_completion`)
 - `reviewService.ts`: reviews keyed to `trade_completion_id`
 - `accountService.ts`: wraps `delete_own_account`
 - `issuesService.ts`: in-app issue/bug reports
 - `notificationService.ts`, `reportService.ts`, `userService.ts`, `storageService.ts`: notifications, item/user reports, user profile, and multi-image/message-image upload to Supabase Storage
-- `matchService.ts`: dead code, superseded by `connectionService.ts`
 
 ## Authentication System
 
@@ -167,7 +164,9 @@ scope. What's left:
 
 Everything else — the connection model, Chat, Mark Trade Complete, account
 deletion, in-app issue reporting, the admin console tabs, the daily like
-limit, filters, the visual reskin, PostHog/Sentry analytics, and Google OAuth
-— is built, configured, and verified against the live Barter2 database. Two
-known Phase 1 design polish items from QA are still open (a toast overlapping
-a button on My Stuff, a notification timestamp sort bug) — see `CLAUDE.md`.
+limit, filters, the visual reskin, PostHog/Sentry analytics, Google OAuth,
+and giveaway listings (backend RPCs, the listing-type toggle, badges, the
+claim/approve flow, and Relist) — is built, configured, and verified against
+the live Barter2 database. Two known Phase 1 design polish items from QA are
+still open (a toast overlapping a button on My Stuff, a notification
+timestamp sort bug) — see `CLAUDE.md`.
