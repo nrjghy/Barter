@@ -4,8 +4,8 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
-import { Dashboard } from "./pages/Dashboard";
-import { AddToy } from "./pages/AddToy";
+import { Discover } from "./pages/Discover";
+import { AddEditItem } from "./pages/AddEditItem";
 import { Profile } from "./pages/Profile";
 import { Chat } from "./pages/Chat";
 import { ChatThread } from "./pages/ChatThread";
@@ -55,7 +55,7 @@ const AppContent: React.FC = () => {
             index
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Discover />
               </ProtectedRoute>
             }
           />
@@ -71,7 +71,7 @@ const AppContent: React.FC = () => {
             path="/add"
             element={
               <ProtectedRoute>
-                <AddToy />
+                <AddEditItem />
               </ProtectedRoute>
             }
           />
@@ -79,7 +79,7 @@ const AppContent: React.FC = () => {
             path="/edit/:itemId"
             element={
               <ProtectedRoute>
-                <AddToy />
+                <AddEditItem />
               </ProtectedRoute>
             }
           />

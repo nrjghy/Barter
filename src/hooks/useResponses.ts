@@ -83,7 +83,7 @@ export const useResponses = () => {
     },
     onError: (error, variables) => {
       // On error, we might need to revert optimistic updates
-      // This is handled in the Dashboard component now
+      // This is handled in the Discover component now
       console.error("Response recording failed:", error);
     },
   });

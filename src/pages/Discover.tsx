@@ -13,7 +13,7 @@ import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { ERROR_CODES, ERROR_MESSAGES } from "../services/config";
 
-export const Dashboard: React.FC = () => {
+export const Discover: React.FC = () => {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());

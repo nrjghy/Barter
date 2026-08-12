@@ -15,7 +15,7 @@ import { trackEvent } from "../lib/analytics";
 type RequiredField = "photos" | "title" | "category" | "condition";
 const REQUIRED_FIELD_ORDER: RequiredField[] = ["photos", "title", "category", "condition"];
 
-export const AddToy: React.FC = () => {
+export const AddEditItem: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
   const location = useLocation();

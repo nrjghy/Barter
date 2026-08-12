@@ -132,7 +132,7 @@ export const ItemDetail: React.FC = () => {
     if (direction === "like") {
       toast.success("Liked! 💖");
       // PRD §17 core conversion funnel, step 3: Like -- same event name as
-      // Dashboard's handleSwipe, since a like from either entry point should
+      // Discover's handleSwipe, since a like from either entry point should
       // roll into the same funnel metric.
       trackEvent("item_liked", { itemId: item.id });
     } else {

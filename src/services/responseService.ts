@@ -80,7 +80,7 @@ export class ResponseService {
   }
 
   /**
-   * Undo a previously-recorded like/pass (Dashboard's Undo button). This is a
+   * Undo a previously-recorded like/pass (Discover's Undo button). This is a
    * real server-side reversal via the undo_response RPC -- it was previously
    * client-state-only, meaning the original response was never actually
    * removed and the daily like counter was never given back. Refuses (rather

@@ -4,7 +4,6 @@ export * from "./config";
 export * from "./validation";
 export * from "./responseService";
 export * from "./itemService";
-export * from "./matchService";
 export * from "./connectionService";
 export * from "./userService";
 export * from "./reviewService";
@@ -21,7 +20,6 @@ export { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./con
 export { ValidationService } from "./validation";
 export { ResponseService } from "./responseService";
 export { ItemService } from "./itemService";
-export { MatchService } from "./matchService";
 export { ConnectionService } from "./connectionService";
 export { UserService } from "./userService";
 export { ReviewService } from "./reviewService";
