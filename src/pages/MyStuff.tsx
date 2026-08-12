@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MoreVertical, ChevronRight, Package } from "lucide-react";
+import { MoreVertical, Package } from "lucide-react";
 import { useItems } from "../hooks/useItems";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { shareItem } from "../utils/share";
@@ -20,8 +20,9 @@ const ListingRow: React.FC<{
   onOpenDetail: () => void;
   onEdit: () => void;
   onCancel: () => void;
+  onRelist: () => void;
   highlighted?: boolean;
-}> = ({ item, onOpenDetail, onEdit, onCancel, highlighted }) => {
+}> = ({ item, onOpenDetail, onEdit, onCancel, onRelist, highlighted }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const status = (item.status ?? "active") as ItemStatus;
   const meta = STATUS_META[status];
@@ -62,15 +63,9 @@ const ListingRow: React.FC<{
         </svg>
       </button>
 
-      {status === "active" ? (
-        <button onClick={() => setMenuOpen((v) => !v)} className="w-7 h-7 flex items-center justify-center text-[oklch(45%_0.02_95)] flex-shrink-0">
-          <MoreVertical className="w-4 h-4" />
-        </button>
-      ) : (
-        <button onClick={onOpenDetail} className="text-[oklch(60%_0.02_90)] flex-shrink-0">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      )}
+      <button onClick={() => setMenuOpen((v) => !v)} className="w-7 h-7 flex items-center justify-center text-[oklch(45%_0.02_95)] flex-shrink-0">
+        <MoreVertical className="w-4 h-4" />
+      </button>
 
       {menuOpen && (
         <>
@@ -82,24 +77,38 @@ const ListingRow: React.FC<{
             >
               View details
             </button>
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                onEdit();
-              }}
-              className="w-full text-left px-3.5 py-2.5 text-[13px] font-semibold text-[oklch(22%_0.02_100)] border-b border-[oklch(88%_0.015_90)]"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                onCancel();
-              }}
-              className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
-            >
-              Cancel listing
-            </button>
+            {status === "active" ? (
+              <>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEdit();
+                  }}
+                  className="w-full text-left px-3.5 py-2.5 text-[13px] font-semibold text-[oklch(22%_0.02_100)] border-b border-[oklch(88%_0.015_90)]"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onCancel();
+                  }}
+                  className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-[oklch(50%_0.15_30)]"
+                >
+                  Cancel listing
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onRelist();
+                }}
+                className="w-full text-left px-3.5 py-2.5 text-[13px] font-bold text-barter-700"
+              >
+                Relist
+              </button>
+            )}
           </div>
         </>
       )}
@@ -185,6 +194,7 @@ export const MyStuff: React.FC = () => {
             onOpenDetail={() => navigate(`/item/${item.id}`)}
             onEdit={() => navigate(`/edit/${item.id}`)}
             onCancel={() => setConfirmingItem(item)}
+            onRelist={() => navigate("/add", { state: { relistFrom: item } })}
             highlighted={item.id === highlightItemId}
           />
         ))}

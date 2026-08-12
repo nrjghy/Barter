@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Camera } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -18,6 +18,8 @@ const REQUIRED_FIELD_ORDER: RequiredField[] = ["photos", "title", "category", "c
 export const AddToy: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
+  const location = useLocation();
+  const relistFrom = (location.state as { relistFrom?: ItemData } | null)?.relistFrom;
 
   // PRD §17 item-listing funnel, step 1: Add-listing form opened. Create
   // mode only -- this funnel is specifically about publishing a new listing,
@@ -107,6 +109,31 @@ export const AddToy: React.FC = () => {
     setSourceUrl(existingItem.sourceUrl ?? "");
     setPrefilled(true);
   }, [isEditMode, existingItem, prefilled]);
+
+  // Relist (PRD §4): MyStuff navigates here with relistFrom in location.state
+  // for a Cancelled/Traded/Expired item. This pre-fills a brand-new listing --
+  // the original item is never touched, and unlike edit mode, listingType
+  // stays freely editable here (a relisted item has zero existing
+  // connections yet, so there's no correctness risk in changing it).
+  useEffect(() => {
+    if (isEditMode || !relistFrom || prefilled) return;
+
+    setTitle(relistFrom.title ?? "");
+    setDescription(relistFrom.description ?? "");
+    setCategory(relistFrom.category ?? "");
+    setCategorySuggestion(relistFrom.categorySuggestion ?? "");
+    setCondition(relistFrom.condition ?? "");
+    setListingType(relistFrom.listingType ?? "trade");
+    setExistingImageUrls(relistFrom.imageUrls ?? []);
+    setEstimatedValue(
+      relistFrom.estimatedValue === null || relistFrom.estimatedValue === undefined
+        ? ""
+        : String(relistFrom.estimatedValue)
+    );
+    setSourceUrl(relistFrom.sourceUrl ?? "");
+    setPrefilled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, relistFrom, prefilled]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);

@@ -301,27 +301,39 @@ export class ItemService {
         return { error: { message: error.message, code: error.code } };
       }
 
-      // If there are images to upload, handle them now
+      // If there are images to upload, handle them now. itemData.imageUrls may
+      // be a mix of already-uploaded storage URLs (carried over via Relist --
+      // see MyStuff.tsx) and fresh base64 previews. Only the base64 portion
+      // needs uploading; already-real URLs pass through unchanged. Mirrors the
+      // identical distinction updateItem already makes -- before Relist
+      // existed, create-mode images were always 100% fresh base64, so this
+      // split was never needed here until now.
       if (itemData.imageUrls && itemData.imageUrls.length > 0) {
-        try {
-          // Convert base64 previews back to files for upload
-          const imageFiles = await ItemService.convertBase64ToFiles(itemData.imageUrls);
+        const alreadyUploadedUrls = itemData.imageUrls.filter((url) => !url.startsWith("data:"));
+        const newBase64Images = itemData.imageUrls.filter((url) => url.startsWith("data:"));
 
-          // Upload images to storage
-          const uploadedUrls = await storageService.uploadImages(imageFiles, userId, data.id);
-
-          // Update the item with the uploaded image URLs
-          const { error: updateError } = await supabase
-            .from(TABLES.ITEMS)
-            .update({ image_urls: uploadedUrls })
-            .eq("id", data.id);
-
-          if (updateError) {
-            console.error("Failed to update item with image URLs:", updateError);
-            // Continue anyway, item was created successfully
+        let finalImageUrls = alreadyUploadedUrls;
+        if (newBase64Images.length > 0) {
+          try {
+            const imageFiles = await ItemService.convertBase64ToFiles(newBase64Images);
+            const uploadedUrls = await storageService.uploadImages(imageFiles, userId, data.id);
+            finalImageUrls = [...alreadyUploadedUrls, ...uploadedUrls];
+          } catch (uploadError) {
+            console.error("Image upload failed:", uploadError);
+            // Keep whatever was already real rather than losing everything --
+            // previously a failed upload wiped the entire batch, including
+            // URLs that never needed uploading in the first place.
+            finalImageUrls = alreadyUploadedUrls;
           }
-        } catch (uploadError) {
-          console.error("Image upload failed:", uploadError);
+        }
+
+        const { error: updateError } = await supabase
+          .from(TABLES.ITEMS)
+          .update({ image_urls: finalImageUrls })
+          .eq("id", data.id);
+
+        if (updateError) {
+          console.error("Failed to update item with image URLs:", updateError);
           // Continue anyway, item was created successfully
         }
       }
