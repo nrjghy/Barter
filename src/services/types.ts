@@ -62,6 +62,7 @@ export interface UserData {
   role: string;
   rating?: number;
   totalRatings?: number;
+  createdAt?: string;
 }
 
 export interface ReviewData {

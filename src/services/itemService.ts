@@ -194,7 +194,8 @@ export class ItemService {
             username,
             location,
             avatar_url,
-            rating
+            rating,
+            created_at
           )
         `
         )
@@ -247,6 +248,7 @@ export class ItemService {
           role: "", // Not included in select
           rating: data.users.rating,
           totalRatings: 0, // Not included in select
+          createdAt: data.users.created_at,
         },
       };
 

@@ -19,7 +19,6 @@ import {
   ExternalLink,
   AlertCircle,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { useResponses } from "../hooks/useResponses";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -63,54 +62,15 @@ export const ItemDetail: React.FC = () => {
     setError(null);
 
     try {
-      const { data, error } = await supabase
-        .from("items")
-        .select(
-          `
-          *,
-          users!inner (
-            id,
-            username,
-            location,
-            avatar_url,
-            rating,
-            created_at
-          )
-        `
-        )
-        .eq("id", id)
-        .eq("is_active", true)
-        .single();
+      const result = await ItemService.getItem(id);
 
-      if (error) throw error;
+      if (result.error || !result.data) {
+        throw new Error(result.error?.message || "Item not found");
+      }
 
-      // Transform the data to match ItemWithUser interface
-      const transformedItem: ItemWithUser = {
-        ...data,
-        imageUrls: data.image_urls || [],
-        userId: data.user_id,
-        isActive: data.is_active,
-        estimatedValue: data.estimated_value,
-        valueCurrency: data.value_currency,
-        sourceUrl: data.source_url,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        inactivityReminderSentAt: data.inactivity_reminder_sent_at,
-        user: {
-          id: data.users.id,
-          username: data.users.username,
-          email: "", // Not provided in the query
-          location: data.users.location,
-          avatarUrl: data.users.avatar_url,
-          role: "user", // Default role
-          rating: data.users.rating,
-          totalRatings: null,
-        },
-      };
-
-      setItem(transformedItem);
+      setItem(result.data);
       // PRD §17 core conversion funnel, step 2: item detail view.
-      trackEvent("item_detail_viewed", { itemId: transformedItem.id });
+      trackEvent("item_detail_viewed", { itemId: result.data.id });
     } catch (error) {
       console.error("Error fetching item:", error);
       setError("Failed to load item details");
