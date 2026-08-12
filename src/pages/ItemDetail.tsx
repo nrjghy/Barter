@@ -17,6 +17,7 @@ import {
   Package,
   ExternalLink,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useResponses } from "../hooks/useResponses";
@@ -225,16 +226,30 @@ export const ItemDetail: React.FC = () => {
                     className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-lg border py-2 min-w-[160px] z-20"
                   >
                     {user?.id === item.userId ? (
-                      <button
-                        onClick={() => {
-                          setShowMoreMenu(false);
-                          navigate(`/edit/${item.id}`);
-                        }}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
-                      >
-                        <Pencil className="w-4 h-4 text-gray-600" />
-                        <span>Edit</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={() => {
+                            setShowMoreMenu(false);
+                            navigate(`/edit/${item.id}`);
+                          }}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                        >
+                          <Pencil className="w-4 h-4 text-gray-600" />
+                          <span>Edit</span>
+                        </button>
+                        {(item.status === "cancelled" || item.status === "traded" || item.status === "expired") && (
+                          <button
+                            onClick={() => {
+                              setShowMoreMenu(false);
+                              navigate("/add", { state: { relistFrom: item } });
+                            }}
+                            className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                          >
+                            <RefreshCw className="w-4 h-4 text-gray-600" />
+                            <span>Relist</span>
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <button
                         onClick={() => {
