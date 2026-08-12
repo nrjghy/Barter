@@ -4,6 +4,8 @@ import { MoreVertical, Package } from "lucide-react";
 import { useItems } from "../hooks/useItems";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { InfoTooltip } from "../components/InfoTooltip";
+import { OnboardingHint } from "../components/OnboardingHint";
+import { useAuth } from "../hooks/useAuth";
 import { shareItem } from "../utils/share";
 import type { ItemData } from "../services/types";
 
@@ -132,9 +134,11 @@ const ListingRow: React.FC<{
 export const MyStuff: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, updateProfile } = useAuth();
   const { userItems, userItemsLoading, cancelItem, cancelItemLoading } = useItems();
   const [filter, setFilter] = useState<"all" | "active">("all");
   const [confirmingItem, setConfirmingItem] = useState<ItemData | null>(null);
+  const [showMyStuffHint, setShowMyStuffHint] = useState(!!user && !user.myStuffHintDismissedAt);
 
   // Post-publish flow (PRD §13): after Add/Edit, land here with the affected
   // listing briefly highlighted rather than a separate confirmation screen.
@@ -161,6 +165,14 @@ export const MyStuff: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
+      <OnboardingHint
+        isOpen={showMyStuffHint}
+        text="This is where your listings live. Tap + to add your first item."
+        onDismiss={async () => {
+          setShowMyStuffHint(false);
+          await updateProfile({ myStuffHintDismissedAt: new Date().toISOString() });
+        }}
+      />
       <button
         onClick={() => navigate("/add")}
         className="w-full py-3.5 rounded-2xl bg-barter-600 text-white text-[15px] font-bold mb-4"

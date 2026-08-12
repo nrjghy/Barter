@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, MessageCircleHeart } from "lucide-react";
 import { useConnections } from "../hooks/useConnections";
+import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { OnboardingHint } from "../components/OnboardingHint";
 import { formatRelativeTime } from "../utils/time";
 import { pickAvatarPalette } from "../utils/avatar";
 import type { ConnectionItemInterestPair, ConnectionLastMessage, ConnectionSummary } from "../services/connectionService";
@@ -87,7 +89,9 @@ const EmptyState: React.FC = () => (
 
 export const Chat: React.FC = () => {
   const navigate = useNavigate();
+  const { user, updateProfile } = useAuth();
   const { connections, loading, error } = useConnections();
+  const [showChatHint, setShowChatHint] = useState(!!user && !user.chatHintDismissedAt);
 
   const handleOpen = (connectionId: string) => {
     navigate(`/chat/${connectionId}`);
@@ -95,6 +99,14 @@ export const Chat: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4">
+      <OnboardingHint
+        isOpen={showChatHint}
+        text="When you and someone else both like each other's items, you'll match here and can start chatting."
+        onDismiss={async () => {
+          setShowChatHint(false);
+          await updateProfile({ chatHintDismissedAt: new Date().toISOString() });
+        }}
+      />
       {loading && (
         <div className="py-16">
           <LoadingSpinner />

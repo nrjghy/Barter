@@ -45,6 +45,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar_url: data.avatar_url || undefined,
         role: data.role || "user",
         locationPromptDismissedAt: data.location_prompt_dismissed_at ?? undefined,
+        discoverHintDismissedAt: data.discover_hint_dismissed_at ?? undefined,
+        myStuffHintDismissedAt: data.my_stuff_hint_dismissed_at ?? undefined,
+        chatHintDismissedAt: data.chat_hint_dismissed_at ?? undefined,
         rating: data.rating ?? undefined,
         createdAt: data.created_at ?? undefined,
       });
@@ -209,6 +212,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             longitude: updates.longitude ?? user.longitude,
             avatar_url: updates.avatar_url || user.avatar_url,
             location_prompt_dismissed_at: updates.locationPromptDismissedAt ?? user.locationPromptDismissedAt,
+            discover_hint_dismissed_at: updates.discoverHintDismissedAt ?? user.discoverHintDismissedAt,
+            my_stuff_hint_dismissed_at: updates.myStuffHintDismissedAt ?? user.myStuffHintDismissedAt,
+            chat_hint_dismissed_at: updates.chatHintDismissedAt ?? user.chatHintDismissedAt,
           },
         ]);
 
@@ -231,6 +237,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           longitude: updates.longitude,
           avatar_url: updates.avatar_url,
           location_prompt_dismissed_at: updates.locationPromptDismissedAt,
+          discover_hint_dismissed_at: updates.discoverHintDismissedAt,
+          my_stuff_hint_dismissed_at: updates.myStuffHintDismissedAt,
+          chat_hint_dismissed_at: updates.chatHintDismissedAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);

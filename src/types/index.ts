@@ -8,6 +8,9 @@ export interface AuthUser {
   avatar_url?: string;
   role?: string;
   locationPromptDismissedAt?: string;
+  discoverHintDismissedAt?: string;
+  myStuffHintDismissedAt?: string;
+  chatHintDismissedAt?: string;
   rating?: number;
   createdAt?: string;
 }

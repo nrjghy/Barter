@@ -6,6 +6,7 @@ import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
 import { LocationPrompt } from "../components/LocationPrompt";
+import { OnboardingHint } from "../components/OnboardingHint";
 import { useItems } from "../hooks/useItems";
 import { useResponses } from "../hooks/useResponses";
 import { useAuth } from "../hooks/useAuth";
@@ -14,7 +15,7 @@ import { trackEvent } from "../lib/analytics";
 import { ERROR_CODES, ERROR_MESSAGES } from "../services/config";
 
 export const Discover: React.FC = () => {
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());
   const [showFilter, setShowFilter] = useState(false);
@@ -24,6 +25,7 @@ export const Discover: React.FC = () => {
     trackEvent("discover_viewed");
   }, []);
   const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showDiscoverHint, setShowDiscoverHint] = useState(!!user && !user.discoverHintDismissedAt);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
@@ -245,6 +247,14 @@ export const Discover: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-4 flex flex-col discover-viewport">
+      <OnboardingHint
+        isOpen={showDiscoverHint}
+        text="Swipe through items near you. Tap the heart to like something, or the X to pass."
+        onDismiss={async () => {
+          setShowDiscoverHint(false);
+          await updateProfile({ discoverHintDismissedAt: new Date().toISOString() });
+        }}
+      />
       <SwipeInterface
         currentItem={currentItem}
         hasMore={hasMore}
