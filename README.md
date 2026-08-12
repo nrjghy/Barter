@@ -71,7 +71,7 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 - `AddEditItem.tsx`: create/edit items with validation and multi-image upload; a listing-type toggle (Trade/Giveaway) is interactive on create and read-only on edit (`listing_type` is immutable after creation — see Data model above), with Estimated Value hidden entirely for giveaways
 - `ItemDetail.tsx`: item details, images, share, a giveaway badge, and the "Original Listing" link (from `sourceUrl`) when present
 - `Chat.tsx`: connection list — item-context line, last-message preview, "New" marker for unopened connections
-- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete, Claim giveaway — shown when the connection has an unclaimed giveaway item, Block, Report). The recipient's claim posts a system message with an Approve action for the lister, reusing the same tradeCompletionId-keyed pattern already used for trade disputes
+- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete, Claim giveaway — shown when the connection has an unclaimed giveaway item, Block, Report). Location sharing opens `LocationSharePicker` (current location, or search-and-pick a named place via `places-autocomplete`); a searched place's name renders in the bubble in place of raw coordinates. The recipient's claim posts a system message with an Approve action for the lister, reusing the same tradeCompletionId-keyed pattern already used for trade disputes. Connection formation (both `check_and_create_match` and `create_giveaway_connection`) now also posts an opening system message into the thread, covering both new and reused connections.
 - `MarkTradeComplete.tsx`: select which items on each side were exchanged and confirm, via the `complete_trade` RPC
 - `ReviewWrite.tsx`: post-trade review screen at `/trade-completion/:tradeCompletionId/review`, surfaced by the review-reminder notification after the dispute window closes
 - `Profile.tsx`: stats (items, trades completed, average rating), reviews received, settings menu
@@ -82,10 +82,11 @@ the Admin console is reached from Profile's settings menu, not a nav tab.
 
 ### Components (selected)
 
-- Layout/nav: `Layout`, `Header`, `BackBar`, `BottomNavigation`, `LoadingSpinner`, `StatsCard`
+- Layout/nav: `Layout`, `Header`, `BackBar` (fixed-position, all 8 detail/task screens using it carry matching top padding), `BottomNavigation`, `LoadingSpinner`, `StatsCard`
 - Items/response: `SwipeCard`, `SwipeInterface`, `SwipeControls`, `SwipeCounter`, `ItemStatus`, `CategoryFilter`
   (these gesture-layer names — `SwipeCard`/`SwipeInterface`/`SwipeControls`/`SwipeCounter`, and the `onSwipe` prop — are intentionally unchanged; only the data layer was renamed swipe→response)
-- Dialogs: `IssueReportDialog` (wired up, reachable from `Header`'s help icon), `NotificationCenter`
+- Dialogs: `IssueReportDialog` (wired up, reachable from `Header`'s help icon), `NotificationCenter` (auto-marks-read on open, tap-to-navigate on connection-related types), `LocationSharePicker` (current location or search-and-pick a place)
+- Guidance: `InfoTooltip` (viewport-clamped info popover, 11 placements across the app), `OnboardingHint` (one-time dismissible per-tab orientation hint, tracked server-side)
 - Auth: `OAuthProviderButton` (Google, Facebook, Apple)
 
 ### Context
@@ -165,8 +166,7 @@ scope. What's left:
 Everything else — the connection model, Chat, Mark Trade Complete, account
 deletion, in-app issue reporting, the admin console tabs, the daily like
 limit, filters, the visual reskin, PostHog/Sentry analytics, Google OAuth,
-and giveaway listings (backend RPCs, the listing-type toggle, badges, the
-claim/approve flow, and Relist) — is built, configured, and verified against
-the live Barter2 database. Two known Phase 1 design polish items from QA are
-still open (a toast overlapping a button on My Stuff, a notification
-timestamp sort bug) — see `CLAUDE.md`.
+giveaway listings, connection-creation system messages, info-icon tooltips,
+the onboarding tour, and location sharing (current location or a searched
+place) — is built, configured, and verified against the live Barter2
+database.
