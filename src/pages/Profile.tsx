@@ -250,9 +250,15 @@ export const Profile: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <h2 className="text-xl font-bold text-gray-900">{user?.username}</h2>
                     <span className="flex items-center space-x-1 text-sm font-medium text-gray-600">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span>{(user?.rating ?? 0).toFixed(1)}</span>
-                      <span className="text-gray-400">({reviews.length})</span>
+                      {reviews.length > 0 ? (
+                        <>
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <span>{(user?.rating ?? 0).toFixed(1)}</span>
+                          <span className="text-gray-400">({reviews.length})</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-400">No ratings yet</span>
+                      )}
                     </span>
                   </div>
                   <p className="text-gray-600">{user?.email}</p>
