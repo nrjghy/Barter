@@ -301,7 +301,7 @@ export const AddEditItem: React.FC = () => {
 
   if (isEditMode && existingItemQuery.isLoading) {
     return (
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto pt-16">
         <BackBar title="Edit listing" onBack={() => navigate("/my-stuff")} />
         <div className="px-4 py-12 flex justify-center">
           <LoadingSpinner />
@@ -312,7 +312,7 @@ export const AddEditItem: React.FC = () => {
 
   if (isEditMode && existingItemLoadError) {
     return (
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto pt-16">
         <BackBar title="Edit listing" onBack={() => navigate("/my-stuff")} />
         <div className="px-4 py-12 text-center text-gray-600">
           Couldn't load this listing. It may have been removed.
@@ -322,7 +322,7 @@ export const AddEditItem: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto pt-16">
       <BackBar title={isEditMode ? "Edit listing" : "Add a listing"} onBack={() => navigate("/my-stuff")} />
       <div className="px-4 py-4">
         <div className="mb-6">

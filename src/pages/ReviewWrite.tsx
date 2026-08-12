@@ -101,7 +101,7 @@ export const ReviewWrite: React.FC = () => {
 
   if (notFound) {
     return (
-      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
         <BackBar title="Write a review" onBack={() => navigate("/chat")} />
         <div className="flex-1 flex items-center justify-center text-center px-8">
           <div className="text-sm text-[oklch(45%_0.02_95)]">This trade couldn't be found.</div>
@@ -112,7 +112,7 @@ export const ReviewWrite: React.FC = () => {
 
   if (alreadyReviewed) {
     return (
-      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
+      <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
         <BackBar title="Write a review" onBack={handleSkip} />
         <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-2">
           <div className="text-sm font-semibold text-[oklch(22%_0.02_100)]">You've already reviewed this trade</div>
@@ -126,7 +126,7 @@ export const ReviewWrite: React.FC = () => {
   const initials = context!.reviewee.username.charAt(0).toUpperCase();
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
+    <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
       <BackBar title="Write a review" onBack={handleSkip} />
 
       <div className="flex-1 overflow-y-auto px-5 py-6">

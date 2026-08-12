@@ -433,7 +433,7 @@ export const ChatThread: React.FC = () => {
   const orderedMessages = [...messages].reverse();
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col">
+    <div className="max-w-md mx-auto min-h-screen flex flex-col pt-16">
       <BackBar
         title={connection?.otherUser.username ?? "Chat"}
         subtitle={itemLabel || undefined}

@@ -368,7 +368,7 @@ export const AdminDashboard: React.FC = () => {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto pt-16">
       <BackBar title="Admin console" onBack={() => navigate('/profile')} />
 
       <div className="px-4 py-4">

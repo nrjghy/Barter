@@ -152,7 +152,7 @@ export const Profile: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md mx-auto pt-16">
       <BackBar
         title="Profile"
         onBack={() => navigate(-1)}

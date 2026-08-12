@@ -35,7 +35,7 @@ export const Account: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)]">
+    <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
       <BackBar title="Account" onBack={() => navigate("/profile")} />
 
       <div className="flex-1 overflow-y-auto px-5 py-5">

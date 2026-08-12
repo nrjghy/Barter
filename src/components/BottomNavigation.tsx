@@ -18,7 +18,7 @@ export const BottomNavigation: React.FC = () => {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 px-4 pb-safe">
-      <div className="max-w-md mx-auto mb-4 flex justify-around py-2 bg-white/90 backdrop-blur-lg rounded-full shadow-xl border border-barter-800/10">
+      <div className="max-w-md mx-auto mb-4 flex justify-around py-2 bg-white/90 backdrop-blur-lg rounded-full shadow-xl border border-barter-800/10 overflow-hidden">
         {baseNavItems.map(({ icon: Icon, label, path }) => {
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
           return (
