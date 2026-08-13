@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Heart, X, Undo2, RefreshCw, Filter } from "lucide-react";
+import { Heart, X, Undo2, Filter } from "lucide-react";
 import { InfoTooltip } from "./InfoTooltip";
 
 interface SwipeControlsProps {
@@ -8,27 +8,15 @@ interface SwipeControlsProps {
   onUndo: () => void;
   disabled: boolean;
   canUndo: boolean;
-  onRefresh: () => void;
   onFilter: () => void;
   hasActiveFilters: boolean;
 }
 
 export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(
-  ({ onSwipe, onUndo, disabled, canUndo, onRefresh, onFilter, hasActiveFilters }) => {
+  ({ onSwipe, onUndo, disabled, canUndo, onFilter, hasActiveFilters }) => {
     return (
       <div className="flex items-center justify-between mb-6">
-        <div className="relative flex-shrink-0">
-          <button
-            onClick={onRefresh}
-            className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition-colors"
-            title="Refresh items"
-          >
-            <RefreshCw className="w-4 h-4 text-gray-500" />
-          </button>
-          <div className="absolute -top-1.5 -right-1.5 bg-white rounded-full">
-            <InfoTooltip text="Reload your Discover feed to check for new listings." label="Refresh" />
-          </div>
-        </div>
+        <div className="w-8 h-8" />
 
         <div className="flex items-center justify-center space-x-8">
           <motion.button

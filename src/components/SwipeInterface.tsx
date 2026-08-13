@@ -11,10 +11,12 @@ interface SwipeInterfaceProps {
   loadingMore: boolean;
   onLoadMore: () => void;
   onSwipe: (direction: "pass" | "like") => void;
+  onRefresh: () => void;
+  refreshing: boolean;
 }
 
 export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
-  ({ currentItem, hasMore, loadingMore, onLoadMore, onSwipe }) => {
+  ({ currentItem, hasMore, loadingMore, onLoadMore, onSwipe, onRefresh, refreshing }) => {
     return (
       <div className="relative flex-1 min-h-[280px] mb-6">
         <AnimatePresence mode="wait">
@@ -28,15 +30,15 @@ export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No more items!</h3>
                 <p className="text-gray-600 mb-4">Check back later for new listings</p>
-                {hasMore && (
-                  <button
-                    onClick={onLoadMore}
-                    disabled={loadingMore}
-                    className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors disabled:opacity-50"
-                  >
-                    {loadingMore ? <LoadingSpinner /> : "Load More Items"}
-                  </button>
-                )}
+                <button
+                  onClick={hasMore ? onLoadMore : onRefresh}
+                  disabled={hasMore ? loadingMore : refreshing}
+                  className="px-4 py-2 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors disabled:opacity-50"
+                >
+                  {hasMore
+                    ? (loadingMore ? <LoadingSpinner /> : "Load More Items")
+                    : (refreshing ? <LoadingSpinner /> : "Check for new listings")}
+                </button>
               </div>
             </div>
           )}

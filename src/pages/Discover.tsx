@@ -34,6 +34,7 @@ export const Discover: React.FC = () => {
   const [maxAge, setMaxAge] = useState(30);
   const [minRating, setMinRating] = useState(3.0);
   const [includeUnrated, setIncludeUnrated] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
@@ -99,11 +100,14 @@ export const Discover: React.FC = () => {
   };
 
   const handleRefresh = async () => {
+    setRefreshing(true);
     try {
       await refetch();
       toast.success("Items refreshed!");
     } catch (error) {
       toast.error("Failed to refresh items");
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -263,6 +267,8 @@ export const Discover: React.FC = () => {
         loadingMore={loadingMore}
         onLoadMore={handleLoadMore}
         onSwipe={handleSwipe}
+        onRefresh={handleRefresh}
+        refreshing={refreshing}
       />
 
       <SwipeControls
@@ -270,7 +276,6 @@ export const Discover: React.FC = () => {
         onUndo={handleUndo}
         disabled={!currentItem || likesRemaining <= 0}
         canUndo={respondedItems.size > 0}
-        onRefresh={handleRefresh}
         onFilter={() => setShowFilter(true)}
         hasActiveFilters={hasActiveFilters}
       />
