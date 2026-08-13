@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart } from "lucide-react";
+import { PackageSearch } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ItemWithUser } from "../services/itemService";
@@ -24,7 +24,7 @@ export const SwipeInterface: React.FC<SwipeInterfaceProps> = React.memo(
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-12 h-12 text-gray-400" />
+                  <PackageSearch className="w-12 h-12 text-gray-400" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No more items!</h3>
                 <p className="text-gray-600 mb-4">Check back later for new listings</p>

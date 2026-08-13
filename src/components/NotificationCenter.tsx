@@ -53,7 +53,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'match':
-        return '💖';
+        return '🤝';
       case 'message':
         return '💬';
       case 'trade_completed':

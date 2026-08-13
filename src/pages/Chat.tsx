@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, MessageCircleHeart } from "lucide-react";
+import { Package, Handshake } from "lucide-react";
 import { useConnections } from "../hooks/useConnections";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -78,7 +78,7 @@ const ConnectionRow: React.FC<{ connection: ConnectionSummary; onOpen: (id: stri
 const EmptyState: React.FC = () => (
   <div className="h-full flex flex-col items-center justify-center text-center gap-3 px-5 py-16">
     <div className="w-16 h-16 rounded-full bg-barter-100 flex items-center justify-center text-barter-700">
-      <MessageCircleHeart className="w-8 h-8" />
+      <Handshake className="w-8 h-8" />
     </div>
     <div className="text-lg font-bold text-[oklch(22%_0.02_100)]">No connections yet</div>
     <div className="text-sm text-[oklch(45%_0.02_95)] leading-relaxed max-w-[240px]">
