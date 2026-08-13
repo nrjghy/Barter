@@ -14,6 +14,11 @@
   min-height: calc(100dvh - 4rem - 5rem);
 }
 
+.chat-thread-viewport {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 /* Custom slider styles */
 .slider {
   -webkit-appearance: none;
