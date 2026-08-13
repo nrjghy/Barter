@@ -339,6 +339,27 @@ export const AddEditItem: React.FC = () => {
     );
   }
 
+  if (isEditMode && existingItem && (existingItem.status ?? "active") !== "active") {
+    return (
+      <div className="max-w-md mx-auto pt-16">
+        <BackBar title="Edit listing" onBack={() => navigate("/my-stuff")} />
+        <div className="px-4 py-12 text-center">
+          <p className="text-gray-600 mb-6">
+            This listing has already been <span className="capitalize">{existingItem.status}</span>,
+            so it can't be edited. Relist it instead to create a fresh
+            listing with the same details.
+          </p>
+          <button
+            onClick={() => navigate("/add", { state: { relistFrom: existingItem } })}
+            className="px-6 py-3 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors font-semibold"
+          >
+            Relist this item
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-md mx-auto pt-16">
       <BackBar title={isEditMode ? "Edit listing" : "Add a listing"} onBack={() => navigate("/my-stuff")} />
