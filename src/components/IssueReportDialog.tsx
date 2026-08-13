@@ -158,7 +158,7 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Short summary"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-[oklch(88%_0.015_90)] text-sm text-[oklch(22%_0.02_100)]"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[oklch(88%_0.015_90)] text-base text-[oklch(22%_0.02_100)]"
               />
             </div>
 

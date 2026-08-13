@@ -608,7 +608,7 @@ export const ChatThread: React.FC = () => {
             }
           }}
           placeholder="Message…"
-          className="flex-1 px-3.5 py-2.5 rounded-full bg-[oklch(94%_0.012_90)] text-[13px] text-[oklch(22%_0.02_100)] placeholder:text-[oklch(52%_0.02_90)] outline-none"
+          className="flex-1 px-3.5 py-2.5 rounded-full bg-[oklch(94%_0.012_90)] text-[16px] text-[oklch(22%_0.02_100)] placeholder:text-[oklch(52%_0.02_90)] outline-none"
         />
         <button
           onClick={handleSend}

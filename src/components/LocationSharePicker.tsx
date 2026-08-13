@@ -89,7 +89,7 @@ export const LocationSharePicker: React.FC<LocationSharePickerProps> = ({
             value={query}
             onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Search a place or address"
-            className="flex-1 bg-transparent text-[13px] focus:outline-none"
+            className="flex-1 bg-transparent text-[16px] focus:outline-none"
             autoFocus
           />
         </div>

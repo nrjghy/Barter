@@ -178,7 +178,7 @@ export const LocationPrompt: React.FC = () => {
                 onChange={(e) => handleQueryChange(e.target.value)}
                 disabled={busy}
                 placeholder="Search a place or address"
-                className="flex-1 bg-transparent text-[13px] focus:outline-none disabled:opacity-50"
+                className="flex-1 bg-transparent text-[16px] focus:outline-none disabled:opacity-50"
               />
             </div>
 
