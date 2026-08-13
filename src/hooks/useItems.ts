@@ -37,6 +37,7 @@ export const useItems = (options?: {
   maxValue?: string;
   maxAge?: number;
   minRating?: number;
+  includeUnrated?: boolean;
   // Caller's own location, for the radius filter -- null/undefined skips it
   lat?: number | null;
   lng?: number | null;
@@ -53,6 +54,7 @@ export const useItems = (options?: {
     maxValue,
     maxAge,
     minRating,
+    includeUnrated,
     lat,
     lng,
   } = options || {};
@@ -61,7 +63,20 @@ export const useItems = (options?: {
   const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery({
     queryKey: [
       "items",
-      { limit, categories, conditions, excludeUserId, radius, minValue, maxValue, maxAge, minRating, lat, lng },
+      {
+        limit,
+        categories,
+        conditions,
+        excludeUserId,
+        radius,
+        minValue,
+        maxValue,
+        maxAge,
+        minRating,
+        includeUnrated,
+        lat,
+        lng,
+      },
     ],
     queryFn: ({ pageParam = 0 }) =>
       ItemService.getItems({
@@ -75,6 +90,7 @@ export const useItems = (options?: {
         maxValue,
         maxAge,
         minRating,
+        includeUnrated,
         lat,
         lng,
       }),

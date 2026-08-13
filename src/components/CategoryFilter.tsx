@@ -15,11 +15,13 @@ interface CategoryFilterProps {
   maxValue?: string;
   maxAge?: number;
   minRating?: number;
+  includeUnrated?: boolean;
   onRadiusChange?: (radius: number) => void;
   onMinValueChange?: (value: string) => void;
   onMaxValueChange?: (value: string) => void;
   onMaxAgeChange?: (age: number) => void;
   onMinRatingChange?: (rating: number) => void;
+  onIncludeUnratedChange?: (val: boolean) => void;
 }
 
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
@@ -34,11 +36,13 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   maxValue = "",
   maxAge = 30,
   minRating = 3.0,
+  includeUnrated = true,
   onRadiusChange,
   onMinValueChange,
   onMaxValueChange,
   onMaxAgeChange,
   onMinRatingChange,
+  onIncludeUnratedChange,
 }) => {
   // Local state for filters - only applied when user clicks Apply
   const [localCategories, setLocalCategories] = useState(selectedCategories);
@@ -48,6 +52,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const [localMaxValue, setLocalMaxValue] = useState(maxValue);
   const [localMaxAge, setLocalMaxAge] = useState(maxAge);
   const [localMinRating, setLocalMinRating] = useState(minRating);
+  const [localIncludeUnrated, setLocalIncludeUnrated] = useState(includeUnrated);
 
   // Update local state when props change (e.g., when component reopens)
   React.useEffect(() => {
@@ -58,7 +63,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     setLocalMaxValue(maxValue);
     setLocalMaxAge(maxAge);
     setLocalMinRating(minRating);
-  }, [selectedCategories, selectedConditions, radius, minValue, maxValue, maxAge, minRating]);
+    setLocalIncludeUnrated(includeUnrated);
+  }, [selectedCategories, selectedConditions, radius, minValue, maxValue, maxAge, minRating, includeUnrated]);
 
   const toggleCategory = (category: string) => {
     if (localCategories.includes(category)) {
@@ -84,6 +90,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     setLocalMaxValue("");
     setLocalMaxAge(30);
     setLocalMinRating(3.0);
+    setLocalIncludeUnrated(true);
   };
 
   const handleApply = () => {
@@ -95,6 +102,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     if (onMaxValueChange) onMaxValueChange(localMaxValue);
     if (onMaxAgeChange) onMaxAgeChange(localMaxAge);
     if (onMinRatingChange) onMinRatingChange(localMinRating);
+    if (onIncludeUnratedChange) onIncludeUnratedChange(localIncludeUnrated);
     onClose();
   };
 
@@ -258,6 +266,15 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 onChange={(e) => setLocalMinRating(Number(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
               />
+              <label className="flex items-center space-x-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={localIncludeUnrated}
+                  onChange={(e) => setLocalIncludeUnrated(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+                />
+                <span>Include sellers with no ratings yet</span>
+              </label>
             </div>
           </div>
         </div>

@@ -37,6 +37,7 @@ export class ItemService {
         p_max_value: options.maxValue ? parseFloat(options.maxValue) : null,
         p_max_age_days: options.maxAge ?? null,
         p_min_rating: options.minRating ?? null,
+        p_include_unrated: options.includeUnrated ?? true,
         p_limit: options.limit,
         p_offset: options.page * options.limit,
       });

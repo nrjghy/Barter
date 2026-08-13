@@ -35,6 +35,7 @@ export const Discover: React.FC = () => {
   const [maxValue, setMaxValue] = useState("");
   const [maxAge, setMaxAge] = useState(30);
   const [minRating, setMinRating] = useState(3.0);
+  const [includeUnrated, setIncludeUnrated] = useState(true);
 
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
@@ -44,6 +45,7 @@ export const Discover: React.FC = () => {
     maxValue: maxValue !== "" ? maxValue : undefined,
     maxAge: maxAge !== 30 ? maxAge : undefined,
     minRating: minRating !== 3.0 ? minRating : undefined,
+    includeUnrated,
     excludeUserId: user?.id, // ✅ Exclude current user's own items
     // New account / location never set -> both null, get_items_browse skips
     // the radius bounds check entirely rather than erroring.
@@ -294,11 +296,13 @@ export const Discover: React.FC = () => {
             maxValue={maxValue}
             maxAge={maxAge}
             minRating={minRating}
+            includeUnrated={includeUnrated}
             onRadiusChange={setRadius}
             onMinValueChange={setMinValue}
             onMaxValueChange={setMaxValue}
             onMaxAgeChange={setMaxAge}
             onMinRatingChange={setMinRating}
+            onIncludeUnratedChange={setIncludeUnrated}
           />
         )}
       </AnimatePresence>
