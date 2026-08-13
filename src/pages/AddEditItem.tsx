@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X, Camera } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useAuth } from "../contexts/AuthContext";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
@@ -67,6 +68,7 @@ export const AddEditItem: React.FC = () => {
   const conditionRef = useRef<HTMLDivElement>(null);
 
   const { createItem, updateItem, getItem, cancelItem, cancelItemLoading } = useItems();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const fieldErrors: Record<RequiredField, boolean> = {
@@ -216,6 +218,11 @@ export const AddEditItem: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isEditMode && user?.latitude == null) {
+      toast.error("Add your location before creating a listing");
+      return;
+    }
 
     // PRD §13: a failed Save attempt marks every required field touched
     // (so all their errors show, not just the ones already blurred) and
