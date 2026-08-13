@@ -15,10 +15,8 @@ interface SwipeControlsProps {
 export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(
   ({ onSwipe, onUndo, disabled, canUndo, onFilter, hasActiveFilters }) => {
     return (
-      <div className="flex items-center justify-between mb-6">
-        <div className="w-8 h-8" />
-
-        <div className="flex items-center justify-center space-x-8">
+      <div className="flex items-center mb-6">
+        <div className="flex-1 flex items-center justify-center space-x-8">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
