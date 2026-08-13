@@ -2,7 +2,7 @@ import React from "react";
 
 interface BackBarProps {
   title: string;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   onBack: () => void;
   action?: React.ReactNode;
 }

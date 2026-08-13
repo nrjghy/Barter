@@ -419,17 +419,34 @@ export const ChatThread: React.FC = () => {
     }
   };
 
-  const itemLabel = connection
+  const referencedItems = connection
     ? Array.from(
-        new Set(
-          connection.itemInterests.flatMap((i) =>
-            [i.myItem, i.theirItem]
-              .filter(Boolean)
-              .map((item) => (item!.listingType === "giveaway" ? `${item!.title} (Giveaway)` : item!.title))
-          )
-        )
-      ).join(" · ")
-    : "";
+        new Map(
+          connection.itemInterests
+            .flatMap((i) => [i.myItem, i.theirItem])
+            .filter((item): item is NonNullable<typeof item> => !!item)
+            .map((item) => [item.id, item])
+        ).values()
+      )
+    : [];
+
+  const itemLabel =
+    referencedItems.length > 0 ? (
+      <span>
+        {referencedItems.map((item, idx) => (
+          <React.Fragment key={item.id}>
+            {idx > 0 && " · "}
+            <button
+              type="button"
+              onClick={() => navigate(`/item/${item.id}`)}
+              className="text-xs text-[oklch(50%_0.02_90)] underline underline-offset-2"
+            >
+              {item.listingType === "giveaway" ? `${item.title} (Giveaway)` : item.title}
+            </button>
+          </React.Fragment>
+        ))}
+      </span>
+    ) : undefined;
 
   // A giveaway item only ever shows as theirItem from the non-owner's
   // perspective (see connectionService.ts's mine/theirs fix) -- so this
@@ -453,7 +470,7 @@ export const ChatThread: React.FC = () => {
     <div className="max-w-md mx-auto chat-thread-viewport flex flex-col pt-16">
       <BackBar
         title={connection?.otherUser.username ?? "Chat"}
-        subtitle={itemLabel || undefined}
+        subtitle={itemLabel}
         onBack={() => navigate("/chat")}
         action={
           <div className="relative flex-shrink-0">
