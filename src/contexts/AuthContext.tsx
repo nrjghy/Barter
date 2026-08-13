@@ -187,6 +187,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    // The user explicitly asked to sign out. Even if the server call
+    // fails (e.g. "Session not found" from a stale tab whose session
+    // was already invalidated elsewhere), never leave them stuck on
+    // an authenticated-looking page: local state always clears so
+    // ProtectedRoute's existing !user redirect fires correctly.
+    setUser(null);
     return { error };
   };
 

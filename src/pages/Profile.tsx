@@ -55,6 +55,7 @@ export const Profile: React.FC = () => {
     try {
       await signOut();
       toast.success("Signed out successfully");
+      navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Failed to sign out");
     }
