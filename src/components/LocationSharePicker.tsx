@@ -45,7 +45,7 @@ export const LocationSharePicker: React.FC<LocationSharePickerProps> = ({
       setSearching(true);
       try {
         const { data, error } = await supabase.functions.invoke("places-autocomplete", {
-          body: { query: trimmed },
+          body: { query: trimmed, preciseLocation: true },
         });
         if (error) {
           toast.error("Failed to search locations");

@@ -1,22 +1,33 @@
-// Server-side autocomplete proxy for Profile.tsx's manual location entry.
-// LocationIQ's Autocomplete API requires an API key, which must stay
-// server-side -- this proxies the request so the key never reaches the
-// browser, following the same invoked-from-browser + explicit-CORS pattern
-// established by reverse-geocode.
+// Server-side autocomplete proxy for Profile.tsx's manual location entry
+// and, with preciseLocation, LocationSharePicker.tsx's in-chat location
+// search. LocationIQ's Autocomplete API requires an API key, which must
+// stay server-side -- this proxies the request so the key never reaches
+// the browser, following the same invoked-from-browser + explicit-CORS
+// pattern established by reverse-geocode.
 //
-// The `layers` request param (city, suburb, neighbourhood, county, state,
-// country) is only a soft preference on LocationIQ's side, not a hard
-// filter -- confirmed live: a "Mokotow" query still returned a former
-// detention facility and a tram depot alongside genuine district results.
-// So results are additionally filtered server-side on OSM's `class` field,
-// keeping only "place" (settlements/districts, e.g. suburb/neighbourhood)
-// and "boundary" (administrative areas -- many European city districts are
-// tagged this way instead of "place") and dropping everything else
-// (amenity, historic, railway, tourism, etc.). Since filtering happens
-// after LocationIQ's own limit is applied, we request more results than we
-// need (LOCATIONIQ_FETCH_LIMIT) and truncate to the real limit
+// By default (preciseLocation false/absent, i.e. Profile's own-location
+// entry, which this app only ever displays as city/country) the `layers`
+// request param (city, suburb, neighbourhood, county, state, country) is
+// set, and results are further filtered server-side on OSM's `class`
+// field, keeping only "place" (settlements/districts, e.g.
+// suburb/neighbourhood) and "boundary" (administrative areas -- many
+// European city districts are tagged this way instead of "place") and
+// dropping everything else (amenity, historic, railway, tourism, etc.).
+// The `layers` param is only a soft preference on LocationIQ's side, not
+// a hard filter -- confirmed live: a "Mokotow" query still returned a
+// former detention facility and a tram depot alongside genuine district
+// results, hence the additional class filter. Since filtering happens
+// after LocationIQ's own limit is applied, we request more results than
+// we need (LOCATIONIQ_FETCH_LIMIT) and truncate to the real limit
 // (RESULT_LIMIT) after filtering, so a noisy query doesn't come back with
 // fewer than 5 genuine results.
+//
+// When preciseLocation is true (chat's location-share search, a direct
+// message to one connected person for in-person meetup coordination) both
+// the `layers` restriction and the class filter are skipped entirely --
+// every result LocationIQ returns for the query passes through, and
+// RESULT_LIMIT is requested directly since nothing is filtered out
+// afterward.
 //
 // Country bias/restriction (countrycodes param) deliberately omitted per
 // explicit product decision, even though this is a Poland-first pilot.
@@ -44,7 +55,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, preciseLocation } = await req.json();
 
     // Re-validate the minimum-length rule server-side rather than trusting
     // the frontend's debounce/min-char gate, matching this project's
@@ -71,8 +82,8 @@ Deno.serve(async (req: Request) => {
     const params = new URLSearchParams({
       key: apiKey,
       q: query,
-      limit: LOCATIONIQ_FETCH_LIMIT,
-      layers: "city,suburb,neighbourhood,county,state,country",
+      limit: preciseLocation === true ? String(RESULT_LIMIT) : LOCATIONIQ_FETCH_LIMIT,
+      ...(preciseLocation === true ? {} : { layers: "city,suburb,neighbourhood,county,state,country" }),
       "accept-language": "en",
     });
 
@@ -103,16 +114,18 @@ Deno.serve(async (req: Request) => {
 
     // lat/lon come back as strings from LocationIQ -- parsed here so the
     // frontend receives real numbers ready to store alongside the label.
-    // Filtered to place/boundary class only (see header comment), then
-    // truncated to the real result limit.
-    const suggestions = data
-      .filter((item) => item.class !== undefined && ALLOWED_CLASSES.has(item.class))
-      .slice(0, RESULT_LIMIT)
-      .map((item) => ({
-        label: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-      }));
+    // Unfiltered for preciseLocation; otherwise filtered to place/boundary
+    // class only (see header comment) and truncated to the real result
+    // limit.
+    const suggestions = (
+      preciseLocation === true
+        ? data
+        : data.filter((item) => item.class !== undefined && ALLOWED_CLASSES.has(item.class)).slice(0, RESULT_LIMIT)
+    ).map((item) => ({
+      label: item.display_name,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+    }));
 
     return new Response(JSON.stringify({ suggestions }), {
       status: 200,

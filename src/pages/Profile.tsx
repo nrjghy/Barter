@@ -80,7 +80,7 @@ export const Profile: React.FC = () => {
           });
           const locationString =
             geocodeError || !geocodeData?.location
-              ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+              ? "Unknown location"
               : geocodeData.location;
 
           const { error } = await updateProfile({
