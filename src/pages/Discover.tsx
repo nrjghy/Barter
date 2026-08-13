@@ -5,7 +5,6 @@ import { CategoryFilter } from "../components/CategoryFilter";
 import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
-import { LocationPrompt } from "../components/LocationPrompt";
 import { OnboardingHint } from "../components/OnboardingHint";
 import { useItems } from "../hooks/useItems";
 import { useResponses } from "../hooks/useResponses";
@@ -24,7 +23,6 @@ export const Discover: React.FC = () => {
   useEffect(() => {
     trackEvent("discover_viewed");
   }, []);
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
   const [showDiscoverHint, setShowDiscoverHint] = useState(!!user && !user.discoverHintDismissedAt);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
@@ -65,10 +63,6 @@ export const Discover: React.FC = () => {
       loadRespondedItems();
     }
   }, [user]); // Remove getRespondedItems from dependencies
-
-  useEffect(() => {
-    setShowLocationPrompt(!!user && user.latitude == null && !user.locationPromptDismissedAt);
-  }, [user]);
 
   // Filter items based on responded items - use more efficient filtering
   const availableItems = React.useMemo(() => {
@@ -306,8 +300,6 @@ export const Discover: React.FC = () => {
           />
         )}
       </AnimatePresence>
-
-      <LocationPrompt isOpen={showLocationPrompt} onClose={() => setShowLocationPrompt(false)} />
     </div>
   );
 };
