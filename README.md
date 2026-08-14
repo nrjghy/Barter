@@ -29,7 +29,7 @@ The current codebase does not include an active scraper. Items do support a
 - Storage: Supabase Storage for multi-image uploads; bucket from `VITE_SUPABASE_STORAGE_BUCKET` (defaults to `barter_user_item_media`)
 - Analytics/monitoring: PostHog (product analytics, session recording) and Sentry (frontend errors/performance) — both no-op gracefully until real keys are configured
 - Email: Resend, triggered by a Supabase Database Webhook on `notifications` inserts, via the `send-notification-email` Edge Function
-- Location: reverse geocoding and manual-entry autocomplete both proxy LocationIQ server-side via Edge Functions (`reverse-geocode`, `places-autocomplete`), since the underlying APIs require a server-held key/User-Agent the browser can't reliably provide
+- Location: reverse geocoding proxies Nominatim server-side via the `reverse-geocode` Edge Function, which also returns the ISO country code, used to derive `users.default_currency` via the `country-to-currency` package (see Data model below). Manual-entry autocomplete proxies LocationIQ via `places-autocomplete`, with an unfiltered/precise mode (`preciseLocation`) used only by chat's location-share picker — deliberately kept separate from the restricted default mode used for a user's own profile location. Both are server-side proxies since the underlying APIs require a server-held key/User-Agent the browser can't reliably provide.
 
 Project structure (high level):
 
@@ -49,10 +49,12 @@ supabase/
 
 ### Data model highlights
 
-- Items include: `image_urls` (TEXT[]), `source_url`, `status` (`active` / `cancelled` / `traded` / `expired`, kept in sync with the legacy `is_active` flag), `listing_type` (`trade` / `giveaway`, set at creation and not editable afterward — see Pages below), `estimated_value` (always 0 for giveaways, exempt from `get_items_browse`'s min/max value filters), `value_currency`, timestamps, and `user_id`
+- Items include: `image_urls` (TEXT[]), `source_url`, `status` (`active` / `cancelled` / `traded` / `expired`, kept in sync with the legacy `is_active` flag), `listing_type` (`trade` / `giveaway`, set at creation and not editable afterward — see Pages below), `estimated_value` (always 0 for giveaways, exempt from `get_items_browse`'s min/max value filters), `value_currency` (defaults from the lister's `users.default_currency`, itself derived from location's country code, but changeable per listing — see AddEditItem.tsx below), timestamps, and `user_id`
+- `items.latitude`/`longitude` are NOT NULL, backed by a `populate_item_location` trigger that fills them from the owner's own location at insert time whenever a caller doesn't supply them directly. Every item is guaranteed to have a location; the radius filter depends on this entirely
 - `connections` (`user_id_1` < `user_id_2` by constraint, `status`: `active` / `ended`), `connection_item_interests`, `connection_reads` (drives the Chat list's "New" marker) replace the old `matches`/`swipes` tables, which no longer exist in the live database
 - `trade_completions` / `trade_completion_items` capture what was actually exchanged when a trade is marked complete, including the 7-day dispute window (`disputed_at`, `dispute_deadline`). `status` (`completed` / `pending_approval` / `approved` / `superseded`) plus `approved_at`/`approved_by` support the giveaway two-step completion model — a regular trade goes straight to `completed`; a giveaway claim starts `pending_approval` and only becomes `approved` (with `dispute_deadline` reset to start from that moment, not the claim) once the lister approves. A `pending_approval` claim beaten by another approved claim on the same item becomes `superseded`, with its own notification wording distinct from the generic "item unavailable" case.
 - `messages.message_type`: `text` / `photo` / `location` / `system` — `system` is reserved for server-inserted messages (e.g. the Mark Trade Complete confirmation)
+- `notifications.type` includes `product_update`, a broadcast type sent to every real (non-system, non-demo) user via the admin-only `send_product_announcement(title, content, data)` RPC — backend-only, not wired into any console UI, same pattern as `admin_delete_user`/`admin_update_item_category` below
 - `issues` (in-app bug/issue reports, separate from item/user reports), `app_settings` (tunable config, e.g. the daily like limit), `login_history` (data capture only — no user-facing screen yet, per Phase 1 scope)
 
 ## Frontend
@@ -64,29 +66,36 @@ top-level routes (`Layout.tsx` renders the persistent header/bottom nav there,
 a shared `BackBar` everywhere else). Profile lives behind the header avatar;
 the Admin console is reached from Profile's settings menu, not a nav tab.
 
+Every protected route also passes through a location gate in
+`ProtectedRoute.tsx`: if `user.latitude` is null, it renders `LocationPrompt`
+(GPS or a neighbourhood-level manual search, no skip option) instead of the
+requested page. This is enforced globally, not per-page, so it can't be
+bypassed by navigating directly to any route.
+
 ### Pages
 
 - `Discover.tsx`: the browse/response experience, with the full filter set (category, condition, radius, value range, listing age, rating) wired to `get_items_browse`; giveaway items show a badge and are exempt from the value filters
 - `MyStuff.tsx`: the user's listings hub — add-listing entry point, All/Active filter, status badges, share, cancel, and Relist (Cancelled/Traded/Expired rows only — creates a new listing pre-filled from the old one via `location.state`, original row untouched)
-- `AddEditItem.tsx`: create/edit items with validation and multi-image upload; a listing-type toggle (Trade/Giveaway) is interactive on create and read-only on edit (`listing_type` is immutable after creation — see Data model above), with Estimated Value hidden entirely for giveaways
-- `ItemDetail.tsx`: item details, images, share, a giveaway badge, and the "Original Listing" link (from `sourceUrl`) when present
+- `AddEditItem.tsx`: create/edit items with validation and multi-image upload; a listing-type toggle (Trade/Giveaway) is interactive on create and read-only on edit (`listing_type` is immutable after creation — see Data model above), with Estimated Value hidden entirely for giveaways. A currency dropdown next to Estimated Value defaults from the user's `defaultCurrency` on create, or the existing/relisted item's own `valueCurrency` on edit/relist. Navigating directly to `/edit/:itemId` for a cancelled, traded, or expired item shows a Relist prompt instead of the edit form — the route itself is guarded, not just MyStuff's own menu (which already hides Edit for non-active items)
+- `ItemDetail.tsx`: item details, images, share, a giveaway badge, the "Original Listing" link (from `sourceUrl`) when present, and the estimated value shown as `{value} {currency}` (e.g. "350 PLN") rather than a hardcoded "$"
 - `Chat.tsx`: connection list — item-context line, last-message preview, "New" marker for unopened connections
-- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete, Claim giveaway — shown when the connection has an unclaimed giveaway item, Block, Report). Location sharing opens `LocationSharePicker` (current location, or search-and-pick a named place via `places-autocomplete`); a searched place's name renders in the bubble in place of raw coordinates. The recipient's claim posts a system message with an Approve action for the lister, reusing the same tradeCompletionId-keyed pattern already used for trade disputes. Connection formation (both `check_and_create_match` and `create_giveaway_connection`) now also posts an opening system message into the thread, covering both new and reused connections.
+- `ChatThread.tsx`: a single thread — text/photo/location message bubbles, a composer for all three, and a "···" menu (Mark Trade Complete, Claim giveaway — shown when the connection has an unclaimed giveaway item, Block, Report). Location sharing opens `LocationSharePicker` (current location, or search-and-pick a named place via `places-autocomplete`); a searched place's name renders in the bubble in place of raw coordinates. The recipient's claim posts a system message with an Approve action for the lister, reusing the same tradeCompletionId-keyed pattern already used for trade disputes. Connection formation (both `check_and_create_match` and `create_giveaway_connection`) now also posts an opening system message into the thread, covering both new and reused connections. The item-context line in the header (`BackBar`'s `subtitle`, widened to accept a `ReactNode` rather than only a string) is tappable per item, navigating to `/item/:id`; for a connection referencing multiple items, each is independently tappable.
 - `MarkTradeComplete.tsx`: select which items on each side were exchanged and confirm, via the `complete_trade` RPC
 - `ReviewWrite.tsx`: post-trade review screen at `/trade-completion/:tradeCompletionId/review`, surfaced by the review-reminder notification after the dispute window closes
 - `Profile.tsx`: stats (items, trades completed, average rating), reviews received, settings menu
 - `Account.tsx`: danger-zone screen — account deletion with confirmation
 - `AccountDeleted.tsx`: standalone post-deletion confirmation screen (outside `ProtectedRoute`, since the session is already cleared by the time it renders)
-- `AdminDashboard.tsx`: admin-only console with tabs for Listings, Reports, Issues, Category Suggestions, and Disputes — all read-only raw views for Phase 1 (no resolve/dismiss actions yet), queried directly against Supabase tables under admin-read RLS policies
+- `AdminDashboard.tsx`: admin-only console with tabs for Listings, Reports, Issues, Category Suggestions, and Disputes, queried directly against Supabase tables under admin-read RLS policies. Reports/Issues/Category Suggestions/Disputes remain read-only raw views for Phase 1 (no resolve/dismiss actions yet). Listings has real actions: Edit opens a category-reclassification modal (`admin_update_item_category`); Delete opens a confirm-then-cancel modal calling `admin_cancel_item`, a new RPC that cancels the listing and notifies connected users the same way the owner's own cancel flow does — matching this project's pattern of never hard-deleting, this isn't a row deletion
 - `Login.tsx`, `Register.tsx`, `ForgotPassword.tsx`, `ResetPassword.tsx`, `AuthCallback.tsx`: auth flows
 
 ### Components (selected)
 
-- Layout/nav: `Layout`, `Header`, `BackBar` (fixed-position, all 8 detail/task screens using it carry matching top padding), `BottomNavigation`, `LoadingSpinner`, `StatsCard`
-- Items/response: `SwipeCard`, `SwipeInterface`, `SwipeControls`, `SwipeCounter`, `ItemStatus`, `CategoryFilter`
+- Layout/nav: `Layout`, `Header`, `BackBar` (fixed-position, all 8 detail/task screens using it carry matching top padding; `subtitle` accepts a `ReactNode`, not just a string, so ChatThread can render tappable item links there), `BottomNavigation`, `LoadingSpinner`, `StatsCard`
+- Items/response: `SwipeCard`, `SwipeInterface` (also owns the empty state's context-aware action: "Load More Items" while paginated results remain, "Check for new listings" once genuinely exhausted, calling `refetch` rather than `fetchNextPage`), `SwipeControls` (Not-for-me/Undo/Like/Filter — no longer has a persistent Refresh action, that moved into SwipeInterface's empty state since it had no real purpose mid-browse), `SwipeCounter`, `ItemStatus`, `CategoryFilter` (also has an "include unrated sellers" toggle, independent of the rating slider's own position)
   (these gesture-layer names — `SwipeCard`/`SwipeInterface`/`SwipeControls`/`SwipeCounter`, and the `onSwipe` prop — are intentionally unchanged; only the data layer was renamed swipe→response)
-- Dialogs: `IssueReportDialog` (wired up, reachable from `Header`'s help icon), `NotificationCenter` (auto-marks-read on open, tap-to-navigate on connection-related types), `LocationSharePicker` (current location or search-and-pick a place)
+- Dialogs: `IssueReportDialog` (wired up, reachable from `Header`'s help icon), `NotificationCenter` (auto-marks-read on open, tap-to-navigate on connection-related types; `product_update` is a plain non-navigating broadcast type), `LocationSharePicker` (current location or search-and-pick a place, unfiltered/precise results, see Location above)
 - Guidance: `InfoTooltip` (viewport-clamped info popover, 11 placements across the app), `OnboardingHint` (one-time dismissible per-tab orientation hint, tracked server-side)
+- `LocationPrompt`: the mandatory-location gate's UI (GPS or manual search, no skip option), rendered by `ProtectedRoute` when a user has no location yet — see Navigation above
 - Auth: `OAuthProviderButton` (Google, Facebook, Apple)
 
 ### Context
