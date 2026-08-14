@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle } from 'lucide-react';
+import { ITEM_CATEGORIES } from '../types';
 
 type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes';
 
@@ -95,6 +96,9 @@ export const AdminDashboard: React.FC = () => {
   const [filterDemo, setFilterDemo] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDemoListings, setShowDemoListings] = useState(false);
+  const [cancelingItem, setCancelingItem] = useState<AdminListingRow | null>(null);
+  const [editingItem, setEditingItem] = useState<AdminListingRow | null>(null);
+  const [editCategory, setEditCategory] = useState('');
 
   const [activeTab, setActiveTab] = useState<AdminTab>('listings');
 
@@ -628,14 +632,14 @@ export const AdminDashboard: React.FC = () => {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => toast.info('Edit functionality coming soon')}
+                          onClick={() => { setEditingItem(item); setEditCategory(item.category); }}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
                           title="Edit Item"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => toast.info('Delete functionality coming soon')}
+                          onClick={() => setCancelingItem(item)}
                           className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
                           title="Delete Item"
                         >
@@ -679,6 +683,85 @@ export const AdminDashboard: React.FC = () => {
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />
             </button>
+          </div>
+        )}
+
+        {editingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setEditingItem(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Reclassify listing</div>
+              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">{editingItem.title}</div>
+              <select
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent mb-4"
+              >
+                {ITEM_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+              <button
+                onClick={async () => {
+                  const { data, error } = await supabase.rpc('admin_update_item_category', {
+                    target_item_id: editingItem.id,
+                    new_category: editCategory,
+                  });
+                  if (error || data?.error) {
+                    toast.error(data?.error ?? error?.message ?? 'Failed to update category');
+                    return;
+                  }
+                  toast.success('Category updated');
+                  setEditingItem(null);
+                  fetchAdminListings();
+                }}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => setEditingItem(null)}
+                className="w-full py-3.5 rounded-xl bg-transparent text-gray-600 text-sm font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {cancelingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setCancelingItem(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Cancel this listing?</div>
+              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+                "{cancelingItem.title}" — this can't be undone. Anyone currently connected over it will be notified
+                it's no longer available.
+              </div>
+              <button
+                onClick={() => setCancelingItem(null)}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+              >
+                Keep listing
+              </button>
+              <button
+                onClick={async () => {
+                  const { data, error } = await supabase.rpc('admin_cancel_item', {
+                    target_item_id: cancelingItem.id,
+                  });
+                  if (error || data?.error) {
+                    toast.error(data?.error ?? error?.message ?? 'Failed to cancel listing');
+                    return;
+                  }
+                  toast.success('Listing cancelled');
+                  setCancelingItem(null);
+                  fetchAdminListings();
+                }}
+                className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold"
+              >
+                Cancel listing
+              </button>
+            </div>
           </div>
         )}
         </>
