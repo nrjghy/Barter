@@ -72,6 +72,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         return '⚠️';
       case 'listing_expiry_reminder':
         return '⏰';
+      case 'product_update':
+        return '🆕';
       default:
         return '📢';
     }
