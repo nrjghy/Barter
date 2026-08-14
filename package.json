@@ -14,6 +14,7 @@
     "@sentry/react": "^10.69.0",
     "@supabase/supabase-js": "^2.53.0",
     "@tanstack/react-query": "^5.83.0",
+    "country-to-currency": "^3.0.1",
     "framer-motion": "^10.16.16",
     "lucide-react": "^0.344.0",
     "posthog-js": "^1.410.5",

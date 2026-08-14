@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Search } from "lucide-react";
 import toast from "react-hot-toast";
+import countryToCurrency from "country-to-currency";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 
@@ -39,12 +40,17 @@ export const LocationPrompt: React.FC = () => {
         const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
           body: { lat: latitude, lng: longitude },
         });
-        const locationString = geocodeError || !geocodeData?.location ? "Unknown location" : geocodeData.location;
+        const { location, countryCode } = geocodeData ?? {};
+        const locationString = geocodeError || !location ? "Unknown location" : location;
+        const defaultCurrency = countryCode
+          ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD"
+          : "USD";
 
         const { error } = await updateProfile({
           location: locationString,
           latitude,
           longitude,
+          defaultCurrency,
         });
 
         setSharing(false);
@@ -106,6 +112,7 @@ export const LocationPrompt: React.FC = () => {
     // normalized to city-level location text instead of storing the
     // raw (often neighborhood-level) suggestion label.
     let locationString = "Unknown location";
+    let defaultCurrency = "USD";
     try {
       const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
         body: { lat: place.lat, lng: place.lng },
@@ -113,14 +120,19 @@ export const LocationPrompt: React.FC = () => {
       if (!geocodeError && geocodeData?.location) {
         locationString = geocodeData.location;
       }
+      const countryCode = geocodeData?.countryCode;
+      if (countryCode) {
+        defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD";
+      }
     } catch {
-      // fall back to "Unknown location" already set above
+      // fall back to "Unknown location" / "USD" already set above
     }
 
     const { error } = await updateProfile({
       location: locationString,
       latitude: place.lat,
       longitude: place.lng,
+      defaultCurrency,
     });
 
     setSelecting(false);

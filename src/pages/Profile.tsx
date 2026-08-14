@@ -13,6 +13,7 @@ import {
   Shield,
   Star,
 } from "lucide-react";
+import countryToCurrency from "country-to-currency";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import { useItems } from "../hooks/useItems";
@@ -38,6 +39,7 @@ export const Profile: React.FC = () => {
     location: user?.location || "",
     latitude: user?.latitude ?? (null as number | null),
     longitude: user?.longitude ?? (null as number | null),
+    defaultCurrency: user?.defaultCurrency,
   });
   const [locationSuggestions, setLocationSuggestions] = useState<{ label: string; lat: number; lng: number }[]>([]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
@@ -83,19 +85,24 @@ export const Profile: React.FC = () => {
             geocodeError || !geocodeData?.location
               ? "Unknown location"
               : geocodeData.location;
+          const countryCode = geocodeData?.countryCode;
+          const defaultCurrency = countryCode
+            ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD"
+            : "USD";
 
           const { error } = await updateProfile({
             ...profileData,
             location: locationString,
             latitude,
             longitude,
+            defaultCurrency,
           });
 
           if (error) {
             console.error("Location update error:", error);
             toast.error("Failed to update location");
           } else {
-            setProfileData((prev) => ({ ...prev, location: locationString, latitude, longitude }));
+            setProfileData((prev) => ({ ...prev, location: locationString, latitude, longitude, defaultCurrency }));
             toast.success("Location updated successfully!");
           }
         } catch (error) {
@@ -184,6 +191,7 @@ export const Profile: React.FC = () => {
                   location: user?.location || "",
                   latitude: user?.latitude ?? (null as number | null),
                   longitude: user?.longitude ?? (null as number | null),
+                  defaultCurrency: user?.defaultCurrency,
                 });
               }}
               className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
@@ -345,6 +353,7 @@ export const Profile: React.FC = () => {
                           // normalized to city-level location text instead of storing the
                           // raw (often neighborhood-level) suggestion label.
                           let locationString = suggestion.label;
+                          let defaultCurrency = "USD";
                           try {
                             const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke(
                               "reverse-geocode",
@@ -353,14 +362,19 @@ export const Profile: React.FC = () => {
                             if (!geocodeError && geocodeData?.location) {
                               locationString = geocodeData.location;
                             }
+                            const countryCode = geocodeData?.countryCode;
+                            if (countryCode) {
+                              defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD";
+                            }
                           } catch (err) {
-                            // fall back to suggestion.label already set above
+                            // fall back to suggestion.label / "USD" already set above
                           }
                           setProfileData((prev) => ({
                             ...prev,
                             location: locationString,
                             latitude: suggestion.lat,
                             longitude: suggestion.lng,
+                            defaultCurrency,
                           }));
                           setShowLocationDropdown(false);
                           setLocationSuggestions([]);

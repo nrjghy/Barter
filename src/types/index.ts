@@ -13,6 +13,7 @@ export interface AuthUser {
   chatHintDismissedAt?: string;
   rating?: number;
   createdAt?: string;
+  defaultCurrency?: string;
 }
 
 export type ProfileUpdate = Partial<Omit<AuthUser, "latitude" | "longitude">> & {

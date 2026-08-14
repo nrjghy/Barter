@@ -17,6 +17,10 @@ import { trackEvent } from "../lib/analytics";
 type RequiredField = "photos" | "title" | "category" | "condition";
 const REQUIRED_FIELD_ORDER: RequiredField[] = ["photos", "title", "category", "condition"];
 
+// Curated dropdown list -- the currency field has no algorithmic use per the
+// PRD, so this intentionally isn't the full ~150-entry ISO 4217 list.
+const CURRENCIES = ["PLN", "EUR", "USD", "GBP", "CZK", "HUF", "RON", "SEK", "NOK", "DKK", "CHF", "UAH"];
+
 export const AddEditItem: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
@@ -33,6 +37,8 @@ export const AddEditItem: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const { user } = useAuth();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -42,6 +48,7 @@ export const AddEditItem: React.FC = () => {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Base64 previews of `images`, same order
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // Pre-existing storage URLs, edit mode only
   const [estimatedValue, setEstimatedValue] = useState("");
+  const [currency, setCurrency] = useState(user?.defaultCurrency ?? "USD");
   const [listingType, setListingType] = useState<"trade" | "giveaway">("trade");
   const [sourceUrl, setSourceUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +75,6 @@ export const AddEditItem: React.FC = () => {
   const conditionRef = useRef<HTMLDivElement>(null);
 
   const { createItem, updateItem, getItem, cancelItem, cancelItemLoading } = useItems();
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const fieldErrors: Record<RequiredField, boolean> = {
@@ -110,6 +116,7 @@ export const AddEditItem: React.FC = () => {
         ? ""
         : String(existingItem.estimatedValue)
     );
+    setCurrency(existingItem.valueCurrency ?? "USD");
     setSourceUrl(existingItem.sourceUrl ?? "");
     setPrefilled(true);
   }, [isEditMode, existingItem, prefilled]);
@@ -134,6 +141,7 @@ export const AddEditItem: React.FC = () => {
         ? ""
         : String(relistFrom.estimatedValue)
     );
+    setCurrency(relistFrom.valueCurrency ?? "USD");
     setSourceUrl(relistFrom.sourceUrl ?? "");
     setPrefilled(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -271,7 +279,7 @@ export const AddEditItem: React.FC = () => {
             condition,
             imageUrls: combinedImageUrls,
             estimatedValue: finalEstimatedValue,
-            valueCurrency: "USD",
+            valueCurrency: currency,
             sourceUrl: sourceUrl.trim() || null,
             categorySuggestion: finalCategorySuggestion,
           },
@@ -293,7 +301,7 @@ export const AddEditItem: React.FC = () => {
           imageUrls: combinedImageUrls, // Pass base64 previews - service will convert to files
           isActive: true,
           estimatedValue: finalEstimatedValue,
-          valueCurrency: "USD",
+          valueCurrency: currency,
           sourceUrl: sourceUrl.trim() || null,
           categorySuggestion: finalCategorySuggestion,
           createdAt: new Date().toISOString(),
@@ -596,18 +604,34 @@ export const AddEditItem: React.FC = () => {
               <label htmlFor="estimatedValue" className="block text-sm font-medium text-gray-700 mb-2">
                 Estimated value (optional)
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                <input
-                  id="estimatedValue"
-                  type="number"
-                  value={estimatedValue}
-                  onChange={(e) => setEstimatedValue(e.target.value)}
-                  className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-                  placeholder="0.00"
-                  min="0"
-                  step="0.01"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">
+                    {currency}
+                  </span>
+                  <input
+                    id="estimatedValue"
+                    type="number"
+                    value={estimatedValue}
+                    onChange={(e) => setEstimatedValue(e.target.value)}
+                    className="w-full pl-14 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <select
+                  id="currency"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                >
+                  {[...new Set([...CURRENCIES, currency])].map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
               </div>
               <p className="text-xs text-gray-500 mt-1">Help others understand your item's value for fair trades. Leave blank if you're not sure.</p>
             </div>

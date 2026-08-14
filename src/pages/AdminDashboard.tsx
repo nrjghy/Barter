@@ -19,6 +19,7 @@ interface AdminListingRow {
   condition: string;
   image_urls: string[] | null;
   estimated_value: number | null;
+  value_currency: string | null;
   is_active: boolean;
   created_at: string;
   user_id: string;
@@ -135,6 +136,7 @@ export const AdminDashboard: React.FC = () => {
           condition,
           image_urls,
           estimated_value,
+          value_currency,
           is_active,
           created_at,
           user_id,
@@ -578,7 +580,7 @@ export const AdminDashboard: React.FC = () => {
                           </div>
                           {item.estimated_value != null && item.estimated_value > 0 && (
                             <div className="text-sm font-medium text-green-600">
-                              ${item.estimated_value}
+                              {item.estimated_value} {item.value_currency}
                             </div>
                           )}
                         </div>
