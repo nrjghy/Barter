@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Camera } from "lucide-react";
+import { X, Camera, Star } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useAuth } from "../contexts/AuthContext";
@@ -20,6 +20,12 @@ const REQUIRED_FIELD_ORDER: RequiredField[] = ["photos", "title", "category", "c
 // Curated dropdown list -- the currency field has no algorithmic use per the
 // PRD, so this intentionally isn't the full ~150-entry ISO 4217 list.
 const CURRENCIES = ["PLN", "EUR", "USD", "GBP", "CZK", "HUF", "RON", "SEK", "NOK", "DKK", "CHF", "UAH"];
+
+// Single ordered source of truth for the photo picker -- position 0 is the
+// listing's primary photo. Existing (already-uploaded) and newly-picked
+// photos are interchangeable entries in the same array so reordering works
+// across both without a separate merge step at submit time.
+type PhotoItem = { type: "existing"; url: string } | { type: "new"; file: File; preview: string };
 
 export const AddEditItem: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
@@ -44,9 +50,7 @@ export const AddEditItem: React.FC = () => {
   const [category, setCategory] = useState("");
   const [categorySuggestion, setCategorySuggestion] = useState("");
   const [condition, setCondition] = useState("");
-  const [images, setImages] = useState<File[]>([]); // Newly-picked files this session only
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]); // Base64 previews of `images`, same order
-  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]); // Pre-existing storage URLs, edit mode only
+  const [photos, setPhotos] = useState<PhotoItem[]>([]); // Ordered photo list, position 0 is primary
   const [estimatedValue, setEstimatedValue] = useState("");
   const [currency, setCurrency] = useState(user?.defaultCurrency ?? "USD");
   const [listingType, setListingType] = useState<"trade" | "giveaway">("trade");
@@ -78,7 +82,7 @@ export const AddEditItem: React.FC = () => {
   const navigate = useNavigate();
 
   const fieldErrors: Record<RequiredField, boolean> = {
-    photos: existingImageUrls.length + images.length === 0,
+    photos: photos.length === 0,
     title: !title.trim(),
     category: !category,
     condition: !condition,
@@ -110,7 +114,7 @@ export const AddEditItem: React.FC = () => {
     setCategorySuggestion(existingItem.categorySuggestion ?? "");
     setCondition(existingItem.condition ?? "");
     setListingType(existingItem.listingType ?? "trade");
-    setExistingImageUrls(existingItem.imageUrls ?? []);
+    setPhotos((existingItem.imageUrls ?? []).map((url) => ({ type: "existing", url })));
     setEstimatedValue(
       existingItem.estimatedValue === null || existingItem.estimatedValue === undefined
         ? ""
@@ -135,7 +139,7 @@ export const AddEditItem: React.FC = () => {
     setCategorySuggestion(relistFrom.categorySuggestion ?? "");
     setCondition(relistFrom.condition ?? "");
     setListingType(relistFrom.listingType ?? "trade");
-    setExistingImageUrls(relistFrom.imageUrls ?? []);
+    setPhotos((relistFrom.imageUrls ?? []).map((url) => ({ type: "existing", url })));
     setEstimatedValue(
       relistFrom.estimatedValue === null || relistFrom.estimatedValue === undefined
         ? ""
@@ -166,7 +170,7 @@ export const AddEditItem: React.FC = () => {
       return true;
     });
 
-    const remainingSlots = 10 - existingImageUrls.length - images.length;
+    const remainingSlots = 10 - photos.length;
     if (validFiles.length > remainingSlots) {
       toast.error(
         remainingSlots <= 0
@@ -176,11 +180,6 @@ export const AddEditItem: React.FC = () => {
       return;
     }
 
-    // Appends to the existing selection rather than replacing it -- this is now
-    // reachable repeatedly via the persistent "Add more" tile once there's at
-    // least one photo, not just once from the initial empty-state picker.
-    setImages((prev) => [...prev, ...validFiles]);
-
     // PRD §17 item-listing funnel, step 2: photo uploaded. Create mode only,
     // and only when something valid was actually added (not on a picker
     // cancel or an all-rejected batch).
@@ -188,7 +187,9 @@ export const AddEditItem: React.FC = () => {
       trackEvent("listing_photo_uploaded");
     }
 
-    // Generate previews
+    // Generate previews, then append -- this is now reachable repeatedly via
+    // the persistent "Add more" tile once there's at least one photo, not
+    // just once from the initial empty-state picker.
     const previews = validFiles.map((file) => {
       const reader = new FileReader();
       return new Promise<string>((resolve) => {
@@ -197,7 +198,14 @@ export const AddEditItem: React.FC = () => {
       });
     });
 
-    Promise.all(previews).then((newPreviews) => setImagePreviews((prev) => [...prev, ...newPreviews]));
+    Promise.all(previews).then((newPreviews) => {
+      const newPhotos: PhotoItem[] = validFiles.map((file, i) => ({
+        type: "new",
+        file,
+        preview: newPreviews[i],
+      }));
+      setPhotos((prev) => [...prev, ...newPhotos]);
+    });
 
     // Without this, re-selecting the same file a second time wouldn't fire onChange
     // again, since this input now stays mounted across multiple picks instead of
@@ -205,13 +213,18 @@ export const AddEditItem: React.FC = () => {
     e.target.value = "";
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+  const handleRemovePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRemoveExistingImage = (index: number) => {
-    setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
+  const handleSetPrimaryPhoto = (index: number) => {
+    setPhotos((prev) => {
+      if (index === 0) return prev;
+      const next = [...prev];
+      const [item] = next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
   };
 
   const handleConfirmCancel = async () => {
@@ -264,10 +277,10 @@ export const AddEditItem: React.FC = () => {
       // suggestion typed in earlier doesn't linger after switching to a different category.
       const finalCategorySuggestion = category === "Other" ? categorySuggestion || undefined : undefined;
 
-      // existingImageUrls (already-real storage URLs, edit mode only) + imagePreviews
-      // (base64 previews of newly-picked files). itemService.updateItem separates
-      // which of these need uploading; in create mode existingImageUrls is always empty.
-      const combinedImageUrls = [...existingImageUrls, ...imagePreviews];
+      // Existing storage URLs and base64 previews of newly-picked files, in the
+      // order set by the picker (position 0 is primary). itemService.updateItem
+      // separates which of these need uploading; in create mode every entry is "new".
+      const combinedImageUrls = photos.map((photo) => (photo.type === "existing" ? photo.url : photo.preview));
 
       if (isEditMode && itemId) {
         const result = (await updateItem({
@@ -444,33 +457,38 @@ export const AddEditItem: React.FC = () => {
           <div ref={photosRef} onMouseDown={() => markTouched("photos")}>
             <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
             <div className="relative">
-              {existingImageUrls.length > 0 || imagePreviews.length > 0 ? (
+              {photos.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {existingImageUrls.map((url, index) => (
-                    <div key={`existing-${index}`} className="relative">
-                      <img src={url} alt={`Photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
+                  {photos.map((photo, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={photo.type === "existing" ? photo.url : photo.preview}
+                        alt={`Photo ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                      />
                       <button
                         type="button"
-                        onClick={() => handleRemoveExistingImage(index)}
+                        onClick={() => handleSetPrimaryPhoto(index)}
+                        disabled={index === 0}
+                        aria-label={index === 0 ? "Primary photo" : "Set as primary photo"}
+                        className={`absolute top-1 left-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                          index === 0
+                            ? "bg-yellow-400 text-white"
+                            : "bg-white/80 text-gray-500 hover:bg-white hover:text-yellow-500"
+                        }`}
+                      >
+                        <Star className="w-4 h-4" fill={index === 0 ? "currentColor" : "none"} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(index)}
                         className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
-                  {imagePreviews.map((preview, index) => (
-                    <div key={`new-${index}`} className="relative">
-                      <img src={preview} alt={`New photo ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  {existingImageUrls.length + imagePreviews.length < 10 && (
+                  {photos.length < 10 && (
                     <label className="flex flex-col items-center justify-center h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
                       <Camera className="w-5 h-5 mb-1 text-gray-400" />
                       <span className="text-xs font-semibold text-gray-500">Add more</span>
