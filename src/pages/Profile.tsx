@@ -24,6 +24,7 @@ import { BackBar } from "../components/BackBar";
 import { StatsCard } from "../components/StatsCard";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { shareApp } from "../utils/share";
 
 export const Profile: React.FC = () => {
   const { user, signOut, updateProfile, updatePassword } = useAuth();
@@ -206,6 +207,15 @@ export const Profile: React.FC = () => {
               className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
             >
               Account
+            </button>
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                shareApp();
+              }}
+              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+            >
+              Invite friends
             </button>
             {user?.role === "admin" && (
               <button

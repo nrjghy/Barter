@@ -1,5 +1,13 @@
 import { toast } from "react-hot-toast";
 
+// Canonical app URL. Deliberately hardcoded rather than derived from
+// window.location.origin -- Netlify resolves both www.letsbarter.app and
+// letsbarter.app to the same site, but WhatsApp's crawler doesn't reliably
+// follow the www -> apex redirect, so a share generated on the www host
+// previously produced a link with a broken preview. Always share the apex
+// domain.
+const APP_URL = "https://letsbarter.app";
+
 /**
  * Share a link to an item listing (PRD §3/§13). Uses the native Web Share
  * API where available, falling back to copying the link to the clipboard.
@@ -14,7 +22,7 @@ import { toast } from "react-hot-toast";
  * surface in the app).
  */
 export async function shareItem(item: { id: string; title: string }): Promise<void> {
-  const url = `${window.location.origin}/listing/${item.id}`;
+  const url = `${APP_URL}/listing/${item.id}`;
 
   if (navigator.share) {
     try {
@@ -30,6 +38,34 @@ export async function shareItem(item: { id: string; title: string }): Promise<vo
 
   try {
     await navigator.clipboard.writeText(url);
+    toast.success("Link copied to clipboard");
+  } catch {
+    toast.error("Couldn't copy the link.");
+  }
+}
+
+/**
+ * Share the app itself, for inviting people who aren't yet on Barter
+ * (Profile > Invite friends). Unlike shareItem, this carries an
+ * accompanying text blurb, since a bare link reads as a drop, a line of
+ * text reads as a personal invite.
+ */
+export async function shareApp(): Promise<void> {
+  const text = "Been decluttering with Barter lately, trading instead of tossing things out. Worth a look:";
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Barter", text, url: APP_URL });
+    } catch (error) {
+      if ((error as Error)?.name !== "AbortError") {
+        toast.error("Couldn't open the share sheet.");
+      }
+    }
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(`${text}\n${APP_URL}`);
     toast.success("Link copied to clipboard");
   } catch {
     toast.error("Couldn't copy the link.");
