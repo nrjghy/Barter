@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // On mount, get the session and set user/loading immediately
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
@@ -71,9 +71,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: session.user.user_metadata?.role || "user",
         });
         // Metadata above is signup-time data and never has latitude/longitude
-        // (or a post-signup location update) -- refine with the real users
-        // row once it's back, same pattern as onAuthStateChange below.
-        fetchUserProfile(session.user);
+        // (or a post-signup location update) -- await the real users row
+        // before unblocking render, so pages never briefly paint with a
+        // metadata-only user (e.g. LocationPrompt flashing for someone who
+        // already has a saved location), same pattern as onAuthStateChange
+        // below.
+        await fetchUserProfile(session.user);
       } else {
         setUser(null);
       }
@@ -84,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
@@ -94,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: session.user.user_metadata?.avatar_url || undefined,
           role: session.user.user_metadata?.role || "user",
         });
-        fetchUserProfile(session.user);
+        await fetchUserProfile(session.user);
       } else {
         setUser(null);
       }
