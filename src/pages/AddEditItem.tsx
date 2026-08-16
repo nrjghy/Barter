@@ -27,6 +27,78 @@ const CURRENCIES = ["PLN", "EUR", "USD", "GBP", "CZK", "HUF", "RON", "SEK", "NOK
 // across both without a separate merge step at submit time.
 type PhotoItem = { type: "existing"; url: string } | { type: "new"; file: File; preview: string };
 
+// PRD §11's 5MB-per-photo cap is purely this app's own rule -- Storage has
+// no server-side size limit on this bucket (file_size_limit: null on
+// barter_user_item_media).
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+// Client-side downscale + re-encode for oversized photos. Exists because iOS
+// Safari transcodes HEIC photos to JPEG at pick time, and JPEG compresses
+// worse than HEIF at equivalent visual quality, so a photo that's well under
+// 5MB in the Photos app can arrive here as a 5MB+ JPEG. Returns null only if
+// it's still over the cap after every dimension/quality round -- callers
+// should fall back to rejecting the file, same as before this existed.
+async function compressImageFile(file: File): Promise<File | null> {
+  let image: HTMLImageElement;
+  try {
+    image = await loadImage(file);
+  } catch {
+    return null;
+  }
+
+  const qualitySteps: number[] = [];
+  for (let q = 0.92; q > 0.6; q -= 0.1) {
+    qualitySteps.push(Math.round(q * 100) / 100);
+  }
+  qualitySteps.push(0.6);
+
+  let maxDimension = 2048;
+  for (let round = 0; round < 3; round++) {
+    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+    const width = Math.round(image.naturalWidth * scale);
+    const height = Math.round(image.naturalHeight * scale);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(image, 0, 0, width, height);
+
+    for (const quality of qualitySteps) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (blob && blob.size <= MAX_UPLOAD_BYTES) {
+        return blobToJpegFile(blob, file.name);
+      }
+    }
+
+    maxDimension = Math.round(maxDimension * 0.8); // ~20% smaller each round
+  }
+
+  return null;
+}
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error(`Failed to load image: ${file.name}`));
+    };
+    img.src = url;
+  });
+}
+
+function blobToJpegFile(blob: Blob, originalName: string): File {
+  const name = /\.jpe?g$/i.test(originalName) ? originalName : originalName.replace(/\.[^./\\]+$/, "") + ".jpg";
+  return new File([blob], name, { type: "image/jpeg", lastModified: Date.now() });
+}
+
 export const AddEditItem: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
@@ -156,10 +228,18 @@ export const AddEditItem: React.FC = () => {
 
     // Validate files
     const validFiles = files.filter((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        toast.error(`${file.name} is too large. Must be less than 5MB`);
-        return false;
+      if (file.size > MAX_UPLOAD_BYTES) {
+        // Canvas re-encoding only captures a single frame, which would
+        // silently strip an animated GIF's animation -- oversized GIFs keep
+        // the original hard reject instead of going through compression.
+        if (file.type === "image/gif") {
+          toast.error(`${file.name} is too large. Must be less than 5MB`);
+          return false;
+        }
+        // Anything else still counts as valid here (occupying a slot below)
+        // and gets a shot at client-side compression once that check passes;
+        // genuinely uncompressible files are caught and rejected individually
+        // after that finishes.
       }
 
       if (!file.type.startsWith("image/")) {
@@ -187,24 +267,42 @@ export const AddEditItem: React.FC = () => {
       trackEvent("listing_photo_uploaded");
     }
 
-    // Generate previews, then append -- this is now reachable repeatedly via
-    // the persistent "Add more" tile once there's at least one photo, not
-    // just once from the initial empty-state picker.
-    const previews = validFiles.map((file) => {
-      const reader = new FileReader();
-      return new Promise<string>((resolve) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
+    // Files already under the cap pass through untouched -- only oversized
+    // (non-GIF) files get downscaled/re-encoded.
+    Promise.all(
+      validFiles.map((file) =>
+        file.size > MAX_UPLOAD_BYTES ? compressImageFile(file).catch(() => null) : Promise.resolve<File | null>(file)
+      )
+    ).then((results) => {
+      const finalFiles: File[] = [];
+      results.forEach((result, i) => {
+        if (result) {
+          finalFiles.push(result);
+        } else {
+          toast.error(`${validFiles[i].name} is too large. Must be less than 5MB`);
+        }
       });
-    });
+      if (finalFiles.length === 0) return;
 
-    Promise.all(previews).then((newPreviews) => {
-      const newPhotos: PhotoItem[] = validFiles.map((file, i) => ({
-        type: "new",
-        file,
-        preview: newPreviews[i],
-      }));
-      setPhotos((prev) => [...prev, ...newPhotos]);
+      // Generate previews, then append -- this is now reachable repeatedly via
+      // the persistent "Add more" tile once there's at least one photo, not
+      // just once from the initial empty-state picker.
+      const previews = finalFiles.map((file) => {
+        const reader = new FileReader();
+        return new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(previews).then((newPreviews) => {
+        const newPhotos: PhotoItem[] = finalFiles.map((file, i) => ({
+          type: "new",
+          file,
+          preview: newPreviews[i],
+        }));
+        setPhotos((prev) => [...prev, ...newPhotos]);
+      });
     });
 
     // Without this, re-selecting the same file a second time wouldn't fire onChange
