@@ -458,7 +458,10 @@ export const ItemDetail: React.FC = () => {
             {/* Seller Information */}
             <div className="bg-white rounded-2xl p-6 border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Listed by</h3>
-              <div className="flex items-start space-x-4">
+              <button
+                onClick={() => navigate(`/user/${item.userId}`)}
+                className="w-full flex items-start space-x-4 text-left hover:opacity-80 transition-opacity"
+              >
                 {item.user.avatarUrl ? (
                   <img
                     src={item.user.avatarUrl}
@@ -496,7 +499,7 @@ export const ItemDetail: React.FC = () => {
                     <span>Member since {formatDate(item.user.createdAt || item.createdAt)}</span>
                   </div>
                 </div>
-              </div>
+              </button>
             </div>
 
             {/* Source URL Section */}

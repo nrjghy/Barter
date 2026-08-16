@@ -13,6 +13,7 @@ import { MarkTradeComplete } from "./pages/MarkTradeComplete";
 import { ReviewWrite } from "./pages/ReviewWrite";
 import { MyStuff } from "./pages/MyStuff";
 import { ItemDetail } from "./pages/ItemDetail";
+import { UserListings } from "./pages/UserListings";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AuthCallback } from "./pages/AuthCallback";
 import { ForgotPassword } from "./pages/ForgotPassword";
@@ -64,6 +65,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <ItemDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/user/:userId"
+            element={
+              <ProtectedRoute>
+                <UserListings />
               </ProtectedRoute>
             }
           />
