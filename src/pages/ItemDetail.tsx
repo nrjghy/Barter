@@ -203,7 +203,7 @@ export const ItemDetail: React.FC = () => {
     >
       <BackBar
         title={item.title}
-        onBack={() => navigate("/")}
+        onBack={() => navigate(-1)}
         action={
           <div className="flex items-center space-x-2 flex-shrink-0">
             <button onClick={handleShare} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
