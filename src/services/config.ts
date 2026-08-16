@@ -127,6 +127,8 @@ export const TABLES = {
   CONNECTION_READS: "connection_reads",
   TRADE_COMPLETIONS: "trade_completions",
   TRADE_COMPLETION_ITEMS: "trade_completion_items",
+  OFFERS: "offers",
+  OFFER_ITEMS: "offer_items",
   ISSUES: "issues",
   APP_SETTINGS: "app_settings",
 } as const;

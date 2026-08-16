@@ -228,6 +228,67 @@ export interface Database {
           item_id?: string;
         };
       };
+      offers: {
+        Row: {
+          id: string;
+          connection_id: string;
+          proposed_by: string;
+          status: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
+          expires_at: string;
+          agreed_at: string | null;
+          auto_complete_at: string | null;
+          trade_completion_id: string | null;
+          superseded_by: string | null;
+          reminder_sent_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          connection_id: string;
+          proposed_by: string;
+          status?: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
+          expires_at: string;
+          agreed_at?: string | null;
+          auto_complete_at?: string | null;
+          trade_completion_id?: string | null;
+          superseded_by?: string | null;
+          reminder_sent_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          connection_id?: string;
+          proposed_by?: string;
+          status?: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
+          expires_at?: string;
+          agreed_at?: string | null;
+          auto_complete_at?: string | null;
+          trade_completion_id?: string | null;
+          superseded_by?: string | null;
+          reminder_sent_at?: string | null;
+          created_at?: string;
+        };
+      };
+      offer_items: {
+        Row: {
+          id: string;
+          offer_id: string;
+          item_id: string;
+          offered_by: string;
+        };
+        Insert: {
+          id?: string;
+          offer_id: string;
+          item_id: string;
+          offered_by: string;
+        };
+        Update: {
+          id?: string;
+          offer_id?: string;
+          item_id?: string;
+          offered_by?: string;
+        };
+      };
       messages: {
         Row: {
           id: string;
@@ -461,6 +522,8 @@ export type ConnectionRead = Database["public"]["Tables"]["connection_reads"]["R
 export type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 export type TradeCompletion = Database["public"]["Tables"]["trade_completions"]["Row"];
 export type TradeCompletionItem = Database["public"]["Tables"]["trade_completion_items"]["Row"];
+export type Offer = Database["public"]["Tables"]["offers"]["Row"];
+export type OfferItem = Database["public"]["Tables"]["offer_items"]["Row"];
 export type Review = Database["public"]["Tables"]["reviews"]["Row"];
 export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];

@@ -8,8 +8,10 @@ import { useAuth } from "../hooks/useAuth";
 import { useUserBlocks } from "../hooks/useUserBlocks";
 import { useReports } from "../hooks/useReports";
 import { useTradeCompletionsByIds } from "../hooks/useTradeCompletions";
+import { useOffers, useOffersByIds } from "../hooks/useOffers";
 import { ConnectionService, TradeCompletionService } from "../services";
 import type { TradeCompletionDisputeInfo } from "../services/tradeCompletionService";
+import type { OfferSummary } from "../services/offerService";
 import { storageService } from "../services/storageService";
 import { toast } from "react-hot-toast";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -25,6 +27,70 @@ import type { MessageWithDetails } from "../services/messageService";
 // built now even though their composer buttons are still disabled --
 // rendering is cheap and self-contained; the send-side (upload,
 // geolocation) is separately scoped work.
+// Offer system-card, keyed off message.data.offerId -- same convention as
+// the trade-completion system card below (a sub-component reading fresh
+// status from a bulk-fetched-by-id map, not from the static message text,
+// since e.g. accept/withdraw don't rewrite earlier messages). Renders on
+// every offer-related system message (offer sent, accepted, withdrawn,
+// expired -- they all share the same offerId), but Accept/Modify only
+// show while that offer is still actually pending and the viewer is the
+// recipient, not the proposer.
+const OfferMessage: React.FC<{
+  message: MessageWithDetails;
+  currentUserId?: string;
+  offer?: OfferSummary;
+  onAccept: (offerId: string) => void;
+  onModify: (offerId: string) => void;
+}> = ({ message, currentUserId, offer, onAccept, onModify }) => {
+  const offerId = (message.data as { offerId?: string } | undefined)?.offerId;
+
+  if (!offerId || !offer) {
+    return (
+      <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
+        {message.content}
+      </div>
+    );
+  }
+
+  const canRespond = offer.status === "pending" && !!currentUserId && offer.proposedBy !== currentUserId;
+  const myItems = offer.items.filter((i) => i.offeredBy === currentUserId);
+  const theirItems = offer.items.filter((i) => i.offeredBy !== currentUserId);
+
+  return (
+    <>
+      <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
+        {message.content}
+      </div>
+      <div className="max-w-[88%] w-full px-3.5 py-3 rounded-2xl border border-[oklch(88%_0.015_90)] bg-white text-[12px] text-[oklch(35%_0.02_95)]">
+        <div className="flex items-start gap-2">
+          <span className="font-bold text-[oklch(22%_0.02_100)] flex-shrink-0">You:</span>
+          <span>{myItems.map((i) => i.title).join(", ") || "—"}</span>
+        </div>
+        <div className="flex items-start gap-2 mt-1">
+          <span className="font-bold text-[oklch(22%_0.02_100)] flex-shrink-0">Them:</span>
+          <span>{theirItems.map((i) => i.title).join(", ") || "—"}</span>
+        </div>
+      </div>
+      {canRespond && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onAccept(offerId)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-barter-600 text-white text-[11px] font-bold"
+          >
+            Accept
+          </button>
+          <button
+            onClick={() => onModify(offerId)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-barter-600 text-barter-700 text-[11px] font-bold"
+          >
+            Modify
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
+
 const MessageBubble: React.FC<{
   message: MessageWithDetails;
   isMine: boolean;
@@ -32,8 +98,36 @@ const MessageBubble: React.FC<{
   tradeCompletionsById: Record<string, TradeCompletionDisputeInfo>;
   onDispute: (tradeCompletionId: string) => void;
   onApprove: (tradeCompletionId: string) => void;
-}> = ({ message, isMine, currentUserId, tradeCompletionsById, onDispute, onApprove }) => {
+  offersById: Record<string, OfferSummary>;
+  onAcceptOffer: (offerId: string) => void;
+  onModifyOffer: (offerId: string) => void;
+}> = ({
+  message,
+  isMine,
+  currentUserId,
+  tradeCompletionsById,
+  onDispute,
+  onApprove,
+  offersById,
+  onAcceptOffer,
+  onModifyOffer,
+}) => {
   if (message.messageType === "system") {
+    const offerId = (message.data as { offerId?: string } | undefined)?.offerId;
+    if (offerId) {
+      return (
+        <div className="flex flex-col items-center gap-1.5">
+          <OfferMessage
+            message={message}
+            currentUserId={currentUserId}
+            offer={offersById[offerId]}
+            onAccept={onAcceptOffer}
+            onModify={onModifyOffer}
+          />
+        </div>
+      );
+    }
+
     const tradeCompletionId = (message.data as { tradeCompletionId?: string } | undefined)?.tradeCompletionId;
     const tradeCompletion = tradeCompletionId ? tradeCompletionsById[tradeCompletionId] : undefined;
     const canDispute =
@@ -168,6 +262,78 @@ const MessageBubble: React.FC<{
   );
 };
 
+function formatCountdown(target: string): string {
+  const diffMs = new Date(target).getTime() - Date.now();
+  if (diffMs <= 0) return "any moment now";
+  const totalMinutes = Math.floor(diffMs / 60000);
+  const days = Math.floor(totalMinutes / (60 * 24));
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+// Ticks every 30s -- plenty of resolution for a countdown that spans days,
+// without re-rendering the whole strip every second.
+function useCountdownLabel(target: string | null | undefined): string | null {
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    if (!target) return;
+    const id = setInterval(() => forceTick((t) => t + 1), 30000);
+    return () => clearInterval(id);
+  }, [target]);
+  return target ? formatCountdown(target) : null;
+}
+
+// The confirmed design: a persistent pinned strip above the composer (not
+// a passive card in the scroll), shown whenever the connection has an
+// `agreed` offer -- distinct from OfferMessage's per-message card, which
+// only reflects a single historical event.
+const AgreedOfferStrip: React.FC<{
+  offer: OfferSummary;
+  currentUserId?: string;
+  onConfirmNow: () => void;
+  onWithdraw: () => void;
+}> = ({ offer, currentUserId, onConfirmNow, onWithdraw }) => {
+  const countdown = useCountdownLabel(offer.autoCompleteAt);
+  const myItems = offer.items.filter((i) => i.offeredBy === currentUserId);
+  const theirItems = offer.items.filter((i) => i.offeredBy !== currentUserId);
+  const summary = [myItems.map((i) => i.title).join(", "), theirItems.map((i) => i.title).join(", ")]
+    .filter(Boolean)
+    .join(" ↔ ");
+
+  return (
+    <div className="flex-shrink-0 px-3.5 py-3 border-t border-[oklch(88%_0.015_90)] bg-barter-50">
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="px-2 py-0.5 rounded-full bg-barter-600 text-white text-[10px] font-extrabold tracking-wide">
+          AGREED
+        </span>
+        {countdown && (
+          <span className="text-[11px] font-semibold text-[oklch(45%_0.02_95)]">
+            Auto-completes in {countdown}
+          </span>
+        )}
+      </div>
+      <div className="text-[12.5px] font-semibold text-[oklch(22%_0.02_100)] mb-2.5 truncate">{summary}</div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onConfirmNow}
+          className="flex-1 py-2.5 rounded-xl bg-barter-600 text-white text-[12.5px] font-bold"
+        >
+          Confirm now
+        </button>
+        <button
+          onClick={onWithdraw}
+          className="flex-1 py-2.5 rounded-xl border border-[oklch(50%_0.15_30_/_0.4)] text-[oklch(50%_0.15_30)] text-[12.5px] font-bold"
+        >
+          Withdraw
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const ChatThread: React.FC = () => {
   const { connectionId } = useParams<{ connectionId: string }>();
   const navigate = useNavigate();
@@ -196,6 +362,8 @@ export const ChatThread: React.FC = () => {
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [selectedClaimItemId, setSelectedClaimItemId] = useState<string | null>(null);
   const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [withdrawConfirmOpen, setWithdrawConfirmOpen] = useState(false);
+  const [withdrawSubmitting, setWithdrawSubmitting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasMarkedOpened = useRef(false);
@@ -209,6 +377,63 @@ export const ChatThread: React.FC = () => {
     )
   );
   const { tradeCompletionsById } = useTradeCompletionsByIds(tradeCompletionIds);
+
+  const offerIds = Array.from(
+    new Set(
+      messages
+        .filter((m) => m.messageType === "system")
+        .map((m) => (m.data as { offerId?: string } | undefined)?.offerId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const { offersById } = useOffersByIds(offerIds);
+  const { currentOffer, acceptOffer, withdrawOffer } = useOffers(connectionId);
+
+  const handleAcceptOffer = async (offerId: string) => {
+    try {
+      const { error } = await acceptOffer(offerId);
+      if (error) {
+        toast.error(error.message || "Couldn't accept this offer. Please try again.");
+        return;
+      }
+      toast.success("Offer accepted!");
+    } catch {
+      toast.error("Couldn't accept this offer. Please try again.");
+    }
+  };
+
+  const handleModifyOffer = (offerId: string) => {
+    if (connectionId) navigate(`/chat/${connectionId}/offer`, { state: { counterOfferId: offerId } });
+  };
+
+  const handleOpenOfferComposer = () => {
+    if (connectionId) navigate(`/chat/${connectionId}/offer`);
+  };
+
+  const handleConfirmNow = () => {
+    if (!connectionId || !currentOffer) return;
+    navigate(`/chat/${connectionId}/trade-complete`, {
+      state: { offerItemIds: currentOffer.items.map((i) => i.id) },
+    });
+  };
+
+  const handleConfirmWithdraw = async () => {
+    if (!currentOffer) return;
+    setWithdrawSubmitting(true);
+    try {
+      const { error } = await withdrawOffer(currentOffer.id);
+      if (error) {
+        toast.error(error.message || "Couldn't withdraw this trade. Please try again.");
+        return;
+      }
+      toast.success("Trade withdrawn");
+      setWithdrawConfirmOpen(false);
+    } catch {
+      toast.error("Couldn't withdraw this trade. Please try again.");
+    } finally {
+      setWithdrawSubmitting(false);
+    }
+  };
 
   const handleConfirmDispute = async () => {
     if (!disputeTradeCompletionId) return;
@@ -561,10 +786,22 @@ export const ChatThread: React.FC = () => {
               tradeCompletionsById={tradeCompletionsById}
               onDispute={setDisputeTradeCompletionId}
               onApprove={setApproveTradeCompletionId}
+              offersById={offersById}
+              onAcceptOffer={handleAcceptOffer}
+              onModifyOffer={handleModifyOffer}
             />
           ))}
         <div ref={bottomRef} />
       </div>
+
+      {currentOffer?.status === "agreed" && (
+        <AgreedOfferStrip
+          offer={currentOffer}
+          currentUserId={user?.id}
+          onConfirmNow={handleConfirmNow}
+          onWithdraw={() => setWithdrawConfirmOpen(true)}
+        />
+      )}
 
       <div className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2.5 border-t border-[oklch(88%_0.015_90)] bg-[oklch(99%_0.006_95)]">
         <input
@@ -597,6 +834,14 @@ export const ChatThread: React.FC = () => {
           ) : (
             <MapPin className="w-[18px] h-[18px]" />
           )}
+        </button>
+        <button
+          onClick={handleOpenOfferComposer}
+          disabled={!!currentOffer}
+          title={currentOffer ? "This connection already has an active offer" : "Propose a trade"}
+          className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40 flex-shrink-0"
+        >
+          🤝
         </button>
         <input
           value={draft}
@@ -797,6 +1042,34 @@ export const ChatThread: React.FC = () => {
             <button
               onClick={() => setClaimModalOpen(false)}
               disabled={claimSubmitting}
+              className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+      {withdrawConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div
+            className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.4)]"
+            onClick={() => !withdrawSubmitting && setWithdrawConfirmOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Withdraw this trade?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] mb-4">
+              {otherUsername} will be notified, and both items return to Discover. This can't be undone.
+            </div>
+            <button
+              onClick={handleConfirmWithdraw}
+              disabled={withdrawSubmitting}
+              className="w-full py-3.5 rounded-xl bg-[oklch(50%_0.15_30)] text-white text-sm font-bold mb-2 disabled:opacity-50"
+            >
+              {withdrawSubmitting ? "Withdrawing…" : "Withdraw"}
+            </button>
+            <button
+              onClick={() => setWithdrawConfirmOpen(false)}
+              disabled={withdrawSubmitting}
               className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(45%_0.02_95)] text-sm font-bold disabled:opacity-50"
             >
               Cancel

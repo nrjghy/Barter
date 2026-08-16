@@ -10,6 +10,7 @@ import { Profile } from "./pages/Profile";
 import { Chat } from "./pages/Chat";
 import { ChatThread } from "./pages/ChatThread";
 import { MarkTradeComplete } from "./pages/MarkTradeComplete";
+import { OfferComposer } from "./pages/OfferComposer";
 import { ReviewWrite } from "./pages/ReviewWrite";
 import { MyStuff } from "./pages/MyStuff";
 import { ItemDetail } from "./pages/ItemDetail";
@@ -137,6 +138,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <MarkTradeComplete />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:connectionId/offer"
+            element={
+              <ProtectedRoute>
+                <OfferComposer />
               </ProtectedRoute>
             }
           />
