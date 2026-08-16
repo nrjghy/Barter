@@ -87,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
@@ -97,13 +97,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           avatar_url: session.user.user_metadata?.avatar_url || undefined,
           role: session.user.user_metadata?.role || "user",
         });
-        await fetchUserProfile(session.user);
+        // Deferred via setTimeout on purpose -- this callback can run
+        // synchronously inside supabase-js's own initializePromise chain
+        // (e.g. recovering a session from storage on first load). Any
+        // awaited call back into the client from here, like fetchUserProfile's
+        // query, would need that same initializePromise to resolve first,
+        // deadlocking against the very call stack it's nested in. Deferring
+        // breaks out of that call stack, same pattern supabase-js uses
+        // internally for its URL-callback path.
+        setTimeout(() => {
+          fetchUserProfile(session.user).finally(() => {
+            setLoading(false);
+            setInitialized(true);
+            console.log("[AuthContext] setLoading(false) called in onAuthStateChange");
+          });
+        }, 0);
       } else {
         setUser(null);
+        setLoading(false);
+        setInitialized(true);
+        console.log("[AuthContext] setLoading(false) called in onAuthStateChange");
       }
-      setLoading(false);
-      setInitialized(true);
-      console.log("[AuthContext] setLoading(false) called in onAuthStateChange");
     });
 
     return () => subscription.unsubscribe();
