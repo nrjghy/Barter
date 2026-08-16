@@ -310,8 +310,12 @@ const AgreedOfferStrip: React.FC<{
           AGREED
         </span>
         {countdown && (
-          <span className="text-[11px] font-semibold text-[oklch(45%_0.02_95)]">
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-[oklch(45%_0.02_95)]">
             Auto-completes in {countdown}
+            <InfoTooltip
+              text="If neither of you confirms or withdraws by then, this trade completes automatically and the items are marked traded."
+              label="Auto-complete"
+            />
           </span>
         )}
       </div>
@@ -835,14 +839,22 @@ export const ChatThread: React.FC = () => {
             <MapPin className="w-[18px] h-[18px]" />
           )}
         </button>
-        <button
-          onClick={handleOpenOfferComposer}
-          disabled={!!currentOffer}
-          title={currentOffer ? "This connection already has an active offer" : "Propose a trade"}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40 flex-shrink-0"
-        >
-          🤝
-        </button>
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={handleOpenOfferComposer}
+            disabled={!!currentOffer}
+            title={currentOffer ? "This connection already has an active offer" : "Propose a trade"}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40"
+          >
+            🤝
+          </button>
+          <div className="absolute -top-1 -right-1 bg-white rounded-full">
+            <InfoTooltip
+              text="Propose a trade — pick items from both sides, and the other person can accept or suggest changes."
+              label="Propose a trade"
+            />
+          </div>
+        </div>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
