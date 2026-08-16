@@ -117,14 +117,22 @@ export const OfferComposer: React.FC = () => {
   const toggleMine = (id: string) =>
     setSelectedMine((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
   const toggleTheirs = (id: string) =>
     setSelectedTheirs((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 

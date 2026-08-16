@@ -49,7 +49,22 @@ const OFFER_SELECT = `
   offer_items ( item_id, offered_by, items ( title, image_urls ) )
 `;
 
-function toOfferSummary(row: any): OfferSummary {
+interface OfferRow {
+  id: string;
+  connection_id: string;
+  proposed_by: string;
+  status: OfferStatus;
+  expires_at: string;
+  agreed_at: string | null;
+  auto_complete_at: string | null;
+  offer_items: Array<{
+    item_id: string;
+    offered_by: string;
+    items: { title: string; image_urls: string[] | null } | null;
+  }> | null;
+}
+
+function toOfferSummary(row: OfferRow): OfferSummary {
   return {
     id: row.id,
     connectionId: row.connection_id,
@@ -58,7 +73,7 @@ function toOfferSummary(row: any): OfferSummary {
     expiresAt: row.expires_at,
     agreedAt: row.agreed_at,
     autoCompleteAt: row.auto_complete_at,
-    items: (row.offer_items || []).map((offerItem: any) => ({
+    items: (row.offer_items || []).map((offerItem) => ({
       id: offerItem.item_id,
       title: offerItem.items?.title ?? "",
       imageUrls: offerItem.items?.image_urls ?? undefined,
@@ -335,7 +350,7 @@ export class OfferService {
         };
       }
 
-      const rows = (data as any[]) || [];
+      const rows = (data as unknown as OfferRow[]) || [];
       const preferred = rows.find((row) => row.status === "agreed") ?? rows.find((row) => row.status === "pending");
 
       return { data: preferred ? toOfferSummary(preferred) : null };
@@ -373,7 +388,7 @@ export class OfferService {
       }
 
       const byId: Record<string, OfferSummary> = {};
-      for (const row of (data as any[]) || []) {
+      for (const row of (data as unknown as OfferRow[]) || []) {
         byId[row.id] = toOfferSummary(row);
       }
 
