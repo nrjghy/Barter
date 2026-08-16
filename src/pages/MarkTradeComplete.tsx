@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Package } from "lucide-react";
 import { useConnection } from "../hooks/useConnections";
 import { useUserItems } from "../hooks/useItems";
@@ -92,18 +92,40 @@ const ItemChecklist: React.FC<{
 export const MarkTradeComplete: React.FC = () => {
   const { connectionId } = useParams<{ connectionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { connection, loading: connectionLoading } = useConnection(connectionId);
   const { items: myItems, loading: myItemsLoading } = useUserItems(user?.id);
   const { items: theirItems, loading: theirItemsLoading } = useUserItems(connection?.otherUser.id);
 
+  // Passed by ChatThread's pinned-strip "Confirm Now" button as a flat
+  // array of item ids covering both sides of the agreed offer -- absent
+  // when reaching this screen the normal way (chat "···" menu).
+  const offerItemIds = (location.state as { offerItemIds?: string[] } | null)?.offerItemIds;
+  const hasOfferState = !!offerItemIds && offerItemIds.length > 0;
+
   const [step, setStep] = useState<Step>("select");
   const [selectedMine, setSelectedMine] = useState<Set<string>>(new Set());
   const [selectedTheirs, setSelectedTheirs] = useState<Set<string>>(new Set());
+  const [prefilled, setPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
   const theirActiveItems = theirItems; // RLS already limits a non-owner's view to active items only
+
+  // Pre-fill both sides from the agreed offer's item ids, once both item
+  // lists have loaded. This is a starting point, not a binding source of
+  // truth -- what actually changed hands can differ from what was agreed
+  // -- so it only seeds initial state (guarded by `prefilled`) and never
+  // overrides the user's own subsequent edits.
+  useEffect(() => {
+    if (!offerItemIds || offerItemIds.length === 0 || prefilled || myItemsLoading || theirItemsLoading) return;
+    const myActiveIds = new Set(myItems.filter((i) => (i.status ?? "active") === "active").map((i) => i.id));
+    const theirIds = new Set(theirItems.map((i) => i.id));
+    setSelectedMine(new Set(offerItemIds.filter((id) => myActiveIds.has(id))));
+    setSelectedTheirs(new Set(offerItemIds.filter((id) => theirIds.has(id))));
+    setPrefilled(true);
+  }, [offerItemIds, prefilled, myItemsLoading, theirItemsLoading, myItems, theirItems]);
 
   const toggleMine = (id: string) =>
     setSelectedMine((prev) => {
@@ -175,6 +197,13 @@ export const MarkTradeComplete: React.FC = () => {
             <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-5">
               Select the item(s) that were actually exchanged with {otherUsername}.
             </div>
+            {hasOfferState && (
+              <div className="p-3.5 rounded-xl bg-barter-50 border border-barter-200 mb-5">
+                <p className="text-[12.5px] text-barter-800 leading-relaxed">
+                  Pre-filled from your agreed trade — adjust if what was actually exchanged was different.
+                </p>
+              </div>
+            )}
             <ItemChecklist
               label="YOUR ITEMS"
               items={myActiveItems}
