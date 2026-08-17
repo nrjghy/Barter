@@ -51,7 +51,7 @@ export const Discover: React.FC = () => {
     lat: user?.latitude ?? null,
     lng: user?.longitude ?? null,
   });
-  const { recordResponse, dailyLikeCount, likeLimit, getRespondedItems, undoResponse } = useResponses();
+  const { recordResponse, dailyLikeCount, likeLimit, getRespondedItems, undoResponse, undoResponseLoading } = useResponses();
 
   // Load previously responded-to items
   useEffect(() => {
@@ -164,7 +164,7 @@ export const Discover: React.FC = () => {
   };
 
   const handleUndo = async () => {
-    if (respondedItems.size === 0) return;
+    if (respondedItems.size === 0 || undoResponseLoading) return;
     const candidates = Array.from(respondedItems).reverse(); // most recent first
 
     for (const candidateItemId of candidates) {
@@ -176,7 +176,7 @@ export const Discover: React.FC = () => {
             // Already matched, can't undo this one -- try the next most recent instead.
             continue;
           }
-          toast.error(result.error.message);
+          toast.error(result.error.message, { id: "undo-toast" });
           return;
         }
 
@@ -188,15 +188,15 @@ export const Discover: React.FC = () => {
         if (currentIndex > 0) {
           setCurrentIndex((prev) => prev - 1);
         }
-        toast.success("Undo successful!");
+        toast.success("Undo successful!", { id: "undo-toast" });
         return;
       } catch (error) {
-        toast.error("Couldn't undo, please try again.");
+        toast.error("Couldn't undo, please try again.", { id: "undo-toast" });
         return;
       }
     }
 
-    toast("Nothing left to undo right now.");
+    toast("Nothing left to undo right now.", { id: "undo-toast" });
   };
 
   const likesRemaining = likeLimit - dailyLikeCount;
@@ -275,7 +275,7 @@ export const Discover: React.FC = () => {
         onSwipe={handleSwipe}
         onUndo={handleUndo}
         disabled={!currentItem || likesRemaining <= 0}
-        canUndo={respondedItems.size > 0}
+        canUndo={respondedItems.size > 0 && !undoResponseLoading}
         onFilter={() => setShowFilter(true)}
         hasActiveFilters={hasActiveFilters}
       />

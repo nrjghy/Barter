@@ -95,6 +95,7 @@ export const useResponses = () => {
     recordResponse: ({ itemId, direction }: { itemId: string; direction: "pass" | "like" }) =>
       recordResponse.mutateAsync({ itemId, direction }),
     undoResponse: (itemId: string) => undoResponse.mutateAsync({ itemId }),
+    undoResponseLoading: undoResponse.isPending,
     checkLikeLimit: () => ResponseService.checkLikeLimit(user!.id),
     getRespondedItems: () => refetchRespondedItems().then((res) => res.data?.data ?? []),
   };
