@@ -157,7 +157,7 @@ export const OfferComposer: React.FC = () => {
   }, [connectionId, selectedMine, selectedTheirs]);
 
   const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
-  const theirActiveItems = theirItems; // RLS already limits a non-owner's view to active items only
+  const theirActiveItems = theirItems.filter((i) => (i.status ?? "active") === "active");
 
   const toggleMine = (id: string) =>
     setSelectedMine((prev) => {

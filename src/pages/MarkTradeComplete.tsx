@@ -148,7 +148,7 @@ export const MarkTradeComplete: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
-  const theirActiveItems = theirItems; // RLS already limits a non-owner's view to active items only
+  const theirActiveItems = theirItems.filter((i) => (i.status ?? "active") === "active");
 
   // Pre-fill both sides from the agreed offer's item ids, once both item
   // lists have loaded. This is a starting point, not a binding source of
@@ -158,7 +158,7 @@ export const MarkTradeComplete: React.FC = () => {
   useEffect(() => {
     if (!offerItemIds || offerItemIds.length === 0 || prefilled || myItemsLoading || theirItemsLoading) return;
     const myActiveIds = new Set(myItems.filter((i) => (i.status ?? "active") === "active").map((i) => i.id));
-    const theirIds = new Set(theirItems.map((i) => i.id));
+    const theirIds = new Set(theirItems.filter((i) => (i.status ?? "active") === "active").map((i) => i.id));
     setSelectedMine(new Set(offerItemIds.filter((id) => myActiveIds.has(id))));
     setSelectedTheirs(new Set(offerItemIds.filter((id) => theirIds.has(id))));
     setPrefilled(true);
