@@ -1,6 +1,10 @@
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { useAuth } from "./useAuth";
 import { NotificationService } from "../services";
+import { getNotificationRoute } from "../utils/notificationRouting";
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -15,7 +19,7 @@ export const useNotifications = () => {
     queryKey: ["notifications", user?.id],
     queryFn: () => NotificationService.getUserNotifications(user!.id),
     enabled: !!user,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
 
   // Get unread notifications
@@ -49,7 +53,7 @@ export const useNotifications = () => {
     queryKey: ["unreadCount", user?.id],
     queryFn: () => NotificationService.getUnreadCount(user!.id),
     enabled: !!user,
-    refetchInterval: 15000,
+    refetchInterval: 5000,
   });
 
   // Mark notification as read
@@ -138,4 +142,41 @@ export const useNotifications = () => {
     createNotificationLoading: createNotification.isPending,
     createNotificationError: createNotification.error?.message,
   };
+};
+
+export const useNotificationToasts = () => {
+  const { notifications } = useNotifications();
+  const navigate = useNavigate();
+  const seenIds = useRef<Set<string> | null>(null);
+
+  useEffect(() => {
+    if (notifications.length === 0 && seenIds.current === null) return;
+
+    if (seenIds.current === null) {
+      // First load: seed from whatever already exists, don't toast the backlog.
+      seenIds.current = new Set(notifications.map((n) => n.id));
+      return;
+    }
+
+    const newOnes = notifications.filter((n) => !n.isRead && !seenIds.current!.has(n.id));
+    for (const n of newOnes) {
+      seenIds.current.add(n.id);
+      const route = getNotificationRoute(n);
+      toast((t) => (
+        <div
+          className={route ? "cursor-pointer" : ""}
+          onClick={() => {
+            toast.dismiss(t.id);
+            if (route) navigate(route);
+          }}
+        >
+          <div className="font-semibold">{n.title}</div>
+          <div className="text-sm opacity-90">{n.content}</div>
+        </div>
+      ));
+    }
+    // Also absorb ids for anything no longer new, so a later unrelated
+    // re-render doesn't re-toast something already handled.
+    for (const n of notifications) seenIds.current.add(n.id);
+  }, [notifications, navigate]);
 };

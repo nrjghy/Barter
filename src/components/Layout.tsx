@@ -3,12 +3,14 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNavigation } from './BottomNavigation';
 import { Header } from './Header';
 import { Toaster } from 'react-hot-toast';
+import { useNotificationToasts } from '../hooks/useNotifications';
 
 const TOP_LEVEL_PATHS = ['/', '/my-stuff', '/chat'];
 
 export const Layout: React.FC = () => {
   const location = useLocation();
   const isTopLevel = TOP_LEVEL_PATHS.includes(location.pathname);
+  useNotificationToasts();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-barter-50 via-barter-100 to-barter-200 relative overflow-hidden">

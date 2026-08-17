@@ -5,26 +5,12 @@ import { Bell, X, Check, Trash2 } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { NotificationWithDetails } from '../services/notificationService';
+import { CONNECTION_NOTIFICATION_TYPES, getNotificationRoute } from '../utils/notificationRouting';
 
 interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const CONNECTION_NOTIFICATION_TYPES = new Set([
-  'match',
-  'trade_completed',
-  'item_unavailable',
-  'pending_approval',
-  'trade_dispute',
-  'offer_received',
-  'offer_agreed',
-  'offer_countered',
-  'offer_withdrawn',
-  'offer_expiring_soon',
-  'offer_auto_completing_soon',
-  'offer_expired',
-]);
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
   const { notifications, notificationsLoading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
@@ -40,21 +26,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
   }, [isOpen]);
 
   const handleNotificationClick = (notification: NotificationWithDetails) => {
-    if (notification.type === 'review_reminder') {
-      const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
-      if (!tradeCompletionId) return;
-      onClose();
-      navigate(`/trade-completion/${tradeCompletionId}/review`);
-      return;
-    }
-
-    if (CONNECTION_NOTIFICATION_TYPES.has(notification.type)) {
-      const connectionId = (notification.data as { connectionId?: string } | undefined)?.connectionId;
-      if (!connectionId) return;
-      onClose();
-      navigate(`/chat/${connectionId}`);
-      return;
-    }
+    const route = getNotificationRoute(notification);
+    if (!route) return;
+    onClose();
+    navigate(route);
   };
 
   const getNotificationIcon = (type: string) => {
