@@ -231,7 +231,13 @@ export const MarkTradeComplete: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
-      <BackBar title="Mark trade complete" onBack={() => navigate(`/chat/${connectionId}`)} />
+      <BackBar
+        title="Mark trade complete"
+        onBack={() => {
+          if (connectionId) sessionStorage.removeItem(selectionStorageKey(connectionId));
+          navigate(`/chat/${connectionId}`);
+        }}
+      />
 
       {connectionLoading ? (
         <div className="flex-1 flex items-center justify-center">

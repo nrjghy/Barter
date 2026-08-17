@@ -217,7 +217,13 @@ export const OfferComposer: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
-      <BackBar title={isCounter ? "Modify offer" : "Propose a trade"} onBack={() => navigate(`/chat/${connectionId}`)} />
+      <BackBar
+        title={isCounter ? "Modify offer" : "Propose a trade"}
+        onBack={() => {
+          if (connectionId) sessionStorage.removeItem(selectionStorageKey(connectionId));
+          navigate(`/chat/${connectionId}`);
+        }}
+      />
 
       {connectionLoading ? (
         <div className="flex-1 flex items-center justify-center">
