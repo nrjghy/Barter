@@ -19,9 +19,13 @@ ALTER TABLE public.notifications ADD CONSTRAINT notifications_type_check
 -- target_item_is_system/target_item_is_curator/target_item_user_id from the
 -- single SELECT that already exists, and inserted_id IS NOT NULL (already
 -- computed for the daily_swipes guard a few lines below) as the "did this
--- like actually get newly recorded" signal, so an undo + re-like doesn't
--- double-notify and a duplicate like (already-liked item) doesn't notify at
--- all. Deliberately placed before the is_system/is_curator/giveaway
+-- like actually get newly recorded" signal, so a duplicate call on an
+-- already-liked item (no undo in between) doesn't notify twice. An undo
+-- followed by a genuine re-like DOES notify again -- undo_response deletes
+-- the row, so the re-like is a real new insert, indistinguishable from a
+-- first-ever like, and that's treated as intentional: a deliberate re-like
+-- after taking one back is current, genuine interest the owner should hear
+-- about, not noise. Deliberately placed before the is_system/is_curator/giveaway
 -- branches so it still fires on a giveaway like from a real user -- only
 -- system and curator owners are excluded (curator likes already branch to
 -- their own connection flow elsewhere).
