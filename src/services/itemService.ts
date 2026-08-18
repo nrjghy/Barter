@@ -323,23 +323,7 @@ export class ItemService {
       // existed, create-mode images were always 100% fresh base64, so this
       // split was never needed here until now.
       if (itemData.imageUrls && itemData.imageUrls.length > 0) {
-        const alreadyUploadedUrls = itemData.imageUrls.filter((url) => !url.startsWith("data:"));
-        const newBase64Images = itemData.imageUrls.filter((url) => url.startsWith("data:"));
-
-        let finalImageUrls = alreadyUploadedUrls;
-        if (newBase64Images.length > 0) {
-          try {
-            const imageFiles = await ItemService.convertBase64ToFiles(newBase64Images);
-            const uploadedUrls = await storageService.uploadImages(imageFiles, userId, data.id);
-            finalImageUrls = [...alreadyUploadedUrls, ...uploadedUrls];
-          } catch (uploadError) {
-            console.error("Image upload failed:", uploadError);
-            // Keep whatever was already real rather than losing everything --
-            // previously a failed upload wiped the entire batch, including
-            // URLs that never needed uploading in the first place.
-            finalImageUrls = alreadyUploadedUrls;
-          }
-        }
+        const finalImageUrls = await ItemService.resolveImageUrls(itemData.imageUrls, userId, data.id);
 
         const { error: updateError } = await supabase
           .from(TABLES.ITEMS)
@@ -415,26 +399,7 @@ export class ItemService {
       // that array straight through -- any base64 entries would have been persisted as
       // raw data URIs in image_urls instead of real storage URLs. Only the base64
       // portion needs uploading; already-real URLs pass through unchanged.
-      let finalImageUrls = updates.imageUrls;
-      if (updates.imageUrls && updates.imageUrls.length > 0) {
-        const alreadyUploadedUrls = updates.imageUrls.filter((url) => !url.startsWith("data:"));
-        const newBase64Images = updates.imageUrls.filter((url) => url.startsWith("data:"));
-
-        if (newBase64Images.length > 0) {
-          try {
-            const imageFiles = await ItemService.convertBase64ToFiles(newBase64Images);
-            const uploadedUrls = await storageService.uploadImages(imageFiles, userId, itemId);
-            finalImageUrls = [...alreadyUploadedUrls, ...uploadedUrls];
-          } catch (uploadError) {
-            console.error("Image upload failed during update:", uploadError);
-            // Fall back to only the images that were already real URLs, rather than
-            // persisting unresolved base64 data into image_urls.
-            finalImageUrls = alreadyUploadedUrls;
-          }
-        } else {
-          finalImageUrls = alreadyUploadedUrls;
-        }
-      }
+      const finalImageUrls = await ItemService.resolveImageUrls(updates.imageUrls, userId, itemId);
 
       const { data, error } = await supabase
         .from(TABLES.ITEMS)
@@ -496,6 +461,75 @@ export class ItemService {
       };
 
       return { data: transformedData };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
+   * Admin editing another user's listing -- covers every field the owner
+   * themselves can edit via AddEditItem.tsx, except listing_type (locked
+   * post-creation for admins too, same as for owners). Goes through
+   * admin_update_item rather than a plain client update: that RPC is
+   * admin-gated, diffs old vs. new server-side, and notifies the owner with
+   * the actual diff (skipped entirely if nothing changed, or if the admin is
+   * editing their own listing). Runs the same image-upload preprocessing as
+   * updateItem before calling it, since Storage uploads are a client-side
+   * concern that can't move into SQL.
+   */
+  static async adminUpdateItem(
+    itemId: string,
+    updates: Partial<ItemData>,
+    adminUserId: string
+  ): Promise<ServiceResult<boolean>> {
+    try {
+      const uuidError = ValidationService.validateUUID(itemId);
+      if (uuidError) return { error: uuidError };
+
+      const finalImageUrls = await ItemService.resolveImageUrls(updates.imageUrls, adminUserId, itemId);
+
+      const { data: result, error } = await supabase.rpc("admin_update_item", {
+        target_item_id: itemId,
+        p_title: updates.title ?? null,
+        p_description: updates.description ?? null,
+        p_category: updates.category ?? null,
+        p_category_suggestion: updates.categorySuggestion ?? null,
+        p_condition: updates.condition ?? null,
+        p_estimated_value: updates.estimatedValue ?? null,
+        p_value_currency: updates.valueCurrency ?? null,
+        p_tags: updates.tags ?? null,
+        p_image_urls: finalImageUrls ?? null,
+        p_location: updates.location ?? null,
+        p_latitude: updates.latitude ?? null,
+        p_longitude: updates.longitude ?? null,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to update item",
+            details: error,
+          },
+        };
+      }
+
+      if (result?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: result.error,
+          },
+        };
+      }
+
+      return { data: true };
     } catch (error) {
       return {
         error: {
@@ -721,6 +755,37 @@ export class ItemService {
     if (conditionError) return conditionError;
 
     return null;
+  }
+
+  /**
+   * Resolves a listing's imageUrls array to real Storage URLs. Entries may be
+   * a mix of already-uploaded storage URLs (kept from before) and fresh
+   * base64 previews (data: URIs) -- only the base64 portion needs uploading,
+   * already-real URLs pass through unchanged. Shared by createItem,
+   * updateItem, and adminUpdateItem so this logic exists exactly once; a
+   * failed upload falls back to just the already-real URLs rather than
+   * persisting unresolved base64 data or losing the whole batch.
+   */
+  private static async resolveImageUrls(
+    imageUrls: string[] | undefined,
+    userId: string,
+    itemId: string
+  ): Promise<string[] | undefined> {
+    if (!imageUrls || imageUrls.length === 0) return imageUrls;
+
+    const alreadyUploadedUrls = imageUrls.filter((url) => !url.startsWith("data:"));
+    const newBase64Images = imageUrls.filter((url) => url.startsWith("data:"));
+
+    if (newBase64Images.length === 0) return alreadyUploadedUrls;
+
+    try {
+      const imageFiles = await ItemService.convertBase64ToFiles(newBase64Images);
+      const uploadedUrls = await storageService.uploadImages(imageFiles, userId, itemId);
+      return [...alreadyUploadedUrls, ...uploadedUrls];
+    } catch (uploadError) {
+      console.error("Image upload failed:", uploadError);
+      return alreadyUploadedUrls;
+    }
   }
 
   /**

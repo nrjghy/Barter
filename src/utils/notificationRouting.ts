@@ -15,6 +15,10 @@ export function getNotificationRoute(notification: NotificationWithDetails): str
     const likerUserId = (notification.data as { likerUserId?: string } | undefined)?.likerUserId;
     return likerUserId ? `/user/${likerUserId}` : null;
   }
+  if (notification.type === "admin_item_edit") {
+    const itemId = (notification.data as { itemId?: string } | undefined)?.itemId;
+    return itemId ? `/item/${itemId}` : null;
+  }
   if (CONNECTION_NOTIFICATION_TYPES.has(notification.type)) {
     const connectionId = (notification.data as { connectionId?: string } | undefined)?.connectionId;
     return connectionId ? `/chat/${connectionId}` : null;

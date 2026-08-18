@@ -7,9 +7,16 @@ import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound } from 'lucide-react';
-import { ITEM_CATEGORIES } from '../types';
-import { AdminService, AdminUserRow } from '../services';
+import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound, MapPin, Navigation, Camera, Star, X } from 'lucide-react';
+import { ITEM_CATEGORIES, ITEM_CONDITIONS } from '../types';
+import { AdminService, AdminUserRow, ItemService } from '../services';
+
+// Curated dropdown list, mirrors AddEditItem.tsx -- not the full ISO 4217 list.
+const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CZK', 'HUF', 'RON', 'SEK', 'NOK', 'DKK', 'CHF', 'UAH'];
+
+// Same shape as AddEditItem.tsx's PhotoItem -- existing (already-uploaded) and
+// newly-picked photos are interchangeable entries in the same ordered array.
+type AdminPhotoItem = { type: 'existing'; url: string } | { type: 'new'; file: File; preview: string };
 
 type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes' | 'users';
 
@@ -18,10 +25,16 @@ interface AdminListingRow {
   title: string;
   description: string | null;
   category: string;
+  category_suggestion: string | null;
   condition: string;
   image_urls: string[] | null;
+  tags: string[] | null;
   estimated_value: number | null;
   value_currency: string | null;
+  listing_type: string | null;
+  location: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_active: boolean;
   created_at: string;
   user_id: string;
@@ -101,7 +114,23 @@ export const AdminDashboard: React.FC = () => {
   const [filterUserName, setFilterUserName] = useState<string | null>(null);
   const [cancelingItem, setCancelingItem] = useState<AdminListingRow | null>(null);
   const [editingItem, setEditingItem] = useState<AdminListingRow | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [editCategory, setEditCategory] = useState('');
+  const [editCategorySuggestion, setEditCategorySuggestion] = useState('');
+  const [editCondition, setEditCondition] = useState('');
+  const [editEstimatedValue, setEditEstimatedValue] = useState('');
+  const [editValueCurrency, setEditValueCurrency] = useState('USD');
+  const [editTagsInput, setEditTagsInput] = useState('');
+  const [editPhotos, setEditPhotos] = useState<AdminPhotoItem[]>([]);
+  const [editLocation, setEditLocation] = useState('');
+  const [editLatitude, setEditLatitude] = useState<number | null>(null);
+  const [editLongitude, setEditLongitude] = useState<number | null>(null);
+  const [editLocationLoading, setEditLocationLoading] = useState(false);
+  const [editLocationSuggestions, setEditLocationSuggestions] = useState<{ label: string; lat: number; lng: number }[]>([]);
+  const [showEditLocationDropdown, setShowEditLocationDropdown] = useState(false);
+  const editLocationSearchTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [activeTab, setActiveTab] = useState<AdminTab>('listings');
 
@@ -152,10 +181,16 @@ export const AdminDashboard: React.FC = () => {
           title,
           description,
           category,
+          category_suggestion,
           condition,
           image_urls,
+          tags,
           estimated_value,
           value_currency,
+          listing_type,
+          location,
+          latitude,
+          longitude,
           is_active,
           created_at,
           user_id,
@@ -453,6 +488,121 @@ export const AdminDashboard: React.FC = () => {
       fetchUsers();
     } finally {
       setUserActionBusy(false);
+    }
+  };
+
+  const handleEditImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remainingSlots = 10 - editPhotos.length;
+    const validFiles = files.filter((file) => file.type.startsWith('image/'));
+    if (validFiles.length > remainingSlots) {
+      toast.error(remainingSlots <= 0 ? 'Maximum 10 images allowed' : `You can add up to ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'}`);
+      return;
+    }
+
+    Promise.all(
+      validFiles.map(
+        (file) =>
+          new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          })
+      )
+    ).then((previews) => {
+      const newPhotos: AdminPhotoItem[] = validFiles.map((file, i) => ({ type: 'new', file, preview: previews[i] }));
+      setEditPhotos((prev) => [...prev, ...newPhotos]);
+    });
+
+    e.target.value = '';
+  };
+
+  const handleRemoveEditPhoto = (index: number) => {
+    setEditPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSetPrimaryEditPhoto = (index: number) => {
+    setEditPhotos((prev) => {
+      if (index === 0) return prev;
+      const next = [...prev];
+      const [item] = next.splice(index, 1);
+      next.unshift(item);
+      return next;
+    });
+  };
+
+  const getCurrentEditLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by this browser');
+      return;
+    }
+    setEditLocationLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke('reverse-geocode', {
+            body: { lat: latitude, lng: longitude },
+          });
+          const locationString = geocodeError || !geocodeData?.location ? 'Unknown location' : geocodeData.location;
+          setEditLocation(locationString);
+          setEditLatitude(latitude);
+          setEditLongitude(longitude);
+        } catch {
+          toast.error('Failed to get location');
+        } finally {
+          setEditLocationLoading(false);
+        }
+      },
+      () => {
+        toast.error('Failed to get current location');
+        setEditLocationLoading(false);
+      }
+    );
+  };
+
+  const handleSaveEditItem = async () => {
+    if (!editingItem || !user) return;
+    setSavingEdit(true);
+    try {
+      const combinedImageUrls = editPhotos.map((photo) => (photo.type === 'existing' ? photo.url : photo.preview));
+      const tags = editTagsInput
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const finalCategorySuggestion = editCategory === 'Other' ? editCategorySuggestion || undefined : undefined;
+      const finalEstimatedValue =
+        editingItem.listing_type === 'giveaway' ? 0 : editEstimatedValue.trim() === '' ? 0 : parseFloat(editEstimatedValue);
+
+      const { error } = await ItemService.adminUpdateItem(
+        editingItem.id,
+        {
+          title: editTitle,
+          description: editDescription,
+          category: editCategory,
+          categorySuggestion: finalCategorySuggestion,
+          condition: editCondition,
+          estimatedValue: finalEstimatedValue,
+          valueCurrency: editValueCurrency,
+          tags,
+          imageUrls: combinedImageUrls,
+          location: editLocation.trim() || undefined,
+          latitude: editLatitude,
+          longitude: editLongitude,
+        },
+        user.id
+      );
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      toast.success('Listing updated');
+      setEditingItem(null);
+      fetchAdminListings();
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -770,7 +920,21 @@ export const AdminDashboard: React.FC = () => {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => { setEditingItem(item); setEditCategory(item.category); }}
+                          onClick={() => {
+                            setEditingItem(item);
+                            setEditTitle(item.title ?? '');
+                            setEditDescription(item.description ?? '');
+                            setEditCategory(item.category);
+                            setEditCategorySuggestion(item.category_suggestion ?? '');
+                            setEditCondition(item.condition);
+                            setEditEstimatedValue(item.estimated_value != null ? String(item.estimated_value) : '');
+                            setEditValueCurrency(item.value_currency ?? 'USD');
+                            setEditTagsInput((item.tags ?? []).join(', '));
+                            setEditPhotos((item.image_urls ?? []).map((url) => ({ type: 'existing', url })));
+                            setEditLocation(item.location ?? '');
+                            setEditLatitude(item.latitude ?? null);
+                            setEditLongitude(item.longitude ?? null);
+                          }}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-gray-100 transition-colors"
                           title="Edit Item"
                         >
@@ -825,41 +989,269 @@ export const AdminDashboard: React.FC = () => {
         )}
 
         {editingItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setEditingItem(null)} />
-            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
-              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Reclassify listing</div>
-              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">{editingItem.title}</div>
-              <select
-                value={editCategory}
-                onChange={(e) => setEditCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent mb-4"
-              >
-                {ITEM_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => !savingEdit && setEditingItem(null)} />
+            <div className="relative w-full max-w-lg bg-white rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-4">Edit listing</div>
+
+              <div className="space-y-4">
+                {/* Listing type -- locked, same as AddEditItem.tsx */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Listing type</label>
+                  <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+                    {editingItem.listing_type === 'giveaway' ? 'Giveaway' : 'Trade'}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Listing type can't be changed after an item is created.</p>
+                </div>
+
+                {/* Photos */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Photos (Up to 10 images)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {editPhotos.map((photo, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={photo.type === 'existing' ? photo.url : photo.preview}
+                          alt={`Photo ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimaryEditPhoto(index)}
+                          disabled={index === 0}
+                          aria-label={index === 0 ? 'Primary photo' : 'Set as primary photo'}
+                          className={`absolute top-1 left-1 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                            index === 0 ? 'bg-yellow-400 text-white' : 'bg-white/80 text-gray-500 hover:bg-white hover:text-yellow-500'
+                          }`}
+                        >
+                          <Star className="w-3 h-3" fill={index === 0 ? 'currentColor' : 'none'} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveEditPhoto(index)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    {editPhotos.length < 10 && (
+                      <label className="flex flex-col items-center justify-center h-20 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+                        <Camera className="w-5 h-5 mb-1 text-gray-400" />
+                        <span className="text-xs font-semibold text-gray-500">Add</span>
+                        <input type="file" className="hidden" accept="image/*" onChange={handleEditImageChange} multiple />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  >
+                    {ITEM_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                  {editCategory === 'Other' && (
+                    <div className="mt-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Suggest a category name (optional)</label>
+                      <input
+                        type="text"
+                        value={editCategorySuggestion}
+                        onChange={(e) => setEditCategorySuggestion(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                        placeholder="e.g. Board Games"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Condition */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Condition</label>
+                  <select
+                    value={editCondition}
+                    onChange={(e) => setEditCondition(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  >
+                    {ITEM_CONDITIONS.map((cond) => (
+                      <option key={cond} value={cond}>{cond}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <div className="flex-1 flex items-center space-x-2 relative">
+                      <input
+                        type="text"
+                        value={editLocation}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setEditLocation(value);
+                          setEditLatitude(null);
+                          setEditLongitude(null);
+
+                          if (editLocationSearchTimeoutRef.current) {
+                            clearTimeout(editLocationSearchTimeoutRef.current);
+                          }
+
+                          const trimmed = value.trim();
+                          if (trimmed.length < 3) {
+                            setEditLocationSuggestions([]);
+                            setShowEditLocationDropdown(false);
+                            return;
+                          }
+
+                          editLocationSearchTimeoutRef.current = setTimeout(async () => {
+                            try {
+                              const { data, error } = await supabase.functions.invoke('places-autocomplete', {
+                                body: { query: trimmed },
+                              });
+                              if (error) {
+                                setEditLocationSuggestions([]);
+                                setShowEditLocationDropdown(false);
+                                return;
+                              }
+                              setEditLocationSuggestions(data?.suggestions || []);
+                              setShowEditLocationDropdown(true);
+                            } catch {
+                              setEditLocationSuggestions([]);
+                              setShowEditLocationDropdown(false);
+                            }
+                          }, 350);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') setShowEditLocationDropdown(false);
+                        }}
+                        onBlur={() => setShowEditLocationDropdown(false)}
+                        className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                        placeholder="Enter this item's location"
+                      />
+                      <button
+                        type="button"
+                        onClick={getCurrentEditLocation}
+                        disabled={editLocationLoading}
+                        className="flex items-center space-x-1 px-3 py-2 bg-barter-100 text-barter-700 rounded-lg hover:bg-barter-200 transition-colors disabled:opacity-50"
+                      >
+                        {editLocationLoading ? <LoadingSpinner /> : <><Navigation className="w-4 h-4" /><span className="text-xs">GPS</span></>}
+                      </button>
+                      {showEditLocationDropdown && editLocationSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-56 overflow-y-auto">
+                          {editLocationSuggestions.map((suggestion, index) => (
+                            <button
+                              key={`${suggestion.label}-${index}`}
+                              type="button"
+                              onMouseDown={async () => {
+                                let locationString = suggestion.label;
+                                try {
+                                  const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke('reverse-geocode', {
+                                    body: { lat: suggestion.lat, lng: suggestion.lng },
+                                  });
+                                  if (!geocodeError && geocodeData?.location) {
+                                    locationString = geocodeData.location;
+                                  }
+                                } catch {
+                                  // fall back to suggestion.label
+                                }
+                                setEditLocation(locationString);
+                                setEditLatitude(suggestion.lat);
+                                setEditLongitude(suggestion.lng);
+                                setShowEditLocationDropdown(false);
+                                setEditLocationSuggestions([]);
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              {suggestion.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Estimated value */}
+                {editingItem.listing_type !== 'giveaway' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Estimated value (optional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={editEstimatedValue}
+                        onChange={(e) => setEditEstimatedValue(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                      />
+                      <select
+                        value={editValueCurrency}
+                        onChange={(e) => setEditValueCurrency(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                      >
+                        {[...new Set([...CURRENCIES, editValueCurrency])].map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tags */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={editTagsInput}
+                    onChange={(e) => setEditTagsInput(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                    placeholder="e.g. vintage, wood, rare"
+                  />
+                </div>
+              </div>
+
               <button
-                onClick={async () => {
-                  const { data, error } = await supabase.rpc('admin_update_item_category', {
-                    target_item_id: editingItem.id,
-                    new_category: editCategory,
-                  });
-                  if (error || data?.error) {
-                    toast.error(data?.error ?? error?.message ?? 'Failed to update category');
-                    return;
-                  }
-                  toast.success('Category updated');
-                  setEditingItem(null);
-                  fetchAdminListings();
-                }}
-                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+                onClick={handleSaveEditItem}
+                disabled={savingEdit}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 mt-5 disabled:opacity-60"
               >
-                Save
+                {savingEdit ? 'Saving…' : 'Save changes'}
               </button>
               <button
                 onClick={() => setEditingItem(null)}
-                className="w-full py-3.5 rounded-xl bg-transparent text-gray-600 text-sm font-bold"
+                disabled={savingEdit}
+                className="w-full py-3.5 rounded-xl bg-transparent text-gray-600 text-sm font-bold disabled:opacity-60"
               >
                 Cancel
               </button>
