@@ -156,6 +156,17 @@ export const OfferComposer: React.FC = () => {
     );
   }, [connectionId, selectedMine, selectedTheirs]);
 
+  // Curated external listings never go through an in-app trade -- the item
+  // picker itself must refuse to render, not just have its entry points
+  // hidden in ChatThread, so a direct/bookmarked URL can't reach it either.
+  // Mirrors the server-side guard in _offer_create_core.
+  useEffect(() => {
+    if (!connectionLoading && connection?.otherUser.isCurator) {
+      toast.error("Curated external listing, the exchange happens off Barter.");
+      navigate(`/chat/${connectionId}`, { replace: true });
+    }
+  }, [connectionLoading, connection, connectionId, navigate]);
+
   const myActiveItems = myItems.filter((i) => (i.status ?? "active") === "active");
   const theirActiveItems = theirItems.filter((i) => (i.status ?? "active") === "active");
 
@@ -225,7 +236,7 @@ export const OfferComposer: React.FC = () => {
         }}
       />
 
-      {connectionLoading ? (
+      {connectionLoading || connection?.otherUser.isCurator ? (
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
         </div>
