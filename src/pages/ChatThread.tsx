@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Camera, MapPin, Send, MoreVertical, X, AlertTriangle } from "lucide-react";
+import { Camera, MapPin, Send, MoreVertical, X, AlertTriangle, ExternalLink } from "lucide-react";
 import { useConnection, useConnections } from "../hooks/useConnections";
 import { useMessages } from "../hooks/useMessages";
 import { useAuth } from "../hooks/useAuth";
@@ -91,6 +91,35 @@ const OfferMessage: React.FC<{
   );
 };
 
+// Curator listing system-card, keyed off message.data.sourceUrl -- same
+// convention as OfferMessage above (reading fresh data off the message
+// itself rather than parsing the static content string). Sent once by
+// create_curator_connection when a pilot user expresses interest in a
+// curator-account item; renders the external listing link as a tappable
+// card since message bodies aren't linkified anywhere else in the app.
+const CuratorListingMessage: React.FC<{ message: MessageWithDetails }> = ({ message }) => {
+  const sourceUrl = (message.data as { sourceUrl?: string } | undefined)?.sourceUrl;
+
+  return (
+    <>
+      <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
+        {message.content}
+      </div>
+      {sourceUrl && (
+        <a
+          href={sourceUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="max-w-[88%] w-full flex items-center gap-2 px-3.5 py-3 rounded-2xl border border-[oklch(88%_0.015_90)] bg-white text-[12px] font-bold text-barter-700"
+        >
+          <ExternalLink className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">View original listing</span>
+        </a>
+      )}
+    </>
+  );
+};
+
 const MessageBubble: React.FC<{
   message: MessageWithDetails;
   isMine: boolean;
@@ -113,6 +142,15 @@ const MessageBubble: React.FC<{
   onModifyOffer,
 }) => {
   if (message.messageType === "system") {
+    const curatorSourceUrl = (message.data as { sourceUrl?: string } | undefined)?.sourceUrl;
+    if (curatorSourceUrl) {
+      return (
+        <div className="flex flex-col items-center gap-1.5">
+          <CuratorListingMessage message={message} />
+        </div>
+      );
+    }
+
     const offerId = (message.data as { offerId?: string } | undefined)?.offerId;
     if (offerId) {
       return (
@@ -569,6 +607,11 @@ export const ChatThread: React.FC = () => {
 
   const otherUserId = connection?.otherUser.id;
   const otherUsername = connection?.otherUser.username ?? "this user";
+  // Curated external listings (the "Barter Finds" account) never go through
+  // an in-app trade -- the exchange happens off Barter, so offer/trade-complete
+  // UI is suppressed for these connections (mirrors the server-side guards in
+  // _offer_create_core/_complete_trade_core).
+  const isCuratorConnection = connection?.otherUser.isCurator === true;
 
   const handleConfirmBlock = async () => {
     if (!connectionId || !otherUserId || !user) return;
@@ -711,19 +754,21 @@ export const ChatThread: React.FC = () => {
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
                 <div className="absolute top-full right-0 mt-1 w-52 bg-white rounded-xl shadow-lg border border-[oklch(88%_0.015_90)] overflow-hidden z-20">
-                  <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
-                    <button
-                      onClick={handleOpenTradeComplete}
-                      className="flex-1 text-left text-[13px] font-bold text-barter-700"
-                    >
-                      Mark trade complete
-                    </button>
-                    <InfoTooltip
-                      text="Record that you've exchanged items in person. The other person gets 7 days to dispute it before it's final."
-                      label="Mark trade complete"
-                    />
-                  </div>
-                  {eligibleGiveawayItems.length > 0 && (
+                  {!isCuratorConnection && (
+                    <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
+                      <button
+                        onClick={handleOpenTradeComplete}
+                        className="flex-1 text-left text-[13px] font-bold text-barter-700"
+                      >
+                        Mark trade complete
+                      </button>
+                      <InfoTooltip
+                        text="Record that you've exchanged items in person. The other person gets 7 days to dispute it before it's final."
+                        label="Mark trade complete"
+                      />
+                    </div>
+                  )}
+                  {!isCuratorConnection && eligibleGiveawayItems.length > 0 && (
                     <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-[oklch(88%_0.015_90)]">
                       <button
                         onClick={handleOpenClaimModal}
@@ -773,6 +818,12 @@ export const ChatThread: React.FC = () => {
           </div>
         }
       />
+
+      {isCuratorConnection && (
+        <div className="flex-shrink-0 px-4 py-2 bg-barter-50 border-b border-[oklch(88%_0.015_90)] text-[11px] font-bold text-barter-700 text-center">
+          Curated external listing, the exchange happens off Barter.
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2.5 bg-[oklch(96%_0.014_92)]">
         {(connectionLoading || messagesLoading) && (
@@ -839,22 +890,24 @@ export const ChatThread: React.FC = () => {
             <MapPin className="w-[18px] h-[18px]" />
           )}
         </button>
-        <div className="relative flex-shrink-0">
-          <button
-            onClick={handleOpenOfferComposer}
-            disabled={!!currentOffer}
-            title={currentOffer ? "This connection already has an active offer" : "Propose a trade"}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40"
-          >
-            🤝
-          </button>
-          <div className="absolute -top-1 -right-1 bg-white rounded-full">
-            <InfoTooltip
-              text="Propose a trade — pick items from both sides, and the other person can accept or suggest changes."
-              label="Propose a trade"
-            />
+        {!isCuratorConnection && (
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={handleOpenOfferComposer}
+              disabled={!!currentOffer}
+              title={currentOffer ? "This connection already has an active offer" : "Propose a trade"}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[16px] hover:bg-[oklch(94%_0.012_90)] disabled:opacity-40"
+            >
+              🤝
+            </button>
+            <div className="absolute -top-1 -right-1 bg-white rounded-full">
+              <InfoTooltip
+                text="Propose a trade — pick items from both sides, and the other person can accept or suggest changes."
+                label="Propose a trade"
+              />
+            </div>
           </div>
-        </div>
+        )}
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

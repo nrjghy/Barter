@@ -21,6 +21,7 @@ export interface ConnectionUserSummary {
   id: string;
   username: string;
   avatarUrl?: string;
+  isCurator?: boolean;
 }
 
 export interface ConnectionItemSummary {
@@ -78,8 +79,8 @@ export class ConnectionService {
           user_id_2,
           created_at,
           updated_at,
-          user1:users!user_id_1 ( id, username, avatar_url ),
-          user2:users!user_id_2 ( id, username, avatar_url )
+          user1:users!user_id_1 ( id, username, avatar_url, is_curator ),
+          user2:users!user_id_2 ( id, username, avatar_url, is_curator )
         `
         )
         .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
@@ -153,8 +154,8 @@ export class ConnectionService {
           user_id_2,
           created_at,
           updated_at,
-          user1:users!user_id_1 ( id, username, avatar_url ),
-          user2:users!user_id_2 ( id, username, avatar_url )
+          user1:users!user_id_1 ( id, username, avatar_url, is_curator ),
+          user2:users!user_id_2 ( id, username, avatar_url, is_curator )
         `
         )
         .eq("id", connectionId)
@@ -469,6 +470,7 @@ export class ConnectionService {
         id: otherUserRaw.id,
         username: otherUserRaw.username,
         avatarUrl: otherUserRaw.avatar_url,
+        isCurator: otherUserRaw.is_curator,
       },
       itemInterests,
       lastMessage,

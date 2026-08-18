@@ -195,6 +195,15 @@ export class ResponseService {
         });
       }
 
+      // Curator items (the "Barter Finds" account) route here regardless of
+      // listing_type -- the curator account never likes back, so the usual
+      // mutual-like gate would leave these permanently unconnected.
+      if (result?.curatorConnectionNeeded && result?.targetItemUserId) {
+        this.handleCuratorConnectionCreation(data.userId, data.itemId).catch((error) => {
+          console.error("Background curator connection creation failed:", error);
+        });
+      }
+
       return {
         data: {
           success: true,
@@ -202,6 +211,7 @@ export class ResponseService {
           canSwipe: result?.canSwipe || false,
           matchCheckNeeded: result?.matchCheckNeeded || false,
           giveawayConnectionNeeded: result?.giveawayConnectionNeeded || false,
+          curatorConnectionNeeded: result?.curatorConnectionNeeded || false,
         },
       };
     } catch (error) {
@@ -272,6 +282,33 @@ export class ResponseService {
       }
     } catch (error) {
       console.error("Background giveaway connection creation failed:", error);
+    }
+  }
+
+  /**
+   * Mirror of handleGiveawayConnectionCreation for the curator path -- the
+   * curator account ("Barter Finds") never likes back, so
+   * create_curator_connection fires immediately in the background rather
+   * than waiting on check_and_create_match's mutual-like gate.
+   */
+  private static async handleCuratorConnectionCreation(userId: string, itemId: string): Promise<void> {
+    try {
+      const { data: result, error } = await supabase.rpc("create_curator_connection", {
+        interested_user_id: userId,
+        curator_item_id: itemId,
+      });
+
+      if (error) {
+        console.error("Curator connection creation RPC error:", error);
+        return;
+      }
+
+      if (result?.connectionCreated && result?.isNewConnection) {
+        console.log("Curator connection created successfully:", result.connectionId);
+        trackEvent("connection_created", { connectionId: result.connectionId });
+      }
+    } catch (error) {
+      console.error("Background curator connection creation failed:", error);
     }
   }
 

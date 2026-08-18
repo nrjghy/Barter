@@ -18,6 +18,7 @@ export interface ResponseResult {
   canSwipe: boolean;
   matchCheckNeeded: boolean;
   giveawayConnectionNeeded: boolean;
+  curatorConnectionNeeded: boolean;
 }
 
 export interface MatchData {
