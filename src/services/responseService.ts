@@ -248,6 +248,7 @@ export class ResponseService {
         // funnel completion.
         if (result.isNewConnection) {
           trackEvent("connection_created", { connectionId: result.connectionId });
+          trackEvent("match_created", { connectionId: result.connectionId });
         }
       }
     } catch (error) {
@@ -279,6 +280,7 @@ export class ResponseService {
         // created either way, matching PRD §7's decision that giveaway
         // connections reuse existing types/events rather than getting their own.
         trackEvent("connection_created", { connectionId: result.connectionId });
+        trackEvent("connection_created_giveaway", { connectionId: result.connectionId });
       }
     } catch (error) {
       console.error("Background giveaway connection creation failed:", error);
@@ -306,6 +308,7 @@ export class ResponseService {
       if (result?.connectionCreated && result?.isNewConnection) {
         console.log("Curator connection created successfully:", result.connectionId);
         trackEvent("connection_created", { connectionId: result.connectionId });
+        trackEvent("connection_created_curator", { connectionId: result.connectionId });
       }
     } catch (error) {
       console.error("Background curator connection creation failed:", error);

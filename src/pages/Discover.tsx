@@ -115,6 +115,8 @@ export const Discover: React.FC = () => {
     if (!currentItem || !user) return;
 
     const respondedItemId = currentItem.id;
+    const respondedItemCategory = currentItem.category;
+    const respondedItemIsCuratorOwned = currentItem.userIsCurator ?? false;
 
     // Optimistic UI update - update immediately
     setRespondedItems((prev) => new Set(prev).add(respondedItemId));
@@ -138,11 +140,21 @@ export const Discover: React.FC = () => {
     try {
       await recordResponse({ itemId: respondedItemId, direction });
 
-      // PRD §17 core conversion funnel, step 3: Like. Tracked after genuine
-      // success, not at the optimistic-UI point above, so a swipe that ends
-      // up rolled back (see catch below) isn't counted.
+      // PRD §17 core conversion funnel, step 3: Like/Pass. Tracked after
+      // genuine success, not at the optimistic-UI point above, so a swipe
+      // that ends up rolled back (see catch below) isn't counted.
       if (direction === "like") {
-        trackEvent("item_liked", { itemId: respondedItemId });
+        trackEvent("item_liked", {
+          itemId: respondedItemId,
+          category: respondedItemCategory,
+          isCuratorOwned: respondedItemIsCuratorOwned,
+        });
+      } else {
+        trackEvent("item_passed", {
+          itemId: respondedItemId,
+          category: respondedItemCategory,
+          isCuratorOwned: respondedItemIsCuratorOwned,
+        });
       }
     } catch (error: any) {
       // Rollback optimistic update on error

@@ -11,6 +11,10 @@ export function getNotificationRoute(notification: NotificationWithDetails): str
     const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
     return tradeCompletionId ? `/trade-completion/${tradeCompletionId}/review` : null;
   }
+  if (notification.type === "like") {
+    const likerUserId = (notification.data as { likerUserId?: string } | undefined)?.likerUserId;
+    return likerUserId ? `/user/${likerUserId}` : null;
+  }
   if (CONNECTION_NOTIFICATION_TYPES.has(notification.type)) {
     const connectionId = (notification.data as { connectionId?: string } | undefined)?.connectionId;
     return connectionId ? `/chat/${connectionId}` : null;

@@ -18,6 +18,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { InfoTooltip } from "../components/InfoTooltip";
 import { LocationSharePicker } from "../components/LocationSharePicker";
+import { trackEvent } from "../lib/analytics";
 import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
 
@@ -384,6 +385,16 @@ export const ChatThread: React.FC = () => {
   const { user } = useAuth();
   const { markConnectionOpened } = useConnections();
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
+  // Shared across all four sendMessage call sites below -- computed once
+  // per render from the already-loaded thread rather than repeating the
+  // check at each site. Not race-proof against two near-simultaneous first
+  // sends, acceptable for an analytics-only event.
+  const isFirstRealMessage = !messages.some((m) => m.messageType !== "system");
+  const trackFirstMessageIfNeeded = () => {
+    if (isFirstRealMessage && connectionId) {
+      trackEvent("chat_first_message", { connectionId });
+    }
+  };
   const { blockUser } = useUserBlocks();
   const { createReport, createReportLoading } = useReports();
   const [draft, setDraft] = useState("");
@@ -537,7 +548,10 @@ export const ChatThread: React.FC = () => {
   const handleSend = () => {
     const content = draft.trim();
     if (!content || !connectionId) return;
-    sendMessage({ messageData: { connectionId, content, messageType: "text" } });
+    sendMessage(
+      { messageData: { connectionId, content, messageType: "text" } },
+      { onSuccess: trackFirstMessageIfNeeded }
+    );
     setDraft("");
   };
 
@@ -550,7 +564,10 @@ export const ChatThread: React.FC = () => {
     setPhotoUploading(true);
     try {
       const url = await storageService.uploadMessageImage(file, user.id, connectionId);
-      sendMessage({ messageData: { connectionId, content: "", messageType: "photo", data: { url } } });
+      sendMessage(
+        { messageData: { connectionId, content: "", messageType: "photo", data: { url } } },
+        { onSuccess: trackFirstMessageIfNeeded }
+      );
     } catch {
       // storageService already surfaces a toast on failure; nothing further to do here.
     } finally {
@@ -571,14 +588,17 @@ export const ChatThread: React.FC = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocationSharing(false);
-        sendMessage({
-          messageData: {
-            connectionId,
-            content: "",
-            messageType: "location",
-            data: { lat: position.coords.latitude, lng: position.coords.longitude },
+        sendMessage(
+          {
+            messageData: {
+              connectionId,
+              content: "",
+              messageType: "location",
+              data: { lat: position.coords.latitude, lng: position.coords.longitude },
+            },
           },
-        });
+          { onSuccess: trackFirstMessageIfNeeded }
+        );
       },
       (error) => {
         setLocationSharing(false);
@@ -595,14 +615,17 @@ export const ChatThread: React.FC = () => {
   const handleSelectSearchedPlace = (place: { lat: number; lng: number; label: string }) => {
     if (!connectionId) return;
     setLocationPickerOpen(false);
-    sendMessage({
-      messageData: {
-        connectionId,
-        content: "",
-        messageType: "location",
-        data: { lat: place.lat, lng: place.lng, label: place.label },
+    sendMessage(
+      {
+        messageData: {
+          connectionId,
+          content: "",
+          messageType: "location",
+          data: { lat: place.lat, lng: place.lng, label: place.label },
+        },
       },
-    });
+      { onSuccess: trackFirstMessageIfNeeded }
+    );
   };
 
   const otherUserId = connection?.otherUser.id;

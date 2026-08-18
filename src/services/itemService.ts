@@ -6,6 +6,10 @@ import { storageService } from "./storageService";
 
 export interface ItemWithUser extends ItemData {
   user: UserData;
+  // Only populated by getItems (backed by get_items_browse, which selects
+  // u.is_curator) -- getUserItems/getItem don't query it, so it's absent
+  // there rather than a misleading false.
+  userIsCurator?: boolean;
 }
 
 export class ItemService {
@@ -70,6 +74,7 @@ export class ItemService {
         sourceUrl: item.source_url,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
+        userIsCurator: item.user_is_curator,
         user: {
           id: item.user_id,
           username: item.user_username,
