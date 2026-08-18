@@ -97,6 +97,8 @@ export const AdminDashboard: React.FC = () => {
   const [filterDemo, setFilterDemo] = useState<boolean | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDemoListings, setShowDemoListings] = useState(false);
+  const [filterUserId, setFilterUserId] = useState<string | null>(null);
+  const [filterUserName, setFilterUserName] = useState<string | null>(null);
   const [cancelingItem, setCancelingItem] = useState<AdminListingRow | null>(null);
   const [editingItem, setEditingItem] = useState<AdminListingRow | null>(null);
   const [editCategory, setEditCategory] = useState('');
@@ -171,6 +173,9 @@ export const AdminDashboard: React.FC = () => {
           { count: 'exact' }
         );
 
+      if (filterUserId) {
+        query = query.eq('user_id', filterUserId);
+      }
       if (filterActive !== null) {
         query = query.eq('is_active', filterActive);
       }
@@ -211,14 +216,14 @@ export const AdminDashboard: React.FC = () => {
     if (!authLoading) {
       fetchAdminListings();
     }
-  }, [user, authLoading, page, limit, sortBy, sortOrder, filterActive, filterDemo, searchTerm, showDemoListings]);
+  }, [user, authLoading, page, limit, sortBy, sortOrder, filterActive, filterDemo, searchTerm, showDemoListings, filterUserId]);
 
   // Changing what the result set even is (filters/search) should snap back
   // to page 0 -- unlike page/limit/sortBy/sortOrder, which are the
   // legitimate ways to move within an already-defined result set.
   useEffect(() => {
     setPage(0);
-  }, [filterActive, filterDemo, searchTerm, showDemoListings]);
+  }, [filterActive, filterDemo, searchTerm, showDemoListings, filterUserId]);
 
   const fetchReports = async () => {
     setReportsLoading(true);
@@ -507,7 +512,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
   
         {/* Tab Switcher */}
-        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 gap-1">
+        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-6 gap-1 overflow-x-auto">
           {([
             { key: 'listings', label: 'Listings', icon: Eye },
             { key: 'reports', label: 'Reports', icon: Flag },
@@ -519,7 +524,7 @@ export const AdminDashboard: React.FC = () => {
             <button
               key={key}
               onClick={() => setActiveTab(key)}
-              className={`flex items-center gap-2 flex-1 justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 flex-shrink-0 whitespace-nowrap justify-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === key ? 'bg-barter-100 text-barter-700' : 'text-gray-600 hover:bg-gray-50'
               }`}
             >
@@ -557,6 +562,15 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
   
+        {filterUserId && (
+          <button
+            onClick={() => { setFilterUserId(null); setFilterUserName(null); }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 mb-4 rounded-full bg-barter-100 text-barter-800 text-sm font-medium hover:bg-barter-200 transition-colors"
+          >
+            Showing items for @{filterUserName} <span className="font-bold">×</span>
+          </button>
+        )}
+
         {/* Filters and Search */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -1120,6 +1134,7 @@ export const AdminDashboard: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connections</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signed Up</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Sign In</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -1131,7 +1146,15 @@ export const AdminDashboard: React.FC = () => {
                     const isBanned = !!row.banned_until;
                     const isAdmin = row.role === 'admin';
                     return (
-                      <tr key={row.id} className="hover:bg-gray-50">
+                      <tr
+                        key={row.id}
+                        onClick={() => {
+                          setFilterUserId(row.id);
+                          setFilterUserName(row.username);
+                          setActiveTab('listings');
+                        }}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{row.username}</div>
                           <div className="text-sm text-gray-500">{row.email}</div>
@@ -1160,7 +1183,10 @@ export const AdminDashboard: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.item_count}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.connection_count}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {row.last_sign_in_at ? new Date(row.last_sign_in_at).toLocaleDateString() : 'Never'}
+                          {new Date(row.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {row.last_sign_in_at ? new Date(row.last_sign_in_at).toLocaleString() : 'Never'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -1169,7 +1195,7 @@ export const AdminDashboard: React.FC = () => {
                             {isBanned ? 'Suspended' : 'Active'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleResetPassword(row)}
