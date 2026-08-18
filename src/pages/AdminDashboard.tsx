@@ -7,10 +7,11 @@ import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle } from 'lucide-react';
+import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound } from 'lucide-react';
 import { ITEM_CATEGORIES } from '../types';
+import { AdminService, AdminUserRow } from '../services';
 
-type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes';
+type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes' | 'users';
 
 interface AdminListingRow {
   id: string;
@@ -82,7 +83,7 @@ interface AdminDisputeRow {
 }
 
 export const AdminDashboard: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, resetPassword } = useAuth();
   const navigate = useNavigate();
   const [listings, setListings] = useState<AdminListingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,6 +118,18 @@ export const AdminDashboard: React.FC = () => {
   const [disputes, setDisputes] = useState<AdminDisputeRow[]>([]);
   const [disputesLoading, setDisputesLoading] = useState(false);
   const [disputesError, setDisputesError] = useState<string | null>(null);
+
+  const [users, setUsers] = useState<AdminUserRow[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
+  const [usersPage, setUsersPage] = useState(0);
+  const [usersLimit] = useState(10);
+  const [usersTotal, setUsersTotal] = useState(0);
+  const [usersSearch, setUsersSearch] = useState('');
+  const [banningUser, setBanningUser] = useState<AdminUserRow | null>(null);
+  const [deletingUser, setDeletingUser] = useState<AdminUserRow | null>(null);
+  const [promotingUser, setPromotingUser] = useState<AdminUserRow | null>(null);
+  const [userActionBusy, setUserActionBusy] = useState(false);
 
   const fetchAdminListings = async () => {
     if (!user || user.role !== 'admin') {
@@ -347,13 +360,96 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+    try {
+      const { data, error } = await AdminService.listUsers(usersSearch || null, usersLimit, usersPage * usersLimit);
+
+      if (error) throw new Error(error.message);
+
+      setUsers(data || []);
+      setUsersTotal(data && data.length > 0 ? data[0].full_count : 0);
+    } catch (err) {
+      console.error('Error fetching admin users:', err);
+      const message = err instanceof Error ? err.message : 'Failed to load users.';
+      setUsersError(message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (authLoading || !user || user.role !== 'admin') return;
     if (activeTab === 'reports') fetchReports();
     if (activeTab === 'issues') fetchIssues();
     if (activeTab === 'suggestions') fetchCategorySuggestions();
     if (activeTab === 'disputes') fetchDisputes();
-  }, [activeTab, user, authLoading]);
+    if (activeTab === 'users') fetchUsers();
+  }, [activeTab, user, authLoading, usersPage, usersSearch]);
+
+  // Changing the search resets to page 0, same fix as the Listings tab's
+  // filter-change effect -- don't reintroduce the stale-page bug here.
+  useEffect(() => {
+    setUsersPage(0);
+  }, [usersSearch]);
+
+  const handleResetPassword = async (row: AdminUserRow) => {
+    const { error } = await resetPassword(row.email);
+    if (error) {
+      toast.error(error.message || 'Failed to send reset email');
+      return;
+    }
+    toast.success(`Password reset email sent to ${row.email}`);
+  };
+
+  const handleToggleBanned = async (row: AdminUserRow, banned: boolean) => {
+    setUserActionBusy(true);
+    try {
+      const { error } = await AdminService.setUserBanned(row.id, banned);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(banned ? `${row.username} suspended` : `${row.username} unbanned`);
+      setBanningUser(null);
+      fetchUsers();
+    } finally {
+      setUserActionBusy(false);
+    }
+  };
+
+  const handleDeleteUser = async (row: AdminUserRow) => {
+    setUserActionBusy(true);
+    try {
+      const { error } = await AdminService.deleteUser(row.id);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(`${row.username}'s account deleted`);
+      setDeletingUser(null);
+      fetchUsers();
+    } finally {
+      setUserActionBusy(false);
+    }
+  };
+
+  const handleSetRole = async (row: AdminUserRow, role: 'user' | 'admin') => {
+    setUserActionBusy(true);
+    try {
+      const { error } = await AdminService.setUserRole(row.id, role);
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.success(role === 'admin' ? `${row.username} promoted to admin` : `${row.username} demoted to user`);
+      setPromotingUser(null);
+      fetchUsers();
+    } finally {
+      setUserActionBusy(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -418,6 +514,7 @@ export const AdminDashboard: React.FC = () => {
             { key: 'issues', label: 'Issues', icon: MessageSquare },
             { key: 'suggestions', label: 'Category Suggestions', icon: Tag },
             { key: 'disputes', label: 'Disputes', icon: AlertTriangle },
+            { key: 'users', label: 'Users', icon: Users },
           ] as { key: AdminTab; label: string; icon: typeof Eye }[]).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -984,6 +1081,241 @@ export const AdminDashboard: React.FC = () => {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'users' && (
+        <>
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by username or email..."
+              value={usersSearch}
+              onChange={(e) => setUsersSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {usersLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : usersError ? (
+            <div className="text-center py-12 text-red-600">{usersError}</div>
+          ) : users.length === 0 ? (
+            <div className="text-center py-12">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No users found</h3>
+              <p className="text-gray-600">Adjust your search to see results.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Connections</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Sign In</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((row) => {
+                    const isSelf = row.id === user.id;
+                    const isBanned = !!row.banned_until;
+                    const isAdmin = row.role === 'admin';
+                    return (
+                      <tr key={row.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{row.username}</div>
+                          <div className="text-sm text-gray-500">{row.email}</div>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            {row.is_demo && (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Demo</span>
+                            )}
+                            {row.is_curator && (
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Curator</span>
+                            )}
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-700">
+                              {row.signup_provider === 'google' ? 'Google' : row.signup_provider === 'email' ? 'Email' : (row.signup_provider ?? 'Unknown')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            isAdmin ? 'bg-barter-100 text-barter-800' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {row.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {row.rating != null ? `${row.rating.toFixed(1)} (${row.total_ratings ?? 0})` : '—'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.item_count}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.connection_count}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {row.last_sign_in_at ? new Date(row.last_sign_in_at).toLocaleDateString() : 'Never'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            isBanned ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                          }`}>
+                            {isBanned ? 'Suspended' : 'Active'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleResetPassword(row)}
+                              className="text-barter-600 hover:text-barter-800 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                              title="Reset password"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => (isBanned ? handleToggleBanned(row, false) : setBanningUser(row))}
+                              disabled={isSelf}
+                              className="text-yellow-600 hover:text-yellow-800 p-1 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={isBanned ? 'Unban' : 'Suspend'}
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => (isAdmin ? handleSetRole(row, 'user') : setPromotingUser(row))}
+                              disabled={isSelf}
+                              className="text-blue-600 hover:text-blue-800 p-1 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              title={isAdmin ? 'Demote to user' : 'Promote to admin'}
+                            >
+                              {isAdmin ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                            </button>
+                            <button
+                              onClick={() => setDeletingUser(row)}
+                              disabled={isSelf}
+                              className="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Delete account"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {Math.ceil(usersTotal / usersLimit) > 1 && (
+          <div className="flex justify-between items-center mt-6 bg-white rounded-xl shadow-sm p-4">
+            <button
+              onClick={() => setUsersPage(prev => Math.max(0, prev - 1))}
+              disabled={usersPage === 0 || usersLoading}
+              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Previous</span>
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {usersPage + 1} of {Math.ceil(usersTotal / usersLimit)}
+            </span>
+            <button
+              onClick={() => setUsersPage(prev => Math.min(Math.ceil(usersTotal / usersLimit) - 1, prev + 1))}
+              disabled={usersPage >= Math.ceil(usersTotal / usersLimit) - 1 || usersLoading}
+              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <span>Next</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {banningUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => !userActionBusy && setBanningUser(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Suspend this user?</div>
+              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+                "{banningUser.username}" will be unable to log in until unbanned.
+              </div>
+              <button
+                onClick={() => setBanningUser(null)}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleToggleBanned(banningUser, true)}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-60"
+              >
+                {userActionBusy ? 'Suspending…' : 'Suspend user'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {deletingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => !userActionBusy && setDeletingUser(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Delete this account?</div>
+              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+                This is permanent — "{deletingUser.username}"'s profile, listings, and messages will be removed and
+                their active items cancelled. Some trade and dispute records may be retained as required by law.
+              </div>
+              <button
+                onClick={() => setDeletingUser(null)}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-60"
+              >
+                Keep account
+              </button>
+              <button
+                onClick={() => handleDeleteUser(deletingUser)}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-60"
+              >
+                {userActionBusy ? 'Deleting…' : 'Delete account'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {promotingUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => !userActionBusy && setPromotingUser(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-2xl p-5 mx-4">
+              <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Promote to admin?</div>
+              <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+                "{promotingUser.username}" will gain full access to this admin console.
+              </div>
+              <button
+                onClick={() => setPromotingUser(null)}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSetRole(promotingUser, 'admin')}
+                disabled={userActionBusy}
+                className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-60"
+              >
+                {userActionBusy ? 'Promoting…' : 'Promote to admin'}
+              </button>
+            </div>
+          </div>
+        )}
+        </>
         )}
       </div>
     </div>
