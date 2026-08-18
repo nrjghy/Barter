@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
@@ -17,6 +17,11 @@ export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());
+  // handleUndo loops through candidates sequentially, and undoResponseLoading
+  // genuinely goes false between each await -- a click during that gap
+  // could start a second, overlapping invocation. This ref covers the
+  // whole loop's duration, not just a single in-flight network call.
+  const undoInFlightRef = useRef(false);
   const [showFilter, setShowFilter] = useState(false);
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
@@ -176,39 +181,45 @@ export const Discover: React.FC = () => {
   };
 
   const handleUndo = async () => {
-    if (respondedItems.size === 0 || undoResponseLoading) return;
-    const candidates = Array.from(respondedItems).reverse(); // most recent first
+    if (respondedItems.size === 0 || undoResponseLoading || undoInFlightRef.current) return;
+    undoInFlightRef.current = true;
 
-    for (const candidateItemId of candidates) {
-      try {
-        const result = await undoResponse(candidateItemId);
+    try {
+      const candidates = Array.from(respondedItems).reverse(); // most recent first
 
-        if (result.error) {
-          if (result.error.code === ERROR_CODES.MATCH_ALREADY_EXISTS) {
-            // Already matched, can't undo this one -- try the next most recent instead.
-            continue;
+      for (const candidateItemId of candidates) {
+        try {
+          const result = await undoResponse(candidateItemId);
+
+          if (result.error) {
+            if (result.error.code === ERROR_CODES.MATCH_ALREADY_EXISTS) {
+              // Already matched, can't undo this one -- try the next most recent instead.
+              continue;
+            }
+            toast.error(result.error.message, { id: "undo-toast" });
+            return;
           }
-          toast.error(result.error.message, { id: "undo-toast" });
+
+          setRespondedItems((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(candidateItemId);
+            return newSet;
+          });
+          if (currentIndex > 0) {
+            setCurrentIndex((prev) => prev - 1);
+          }
+          toast.success("Undo successful!", { id: "undo-toast" });
+          return;
+        } catch (error) {
+          toast.error("Couldn't undo, please try again.", { id: "undo-toast" });
           return;
         }
-
-        setRespondedItems((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(candidateItemId);
-          return newSet;
-        });
-        if (currentIndex > 0) {
-          setCurrentIndex((prev) => prev - 1);
-        }
-        toast.success("Undo successful!", { id: "undo-toast" });
-        return;
-      } catch (error) {
-        toast.error("Couldn't undo, please try again.", { id: "undo-toast" });
-        return;
       }
-    }
 
-    toast("Nothing left to undo right now.", { id: "undo-toast" });
+      toast("Nothing left to undo right now.", { id: "undo-toast" });
+    } finally {
+      undoInFlightRef.current = false;
+    }
   };
 
   const likesRemaining = likeLimit - dailyLikeCount;
@@ -287,7 +298,7 @@ export const Discover: React.FC = () => {
         onSwipe={handleSwipe}
         onUndo={handleUndo}
         disabled={!currentItem || likesRemaining <= 0}
-        canUndo={respondedItems.size > 0 && !undoResponseLoading}
+        canUndo={respondedItems.size > 0 && !undoResponseLoading && !undoInFlightRef.current}
         onFilter={() => setShowFilter(true)}
         hasActiveFilters={hasActiveFilters}
       />
