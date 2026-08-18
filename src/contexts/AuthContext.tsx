@@ -89,6 +89,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        // Same reasoning as the getSession() path above: the metadata-only
+        // setUser below never has latitude/longitude, so flip loading back
+        // to true first -- otherwise, for any auth event after the initial
+        // one (token refresh, tab resume, etc.), loading is already false
+        // and ProtectedRoute would evaluate this metadata-only user against
+        // the "does this user have a location" check during the window
+        // before the deferred fetchUserProfile below resolves, flashing
+        // LocationPrompt for someone who already has a saved location.
+        setLoading(true);
         setUser({
           id: session.user.id,
           email: session.user.email!,
