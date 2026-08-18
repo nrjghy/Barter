@@ -543,7 +543,7 @@ export const ChatThread: React.FC = () => {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "auto" });
-  }, [messages.length]);
+  }, [messages.length, currentOffer?.status]);
 
   const handleSend = () => {
     const content = draft.trim();
