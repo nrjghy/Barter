@@ -45,6 +45,9 @@ export interface ItemData {
   valueCurrency?: string;
   sourceUrl?: string;
   categorySuggestion?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  location?: string;
   createdAt: string;
   updatedAt: string;
   // Set once the daily inactivity-reminder cron nudges the owner (PRD §2);

@@ -238,6 +238,9 @@ export class ItemService {
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
         categorySuggestion: data.category_suggestion,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        location: data.location,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         user: {
@@ -292,6 +295,9 @@ export class ItemService {
             value_currency: itemData.valueCurrency,
             source_url: itemData.sourceUrl,
             category_suggestion: itemData.categorySuggestion,
+            latitude: itemData.latitude,
+            longitude: itemData.longitude,
+            location: itemData.location,
             created_at: itemData.createdAt,
             updated_at: itemData.updatedAt,
           },
@@ -358,6 +364,9 @@ export class ItemService {
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
         categorySuggestion: data.category_suggestion,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        location: data.location,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
@@ -438,6 +447,9 @@ export class ItemService {
           value_currency: updates.valueCurrency,
           source_url: updates.sourceUrl,
           category_suggestion: updates.categorySuggestion, // was previously dropped entirely
+          latitude: updates.latitude,
+          longitude: updates.longitude,
+          location: updates.location,
           updated_at: new Date().toISOString(),
         })
         .eq("id", itemId)
@@ -471,6 +483,9 @@ export class ItemService {
         valueCurrency: data.value_currency,
         sourceUrl: data.source_url,
         categorySuggestion: data.category_suggestion,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        location: data.location,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };

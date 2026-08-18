@@ -392,6 +392,12 @@ export const ItemDetail: React.FC = () => {
                   Listed {formatDate(item.createdAt)}
                 </div>
               </div>
+              {item.location && (
+                <div className="flex items-center text-gray-500 text-sm mt-2">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span>{item.location}</span>
+                </div>
+              )}
             </div>
 
             {/* Inactivity reminder banner (PRD §2) */}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X, Camera, Star } from "lucide-react";
+import { X, Camera, Star, MapPin, Navigation } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,6 +10,7 @@ import { InfoTooltip } from "../components/InfoTooltip";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
+import { supabase } from "../lib/supabase";
 
 // PRD §2 required fields, in on-screen order -- used both to decide which
 // fields need a touched/error state and, on a failed Save, to find the
@@ -127,6 +128,18 @@ export const AddEditItem: React.FC = () => {
   const [currency, setCurrency] = useState(user?.defaultCurrency ?? "USD");
   const [listingType, setListingType] = useState<"trade" | "giveaway">("trade");
   const [sourceUrl, setSourceUrl] = useState("");
+  // Defaults to the owner's profile location; editable below via the same
+  // places-autocomplete pattern as Profile.tsx, so a listing can be pinned
+  // somewhere other than the owner's own address.
+  const [itemLocation, setItemLocation] = useState(user?.location ?? "");
+  const [itemLatitude, setItemLatitude] = useState<number | null>(user?.latitude ?? null);
+  const [itemLongitude, setItemLongitude] = useState<number | null>(user?.longitude ?? null);
+  const [itemLocationLoading, setItemLocationLoading] = useState(false);
+  const [itemLocationSuggestions, setItemLocationSuggestions] = useState<
+    { label: string; lat: number; lng: number }[]
+  >([]);
+  const [showItemLocationDropdown, setShowItemLocationDropdown] = useState(false);
+  const itemLocationSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loading, setLoading] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -194,6 +207,9 @@ export const AddEditItem: React.FC = () => {
     );
     setCurrency(existingItem.valueCurrency ?? "USD");
     setSourceUrl(existingItem.sourceUrl ?? "");
+    setItemLocation(existingItem.location ?? "");
+    setItemLatitude(existingItem.latitude ?? null);
+    setItemLongitude(existingItem.longitude ?? null);
     setPrefilled(true);
   }, [isEditMode, existingItem, prefilled]);
 
@@ -219,9 +235,48 @@ export const AddEditItem: React.FC = () => {
     );
     setCurrency(relistFrom.valueCurrency ?? "USD");
     setSourceUrl(relistFrom.sourceUrl ?? "");
+    setItemLocation(relistFrom.location ?? "");
+    setItemLatitude(relistFrom.latitude ?? null);
+    setItemLongitude(relistFrom.longitude ?? null);
     setPrefilled(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, relistFrom, prefilled]);
+
+  const getCurrentItemLocation = async () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by this browser");
+      return;
+    }
+
+    setItemLocationLoading(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
+            body: { lat: latitude, lng: longitude },
+          });
+          const locationString =
+            geocodeError || !geocodeData?.location ? "Unknown location" : geocodeData.location;
+
+          setItemLocation(locationString);
+          setItemLatitude(latitude);
+          setItemLongitude(longitude);
+        } catch (error) {
+          console.error("Unexpected location update error:", error);
+          toast.error("Failed to get location");
+        } finally {
+          setItemLocationLoading(false);
+        }
+      },
+      () => {
+        toast.error("Failed to get current location");
+        setItemLocationLoading(false);
+      }
+    );
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -338,7 +393,7 @@ export const AddEditItem: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isEditMode && user?.latitude == null) {
+    if (!isEditMode && itemLatitude == null && user?.latitude == null) {
       toast.error("Add your location before creating a listing");
       return;
     }
@@ -393,6 +448,9 @@ export const AddEditItem: React.FC = () => {
             valueCurrency: currency,
             sourceUrl: sourceUrl.trim() || null,
             categorySuggestion: finalCategorySuggestion,
+            location: itemLocation.trim() || undefined,
+            latitude: itemLatitude,
+            longitude: itemLongitude,
           },
         })) as ServiceResult<ItemData>;
 
@@ -415,6 +473,9 @@ export const AddEditItem: React.FC = () => {
           valueCurrency: currency,
           sourceUrl: sourceUrl.trim() || null,
           categorySuggestion: finalCategorySuggestion,
+          location: itemLocation.trim() || undefined,
+          latitude: itemLatitude,
+          longitude: itemLongitude,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })) as ServiceResult<ItemData>;
@@ -714,6 +775,116 @@ export const AddEditItem: React.FC = () => {
             )}
           </div>
   
+          {/* Location */}
+          <div>
+            <label htmlFor="itemLocation" className="block text-sm font-medium text-gray-700 mb-2">
+              Location
+            </label>
+            <div className="flex items-center text-gray-600">
+              <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
+              <div className="flex-1 flex items-center space-x-2 relative">
+                <input
+                  id="itemLocation"
+                  type="text"
+                  value={itemLocation}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setItemLocation(value);
+                    setItemLatitude(null);
+                    setItemLongitude(null);
+
+                    if (itemLocationSearchTimeoutRef.current) {
+                      clearTimeout(itemLocationSearchTimeoutRef.current);
+                    }
+
+                    const trimmed = value.trim();
+                    if (trimmed.length < 3) {
+                      setItemLocationSuggestions([]);
+                      setShowItemLocationDropdown(false);
+                      return;
+                    }
+
+                    itemLocationSearchTimeoutRef.current = setTimeout(async () => {
+                      try {
+                        const { data, error } = await supabase.functions.invoke("places-autocomplete", {
+                          body: { query: trimmed },
+                        });
+                        if (error) {
+                          toast.error("Failed to search locations");
+                          setItemLocationSuggestions([]);
+                          setShowItemLocationDropdown(false);
+                          return;
+                        }
+                        setItemLocationSuggestions(data?.suggestions || []);
+                        setShowItemLocationDropdown(true);
+                      } catch (err) {
+                        toast.error("Failed to search locations");
+                        setItemLocationSuggestions([]);
+                        setShowItemLocationDropdown(false);
+                      }
+                    }, 350);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowItemLocationDropdown(false);
+                    }
+                  }}
+                  onBlur={() => setShowItemLocationDropdown(false)}
+                  className="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
+                  placeholder="Enter this item's location"
+                />
+                <button
+                  type="button"
+                  onClick={getCurrentItemLocation}
+                  disabled={itemLocationLoading}
+                  className="flex items-center space-x-1 px-3 py-2 bg-barter-100 text-barter-700 rounded-lg hover:bg-barter-200 transition-colors disabled:opacity-50"
+                >
+                  {itemLocationLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      <Navigation className="w-4 h-4" />
+                      <span className="text-xs">GPS</span>
+                    </>
+                  )}
+                </button>
+                {showItemLocationDropdown && itemLocationSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-56 overflow-y-auto">
+                    {itemLocationSuggestions.map((suggestion, index) => (
+                      <button
+                        key={`${suggestion.label}-${index}`}
+                        type="button"
+                        onMouseDown={async () => {
+                          let locationString = suggestion.label;
+                          try {
+                            const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke(
+                              "reverse-geocode",
+                              { body: { lat: suggestion.lat, lng: suggestion.lng } }
+                            );
+                            if (!geocodeError && geocodeData?.location) {
+                              locationString = geocodeData.location;
+                            }
+                          } catch (err) {
+                            // fall back to suggestion.label
+                          }
+                          setItemLocation(locationString);
+                          setItemLatitude(suggestion.lat);
+                          setItemLongitude(suggestion.lng);
+                          setShowItemLocationDropdown(false);
+                          setItemLocationSuggestions([]);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Defaults to your profile location. Change it if this item is elsewhere.</p>
+          </div>
+
           {/* Item Value */}
           {listingType !== "giveaway" && (
             <div>
