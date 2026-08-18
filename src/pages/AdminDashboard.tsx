@@ -183,7 +183,11 @@ export const AdminDashboard: React.FC = () => {
       setTotal(count || 0);
     } catch (err) {
       console.error('Error fetching admin listings:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+      const message =
+        err instanceof Error ? err.message :
+        (err && typeof err === "object" && "message" in err) ? String((err as { message: unknown }).message) :
+        "An unknown error occurred.";
+      setError(message);
       toast.error('Failed to load admin data.');
     } finally {
       setLoading(false);
@@ -195,6 +199,13 @@ export const AdminDashboard: React.FC = () => {
       fetchAdminListings();
     }
   }, [user, authLoading, page, limit, sortBy, sortOrder, filterActive, filterDemo, searchTerm, showDemoListings]);
+
+  // Changing what the result set even is (filters/search) should snap back
+  // to page 0 -- unlike page/limit/sortBy/sortOrder, which are the
+  // legitimate ways to move within an already-defined result set.
+  useEffect(() => {
+    setPage(0);
+  }, [filterActive, filterDemo, searchTerm, showDemoListings]);
 
   const fetchReports = async () => {
     setReportsLoading(true);
@@ -220,7 +231,11 @@ export const AdminDashboard: React.FC = () => {
       setReports((data as unknown as AdminReportRow[]) || []);
     } catch (err) {
       console.error('Error fetching admin reports:', err);
-      setReportsError(err instanceof Error ? err.message : 'Failed to load reports.');
+      const message =
+        err instanceof Error ? err.message :
+        (err && typeof err === "object" && "message" in err) ? String((err as { message: unknown }).message) :
+        'Failed to load reports.';
+      setReportsError(message);
     } finally {
       setReportsLoading(false);
     }
@@ -250,7 +265,11 @@ export const AdminDashboard: React.FC = () => {
       setIssues((data as unknown as AdminIssueRow[]) || []);
     } catch (err) {
       console.error('Error fetching admin issues:', err);
-      setIssuesError(err instanceof Error ? err.message : 'Failed to load issues.');
+      const message =
+        err instanceof Error ? err.message :
+        (err && typeof err === "object" && "message" in err) ? String((err as { message: unknown }).message) :
+        'Failed to load issues.';
+      setIssuesError(message);
     } finally {
       setIssuesLoading(false);
     }
@@ -279,7 +298,11 @@ export const AdminDashboard: React.FC = () => {
       setSuggestions((data as unknown as AdminCategorySuggestionRow[]) || []);
     } catch (err) {
       console.error('Error fetching category suggestions:', err);
-      setSuggestionsError(err instanceof Error ? err.message : 'Failed to load category suggestions.');
+      const message =
+        err instanceof Error ? err.message :
+        (err && typeof err === "object" && "message" in err) ? String((err as { message: unknown }).message) :
+        'Failed to load category suggestions.';
+      setSuggestionsError(message);
     } finally {
       setSuggestionsLoading(false);
     }
@@ -314,7 +337,11 @@ export const AdminDashboard: React.FC = () => {
       setDisputes((data as unknown as AdminDisputeRow[]) || []);
     } catch (err) {
       console.error('Error fetching admin disputes:', err);
-      setDisputesError(err instanceof Error ? err.message : 'Failed to load disputes.');
+      const message =
+        err instanceof Error ? err.message :
+        (err && typeof err === "object" && "message" in err) ? String((err as { message: unknown }).message) :
+        'Failed to load disputes.';
+      setDisputesError(message);
     } finally {
       setDisputesLoading(false);
     }
