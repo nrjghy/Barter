@@ -1,6 +1,8 @@
-// Triggered by a Supabase Database Webhook on INSERT to public.notifications.
-// Looks up the recipient's email via auth.users and sends it through Resend,
-// using the notification's own title/content as the subject/body. Every
+// Triggered on INSERT to public.notifications, via the pg_net trigger in
+// 20260827100328_notification_email_trigger.sql (Database Webhooks is
+// unusable on Barter2, supabase_functions schema missing). Looks up the
+// recipient's email via auth.users and sends it through Resend, using the
+// notification's own title/content as the subject/body. Every
 // notification-creation path in this app already writes meaningful,
 // human-readable title/content, so no per-type template is needed here
 // (PRD §7: no per-type granularity for v1, everything gets delivered).
@@ -19,15 +21,36 @@
 // user-entered text (e.g. notify_connections_item_unavailable includes listing
 // titles verbatim) -- unescaped, a listing titled with an <img onerror=...> or
 // a phishing <a href> would render as live HTML in the recipient's email
-// client. Found while adding the action-button support below, fixed here
-// rather than filed separately since it's the same interpolation point.
+// client. notification.title is escaped too, since it renders inside the
+// HTML body itself, not just the Resend subject field which doesn't
+// interpret HTML.
 //
 // notification.data.actionPath / actionLabel are optional and generic --
 // any notification type can set them to render a CTA button in the email
 // (first use: listing_expiry_reminder's "still available?" confirmation
-// link, PRD §2). actionPath is relative (e.g. "/item/<uuid>"); this function
+// link, PRD §2; match notifications added August 27, linking to the chat
+// thread). actionPath is relative (e.g. "/item/<uuid>"); this function
 // prefixes it with FRONTEND_URL to build the full link, same pattern as
 // item-preview's own redirect construction.
+//
+// August 27, second revision: the first redesign (dark theme, #0d0f11/
+// #1a1d21/#8fcb9b, matching what was believed to be the live Confirm
+// signup template) was live-tested and confirmed broken specifically in
+// the native Gmail iOS app -- rendered correctly in Gmail on desktop web
+// and in Gmail.com via mobile Safari, but opened with a white background
+// in the Gmail iOS app itself, isolating the cause to that app's own
+// dark-mode rendering pass rather than the markup. Gmail iOS is
+// documented (unofficially, by the email-dev community, not Google) as
+// the highest-risk client for fully inverting sections that are already
+// authored dark. The Confirm signup template was independently confirmed
+// broken the same way. Rather than fight that engine, switched to a
+// light design instead, mirroring the Reset password auth template
+// exactly (#FDFCF7 page background, white card, #1D5B2B green), since
+// light-authored emails are the documented pattern Gmail's mobile dark
+// mode adapts gracefully rather than inverts unpredictably. Reset
+// password itself was not reported broken on any client. No bgcolor
+// attributes here (unlike the dark attempt) since this design isn't
+// fighting inversion, it's relying on it.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -93,8 +116,56 @@ Deno.serve(async (req: Request) => {
     const actionUrl = actionPath ? (FRONTEND_URL ? `${FRONTEND_URL}${actionPath}` : actionPath) : null;
 
     const actionButtonHtml = actionUrl
-      ? `<p style="margin-top: 20px;"><a href="${escapeHtml(actionUrl)}" style="display: inline-block; background: #2f6f4f; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600;">${escapeHtml(actionLabel)}</a></p>`
+      ? `<tr>
+          <td align="center" style="padding: 0 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0">
+              <tr>
+                <td align="center" style="border-radius: 12px; background-color:#1D5B2B;">
+                  <a href="${escapeHtml(actionUrl)}" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 700; color:#ffffff; text-decoration: none; border-radius: 12px;">${escapeHtml(actionLabel)}</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>`
       : "";
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(notification.title)}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#FDFCF7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FDFCF7; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; background-color:#ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+          <tr>
+            <td align="center" style="padding: 32px 32px 0 32px;">
+              <span style="font-size: 22px; font-weight: 800; color:#1D5B2B; letter-spacing: -0.02em;">Barter</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px 32px 24px 32px;">
+              <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color:#1a1a1a;">${escapeHtml(notification.title)}</h1>
+              <p style="margin: 0; font-size: 14px; line-height: 1.6; color:#4b5563;">${escapeHtml(notification.content)}</p>
+            </td>
+          </tr>
+          ${actionButtonHtml}
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
+          <tr>
+            <td align="center" style="padding: 20px 32px;">
+              <p style="margin: 0; font-size: 11px; color:#c1c9c1;">Barter &middot; Warsaw, Poland</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -106,11 +177,7 @@ Deno.serve(async (req: Request) => {
         from: RESEND_FROM_EMAIL,
         to: userData.user.email,
         subject: notification.title,
-        html: `<div style="font-family: sans-serif; font-size: 15px; color: #1a1a1a; line-height: 1.5;">
-          <p>${escapeHtml(notification.content)}</p>
-          ${actionButtonHtml}
-          <p style="margin-top: 24px; font-size: 13px; color: #767676;">— Barter</p>
-        </div>`,
+        html,
       }),
     });
 
