@@ -28,29 +28,27 @@
 // notification.data.actionPath / actionLabel are optional and generic --
 // any notification type can set them to render a CTA button in the email
 // (first use: listing_expiry_reminder's "still available?" confirmation
-// link, PRD §2; match notifications added August 27, linking to the chat
-// thread). actionPath is relative (e.g. "/item/<uuid>"); this function
-// prefixes it with FRONTEND_URL to build the full link, same pattern as
-// item-preview's own redirect construction.
+// link, PRD §2; match/giveaway notifications added August 27, linking to
+// the chat thread). actionPath is relative (e.g. "/item/<uuid>"); this
+// function prefixes it with FRONTEND_URL to build the full link, same
+// pattern as item-preview's own redirect construction.
 //
-// August 27, second revision: the first redesign (dark theme, #0d0f11/
-// #1a1d21/#8fcb9b, matching what was believed to be the live Confirm
-// signup template) was live-tested and confirmed broken specifically in
-// the native Gmail iOS app -- rendered correctly in Gmail on desktop web
-// and in Gmail.com via mobile Safari, but opened with a white background
-// in the Gmail iOS app itself, isolating the cause to that app's own
-// dark-mode rendering pass rather than the markup. Gmail iOS is
-// documented (unofficially, by the email-dev community, not Google) as
-// the highest-risk client for fully inverting sections that are already
-// authored dark. The Confirm signup template was independently confirmed
-// broken the same way. Rather than fight that engine, switched to a
-// light design instead, mirroring the Reset password auth template
-// exactly (#FDFCF7 page background, white card, #1D5B2B green), since
-// light-authored emails are the documented pattern Gmail's mobile dark
-// mode adapts gracefully rather than inverts unpredictably. Reset
-// password itself was not reported broken on any client. No bgcolor
-// attributes here (unlike the dark attempt) since this design isn't
-// fighting inversion, it's relying on it.
+// August 27, second revision: switched from a dark theme to the current
+// light design (#FDFCF7/white card/#1D5B2B) after live-testing found the
+// dark version broken specifically in the native Gmail iOS app -- see
+// prior revision history in git for the full investigation.
+//
+// August 27, third revision: added a standing "invite a friend" line to
+// the footer of every notification email (not the two Supabase Auth
+// templates, which are a separate Dashboard-managed system), reusing the
+// same https://letsbarter.app link the in-app Profile > Invite friends
+// share button already uses -- no referral/attribution tracking exists in
+// the app, so this doesn't invent one. Kept deliberately small and low in
+// the footer, below the CTA button, so it reads as a quiet utility line
+// (like the "Barter" signature itself) rather than a second call to
+// action competing with the email's actual content. Also dropped
+// "Warsaw, Poland" from the footer signature, in anticipation of
+// additional pilot cities.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -156,8 +154,13 @@ Deno.serve(async (req: Request) => {
         </table>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
           <tr>
-            <td align="center" style="padding: 20px 32px;">
-              <p style="margin: 0; font-size: 11px; color:#c1c9c1;">Barter &middot; Warsaw, Poland</p>
+            <td align="center" style="padding: 20px 32px 4px 32px;">
+              <p style="margin: 0; font-size: 11px; line-height: 1.6; color:#9ca3af;">Barter works best with more people trading nearby. <a href="https://letsbarter.app" style="color:#1D5B2B; text-decoration: underline;">Invite a friend</a></p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding: 4px 32px 20px 32px;">
+              <p style="margin: 0; font-size: 11px; color:#c1c9c1;">Barter</p>
             </td>
           </tr>
         </table>
