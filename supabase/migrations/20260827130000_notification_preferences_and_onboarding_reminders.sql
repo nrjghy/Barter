@@ -120,6 +120,12 @@ BEGIN
     SET onboarding_list_reminders_sent = r.stage + 1,
         onboarding_list_last_reminder_at = now()
     WHERE id = r.user_id;
+
+    -- Resend's documented limit is 10 requests/second; every notification
+    -- insert here fires an async pg_net call via the trigger, so without
+    -- this delay a backlog above ~10 people hits 429s (found live: 7 of
+    -- 17 concurrent sends failed this way before this fix).
+    PERFORM pg_sleep(0.15);
   END LOOP;
 END;
 $function$;
