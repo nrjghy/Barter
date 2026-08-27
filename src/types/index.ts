@@ -14,6 +14,7 @@ export interface AuthUser {
   rating?: number;
   createdAt?: string;
   defaultCurrency?: string;
+  notificationPreferences?: Record<string, Record<string, boolean>>;
 }
 
 export type ProfileUpdate = Partial<Omit<AuthUser, "latitude" | "longitude">> & {

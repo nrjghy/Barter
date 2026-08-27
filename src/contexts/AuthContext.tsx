@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         chatHintDismissedAt: data.chat_hint_dismissed_at ?? undefined,
         rating: data.rating ?? undefined,
         createdAt: data.created_at ?? undefined,
+        notificationPreferences: data.notification_preferences ?? undefined,
       });
     } catch (error) {
       console.error("[AuthContext] Error in fetchUserProfile (catch):", error);

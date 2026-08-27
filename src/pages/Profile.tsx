@@ -217,6 +217,15 @@ export const Profile: React.FC = () => {
             >
               Invite friends
             </button>
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                navigate("/notification-settings");
+              }}
+              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+            >
+              Notifications
+            </button>
             {user?.role === "admin" && (
               <button
                 onClick={() => {

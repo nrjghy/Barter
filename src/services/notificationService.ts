@@ -33,6 +33,54 @@ export interface NotificationStats {
 
 export class NotificationService {
   /**
+   * Update the current user's own notification preference for a category/channel.
+   * Calls update_notification_preference, which validates category/channel
+   * server-side and scopes the write to auth.uid() -- no user id passed here.
+   */
+  static async updateNotificationPreference(
+    category: "match" | "message" | "product_update" | "review_reminder" | "onboarding",
+    channel: "email",
+    enabled: boolean
+  ): Promise<ServiceResult<Record<string, Record<string, boolean>>>> {
+    try {
+      const { data, error } = await supabase.rpc("update_notification_preference", {
+        p_category: category,
+        p_channel: channel,
+        p_enabled: enabled,
+      });
+
+      if (error) {
+        return {
+          error: {
+            code: ERROR_CODES.NETWORK_ERROR,
+            message: "Failed to update notification preference",
+            details: error,
+          },
+        };
+      }
+
+      if (data?.error) {
+        return {
+          error: {
+            code: ERROR_CODES.VALIDATION_ERROR,
+            message: data.error,
+          },
+        };
+      }
+
+      return { data: data.notification_preferences };
+    } catch (error) {
+      return {
+        error: {
+          code: ERROR_CODES.UNKNOWN_ERROR,
+          message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR],
+          details: error,
+        },
+      };
+    }
+  }
+
+  /**
    * Create a new notification
    */
   static async createNotification(

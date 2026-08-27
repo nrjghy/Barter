@@ -20,6 +20,7 @@ import { AuthCallback } from "./pages/AuthCallback";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import { Account } from "./pages/Account";
+import { NotificationSettings } from "./pages/NotificationSettings";
 import { AccountDeleted } from "./pages/AccountDeleted";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
@@ -114,6 +115,14 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Account />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notification-settings"
+            element={
+              <ProtectedRoute>
+                <NotificationSettings />
               </ProtectedRoute>
             }
           />
