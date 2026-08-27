@@ -26,29 +26,25 @@
 // interpret HTML.
 //
 // notification.data.actionPath / actionLabel are optional and generic --
-// any notification type can set them to render a CTA button in the email
+// any notification type can set them to render a CTA link in the email
 // (first use: listing_expiry_reminder's "still available?" confirmation
-// link, PRD §2; match/giveaway notifications added August 27, linking to
-// the chat thread). actionPath is relative (e.g. "/item/<uuid>"); this
-// function prefixes it with FRONTEND_URL to build the full link, same
-// pattern as item-preview's own redirect construction.
+// link, PRD §2). actionPath is relative (e.g. "/item/<uuid>"); this
+// function prefixes it with FRONTEND_URL to build the full link.
 //
-// August 27, second revision: switched from a dark theme to the current
-// light design (#FDFCF7/white card/#1D5B2B) after live-testing found the
-// dark version broken specifically in the native Gmail iOS app -- see
-// prior revision history in git for the full investigation.
-//
-// August 27, third revision: added a standing "invite a friend" line to
-// the footer of every notification email (not the two Supabase Auth
-// templates, which are a separate Dashboard-managed system), reusing the
-// same https://letsbarter.app link the in-app Profile > Invite friends
-// share button already uses -- no referral/attribution tracking exists in
-// the app, so this doesn't invent one. Kept deliberately small and low in
-// the footer, below the CTA button, so it reads as a quiet utility line
-// (like the "Barter" signature itself) rather than a second call to
-// action competing with the email's actual content. Also dropped
-// "Warsaw, Poland" from the footer signature, in anticipation of
-// additional pilot cities.
+// August 27, sixth revision: rebuilt from a boxed-card/branded-header/
+// button-CTA design to a plain, near-text layout, after confirming live
+// that the boxed version landed in Gmail's Promotions tab even for a
+// fresh recipient with zero prior history with this sender -- ruling out
+// "just this test account's history" and pointing at the template itself.
+// Per documented Gmail classifier behavior, branded header banners,
+// button-styled CTAs, and boxed/shadowed containers are strong Promotions
+// signals; plain, text-dominant HTML is the documented way to avoid them.
+// This trades away the more polished look approved earlier for better
+// inbox placement -- a deliberate choice, not an oversight. The CTA is
+// now an inline text link, not a button; there's no logo header; no card
+// container; and the two footer links (invite, manage preferences) are
+// combined onto one line with a single "Barter" signoff instead of two
+// separate mentions of the name.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -103,9 +99,6 @@ Deno.serve(async (req: Request) => {
         userId: notification.user_id,
         userError,
       });
-      // Return 200 so Supabase doesn't retry indefinitely on a permanent
-      // lookup failure (e.g. the user was deleted between the notification
-      // being inserted and this webhook firing).
       return new Response(JSON.stringify({ skipped: "no recipient email" }), { status: 200 });
     }
 
@@ -113,18 +106,8 @@ Deno.serve(async (req: Request) => {
     const actionLabel = notification.data?.actionLabel ?? "Open in Barter";
     const actionUrl = actionPath ? (FRONTEND_URL ? `${FRONTEND_URL}${actionPath}` : actionPath) : null;
 
-    const actionButtonHtml = actionUrl
-      ? `<tr>
-          <td align="center" style="padding: 0 32px 24px 32px;">
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr>
-                <td align="center" style="border-radius: 12px; background-color:#1D5B2B;">
-                  <a href="${escapeHtml(actionUrl)}" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 15px; font-weight: 700; color:#ffffff; text-decoration: none; border-radius: 12px;">${escapeHtml(actionLabel)}</a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>`
+    const actionLinkHtml = actionUrl
+      ? `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6;"><a href="${escapeHtml(actionUrl)}" style="color:#1D5B2B;">${escapeHtml(actionLabel)}</a></p>`
       : "";
 
     const html = `<!DOCTYPE html>
@@ -134,39 +117,16 @@ Deno.serve(async (req: Request) => {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(notification.title)}</title>
 </head>
-<body style="margin:0; padding:0; background-color:#FDFCF7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FDFCF7; padding: 40px 16px;">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px; background-color:#ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
-          <tr>
-            <td align="center" style="padding: 32px 32px 0 32px;">
-              <span style="font-size: 22px; font-weight: 800; color:#1D5B2B; letter-spacing: -0.02em;">Barter</span>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 24px 32px 24px 32px;">
-              <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 800; color:#1a1a1a;">${escapeHtml(notification.title)}</h1>
-              <p style="margin: 0; font-size: 14px; line-height: 1.6; color:#4b5563;">${escapeHtml(notification.content)}</p>
-            </td>
-          </tr>
-          ${actionButtonHtml}
-        </table>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 480px;">
-          <tr>
-            <td align="center" style="padding: 20px 32px 4px 32px;">
-              <p style="margin: 0; font-size: 11px; line-height: 1.6; color:#9ca3af;">Barter works best with more people trading nearby. <a href="https://letsbarter.app" style="color:#1D5B2B; text-decoration: underline;">Invite a friend</a></p>
-            </td>
-          </tr>
-          <tr>
-            <td align="center" style="padding: 4px 32px 20px 32px;">
-              <p style="margin: 0; font-size: 11px; color:#c1c9c1;">Barter</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<body style="margin:0; padding:0; background-color:#ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#1a1a1a;">
+  <div style="max-width: 480px; margin: 0 auto; padding: 24px 20px;">
+    <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; line-height: 1.5;">${escapeHtml(notification.title)}</p>
+    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6;">${escapeHtml(notification.content)}</p>
+    ${actionLinkHtml}
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">&mdash; Barter</p>
+    <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
+      <a href="https://letsbarter.app/invite.html" style="color:#9ca3af;">Invite a friend</a> &middot; <a href="https://letsbarter.app/notification-settings" style="color:#9ca3af;">Manage email preferences</a>
+    </p>
+  </div>
 </body>
 </html>`;
 
