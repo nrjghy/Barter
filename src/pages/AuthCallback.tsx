@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { consumeRedirectAfterLogin } from '../utils/redirectAfterLogin';
 import toast from 'react-hot-toast';
 
 export const AuthCallback: React.FC = () => {
@@ -21,7 +22,7 @@ export const AuthCallback: React.FC = () => {
 
         if (data.session) {
           toast.success('Successfully signed in!');
-          navigate('/');
+          navigate(consumeRedirectAfterLogin());
         } else {
           navigate('/login');
         }

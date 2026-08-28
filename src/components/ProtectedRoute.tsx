@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingSpinner } from './LoadingSpinner';
 import { LocationPrompt } from './LocationPrompt';
@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -20,6 +21,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
+    // Remember where they were headed so Login/AuthCallback can send
+    // them back here after signing in, instead of always landing on the
+    // default post-login destination.
+    const destination = location.pathname + location.search;
+    if (destination !== '/login') {
+      sessionStorage.setItem('barter_redirect_after_login', destination);
+    }
     return <Navigate to="/login" replace />;
   }
 

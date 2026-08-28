@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { OAuthProviderButton } from "../components/OAuthProviderButton";
+import { consumeRedirectAfterLogin } from "../utils/redirectAfterLogin";
 import toast from "react-hot-toast";
 
 export const Login: React.FC = () => {
@@ -39,7 +40,7 @@ export const Login: React.FC = () => {
         }
       } else {
         toast.success("Welcome back!");
-        navigate("/");
+        navigate(consumeRedirectAfterLogin());
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");
