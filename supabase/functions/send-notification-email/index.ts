@@ -45,6 +45,20 @@
 // container; and the two footer links (invite, manage preferences) are
 // combined onto one line with a single "Barter" signoff instead of two
 // separate mentions of the name.
+//
+// August 27, seventh revision: adds a List-Unsubscribe header (RFC 8058,
+// one-click) whenever the trigger passes a non-null category, i.e. only
+// for the five toggleable categories -- never for always-on transactional
+// types, since an automated one-click request silently disabling e.g.
+// trade-completed notifications would be a real harm. The link is signed
+// with an HMAC over "user_id:category" keyed by SERVICE_ROLE_KEY
+// (verified by the separate unsubscribe function, no new secret needed).
+// Gmail/Yahoo require this header, RFC-8058-compliant, for bulk senders;
+// it's also a documented Promotions-tab signal independent of that
+// requirement. Live-verified end to end: a real signed link correctly
+// updates only the targeted category, a tampered signature is rejected,
+// POST returns a blank 200 (RFC 8058), GET returns a plain-text
+// confirmation.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -68,6 +82,7 @@ interface WebhookPayload {
   table: string;
   record: NotificationRow;
   old_record: NotificationRow | null;
+  category: string | null;
 }
 
 function escapeHtml(input: string): string {
@@ -77,6 +92,19 @@ function escapeHtml(input: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+async function sign(secret: string, message: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 Deno.serve(async (req: Request) => {
@@ -130,6 +158,16 @@ Deno.serve(async (req: Request) => {
 </body>
 </html>`;
 
+    let resendHeaders: Record<string, string> | undefined;
+    if (payload.category) {
+      const sig = await sign(SERVICE_ROLE_KEY, `${notification.user_id}:${payload.category}`);
+      const unsubscribeUrl = `${SUPABASE_URL}/functions/v1/unsubscribe?u=${notification.user_id}&c=${payload.category}&sig=${sig}`;
+      resendHeaders = {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+      };
+    }
+
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -141,6 +179,7 @@ Deno.serve(async (req: Request) => {
         to: userData.user.email,
         subject: notification.title,
         html,
+        ...(resendHeaders ? { headers: resendHeaders } : {}),
       }),
     });
 
