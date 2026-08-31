@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Home, Package, MessageCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+
+// Below this, always show the bar regardless of scroll direction.
+const NEAR_TOP_THRESHOLD = 24;
 
 // Final 3-tab layout from the approved nav-shell design (Discover / My
 // Stuff / Chat). Profile lives behind the header avatar, and Admin console
@@ -15,9 +18,45 @@ const baseNavItems = [
 export const BottomNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [visible, setVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Reset to visible whenever the page changes -- new pages generally
+  // start scrolled to the top, and we don't want a stale hidden state
+  // carried over from the previous page's scroll position.
+  useEffect(() => {
+    setVisible(true);
+    lastScrollY.current = window.scrollY;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        if (currentY <= NEAR_TOP_THRESHOLD || currentY < lastScrollY.current) {
+          setVisible(true);
+        } else if (currentY > lastScrollY.current) {
+          setVisible(false);
+        }
+        lastScrollY.current = currentY;
+        ticking = false;
+      });
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 px-4 pb-safe">
+    <nav
+      className={`fixed bottom-0 left-0 right-0 px-4 pb-safe transition-transform duration-300 ease-out ${
+        visible ? 'translate-y-0' : 'translate-y-[150%]'
+      }`}
+    >
       <div className="max-w-md mx-auto mb-4 flex justify-around py-2 bg-white/90 backdrop-blur-lg rounded-full shadow-xl border border-barter-800/10 overflow-hidden">
         {baseNavItems.map(({ icon: Icon, label, path }) => {
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);

@@ -7,9 +7,18 @@ import { useNotificationToasts } from '../hooks/useNotifications';
 
 const TOP_LEVEL_PATHS = ['/', '/my-stuff', '/chat'];
 
+// Profile sub-tree: shows the bottom tab bar (Profile lives behind the
+// header avatar, not as its own tab) but keeps its own BackBar/padding,
+// so it's tracked separately from TOP_LEVEL_PATHS rather than folded in.
+const BOTTOM_NAV_PROFILE_PATHS = ['/profile', '/account', '/notification-settings', '/groups'];
+
 export const Layout: React.FC = () => {
   const location = useLocation();
   const isTopLevel = TOP_LEVEL_PATHS.includes(location.pathname);
+  const showBottomNav =
+    isTopLevel ||
+    BOTTOM_NAV_PROFILE_PATHS.includes(location.pathname) ||
+    location.pathname.startsWith('/groups/');
   useNotificationToasts();
 
   return (
@@ -63,7 +72,7 @@ export const Layout: React.FC = () => {
         <Outlet />
       </main>
 
-      {isTopLevel && <BottomNavigation />}
+      {showBottomNav && <BottomNavigation />}
     </div>
   );
 };
