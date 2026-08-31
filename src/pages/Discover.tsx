@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
@@ -362,7 +363,13 @@ export const Discover: React.FC = () => {
         </div>
 
         {groups.length === 0 ? (
-          <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">Join a group to browse privately.</p>
+          <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">
+            Join or{" "}
+            <Link to="/groups" className="text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline">
+              create
+            </Link>{" "}
+            a group to browse privately.
+          </p>
         ) : browseMode === "groups" ? (
           <>
             <div className="mt-2 space-y-1.5">

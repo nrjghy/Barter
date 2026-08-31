@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Camera, Star, MapPin, Navigation } from "lucide-react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useAuth } from "../contexts/AuthContext";
 import { useUserGroups, useItemGroupIds } from "../hooks/useGroups";
@@ -677,7 +677,11 @@ export const AddEditItem: React.FC = () => {
               <div className="text-sm font-medium text-gray-700 mb-2">Share to groups</div>
               {userGroups.length === 0 ? (
                 <p className="text-xs text-gray-500">
-                  You're not in any groups yet. Create or join one to share listings privately.
+                  You're not in any groups yet.{" "}
+                  <Link to="/groups" className="text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline">
+                    Create
+                  </Link>{" "}
+                  one to share listings privately, or wait for an invite to join one.
                 </p>
               ) : (
                 <div className="space-y-2">
