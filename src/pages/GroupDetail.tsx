@@ -86,6 +86,10 @@ export const GroupDetail: React.FC = () => {
       <BackBar title={group.name} subtitle={`${members.length} ${members.length === 1 ? "member" : "members"}`} onBack={() => navigate("/groups")} />
 
       <div className="flex-1 px-5 py-5">
+        {group.description && (
+          <p className="text-sm text-[oklch(45%_0.02_95)] leading-relaxed mb-5">{group.description}</p>
+        )}
+
         <div className="flex items-center justify-between mb-3">
           <div className="text-[11px] font-bold text-[oklch(50%_0.02_95)] tracking-wide">MEMBERS</div>
           <button

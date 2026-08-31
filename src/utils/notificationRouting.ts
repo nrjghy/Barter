@@ -11,6 +11,11 @@ export const GROUP_NOTIFICATION_TYPES = new Set([
 ]);
 
 export function getNotificationRoute(notification: NotificationWithDetails): string | null {
+  if (notification.type === "group_invite") {
+    // Not yet a member -- RLS blocks /groups/:id until the invite is
+    // accepted, so route to the hub where the pending-invite card lives.
+    return "/groups";
+  }
   if (GROUP_NOTIFICATION_TYPES.has(notification.type)) {
     const groupId = (notification.data as { groupId?: string } | undefined)?.groupId;
     return groupId ? `/groups/${groupId}` : null;
