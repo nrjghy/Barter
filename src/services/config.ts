@@ -131,6 +131,9 @@ export const TABLES = {
   OFFER_ITEMS: "offer_items",
   ISSUES: "issues",
   APP_SETTINGS: "app_settings",
+  GROUPS: "groups",
+  GROUP_MEMBERSHIPS: "group_memberships",
+  ITEM_GROUPS: "item_groups",
 } as const;
 
 // Real-time channels

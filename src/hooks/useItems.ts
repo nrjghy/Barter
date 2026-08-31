@@ -41,6 +41,9 @@ export const useItems = (options?: {
   // Caller's own location, for the radius filter -- null/undefined skips it
   lat?: number | null;
   lng?: number | null;
+  // Discover's browse scope: null/undefined = Public mode, an array
+  // (including empty) = My Groups mode scoped to those group ids.
+  groupIds?: string[] | null;
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -57,6 +60,7 @@ export const useItems = (options?: {
     includeUnrated,
     lat,
     lng,
+    groupIds,
   } = options || {};
 
   // Get items for browsing with infinite pagination
@@ -76,6 +80,7 @@ export const useItems = (options?: {
         includeUnrated,
         lat,
         lng,
+        groupIds,
       },
     ],
     queryFn: ({ pageParam = 0 }) =>
@@ -93,6 +98,7 @@ export const useItems = (options?: {
         includeUnrated,
         lat,
         lng,
+        groupIds,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage: ServiceResult<ItemWithUser[]>, allPages) => {

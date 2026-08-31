@@ -2,7 +2,9 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Bell, X, Check, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useNotifications } from '../hooks/useNotifications';
+import { useGroupInviteActions } from '../hooks/useGroups';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { NotificationWithDetails } from '../services/notificationService';
 import { CONNECTION_NOTIFICATION_TYPES, getNotificationRoute } from '../utils/notificationRouting';
@@ -14,7 +16,26 @@ interface NotificationCenterProps {
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
   const { notifications, notificationsLoading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
+  const { acceptInvite, declineInvite, acceptingGroupId, decliningGroupId } = useGroupInviteActions();
   const navigate = useNavigate();
+
+  const handleAcceptInvite = async (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    const result = await acceptInvite(groupId);
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success("You've joined the group!");
+    }
+  };
+
+  const handleDeclineInvite = async (e: React.MouseEvent, groupId: string) => {
+    e.stopPropagation();
+    const result = await declineInvite(groupId);
+    if (result.error) {
+      toast.error(result.error.message);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && unreadCount > 0) {
@@ -56,6 +77,11 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
         return '⏰';
       case 'product_update':
         return '🆕';
+      case 'group_invite':
+      case 'group_invite_accepted':
+      case 'group_invite_declined':
+      case 'group_ownership_transferred':
+        return '👥';
       default:
         return '📢';
     }
@@ -169,6 +195,30 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             <p className="text-xs text-gray-500 mt-2">
                               {formatTimeAgo(notification.createdAt)}
                             </p>
+                            {notification.type === 'group_invite' && (() => {
+                              const groupId = (notification.data as { groupId?: string } | undefined)?.groupId;
+                              if (!groupId) return null;
+                              const accepting = acceptingGroupId === groupId;
+                              const declining = decliningGroupId === groupId;
+                              return (
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <button
+                                    onClick={(e) => handleAcceptInvite(e, groupId)}
+                                    disabled={accepting || declining}
+                                    className="px-3 py-1.5 text-xs font-semibold bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors disabled:opacity-50"
+                                  >
+                                    {accepting ? 'Accepting…' : 'Accept'}
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeclineInvite(e, groupId)}
+                                    disabled={accepting || declining}
+                                    className="px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                                  >
+                                    {declining ? 'Declining…' : 'Decline'}
+                                  </button>
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="flex items-center space-x-1 ml-2">
                             {!notification.isRead && (

@@ -55,6 +55,9 @@ export interface ItemData {
   // null/undefined means either no reminder has fired, or it was resolved
   // by a later update (see confirmStillAvailable in itemService.ts).
   inactivityReminderSentAt?: string | null;
+  // Whether this listing shows up in Public browse mode (defaults to true).
+  // Independent of group sharing -- see item_groups / set_item_groups.
+  isPublic?: boolean;
 }
 
 export interface UserData {
@@ -114,6 +117,10 @@ export interface FilterOptions {
   // the radius bounds check entirely (get_items_browse handles this).
   lat?: number | null;
   lng?: number | null;
+  // Discover's browse scope: null/undefined = Public mode (unchanged
+  // behavior); an array (including empty) = My Groups mode, scoped to
+  // those group ids.
+  groupIds?: string[] | null;
 }
 
 export interface ServiceError {

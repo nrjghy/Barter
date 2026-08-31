@@ -6,7 +6,15 @@ export const CONNECTION_NOTIFICATION_TYPES = new Set([
   "offer_expiring_soon", "offer_auto_completing_soon", "offer_expired",
 ]);
 
+export const GROUP_NOTIFICATION_TYPES = new Set([
+  "group_invite", "group_invite_accepted", "group_invite_declined", "group_ownership_transferred",
+]);
+
 export function getNotificationRoute(notification: NotificationWithDetails): string | null {
+  if (GROUP_NOTIFICATION_TYPES.has(notification.type)) {
+    const groupId = (notification.data as { groupId?: string } | undefined)?.groupId;
+    return groupId ? `/groups/${groupId}` : null;
+  }
   if (notification.type === "review_reminder") {
     const tradeCompletionId = (notification.data as { trade_completion_id?: string } | undefined)?.trade_completion_id;
     return tradeCompletionId ? `/trade-completion/${tradeCompletionId}/review` : null;

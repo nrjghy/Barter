@@ -9,6 +9,7 @@ import { OnboardingHint } from "../components/OnboardingHint";
 import { useItems } from "../hooks/useItems";
 import { useResponses } from "../hooks/useResponses";
 import { useAuth } from "../hooks/useAuth";
+import { useUserGroups, useBrowseScope } from "../hooks/useGroups";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { ERROR_CODES, ERROR_MESSAGES } from "../services/config";
@@ -41,6 +42,55 @@ export const Discover: React.FC = () => {
   const [includeUnrated, setIncludeUnrated] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Discover browse scope (Public vs. My Groups). Backed by
+  // users.browse_mode/browse_group_ids via useBrowseScope; local state
+  // mirrors it once loaded so toggling feels instant.
+  const { groups } = useUserGroups();
+  const { scope, updateScope } = useBrowseScope();
+  const [browseMode, setBrowseMode] = useState<"public" | "groups">("public");
+  const [checkedGroupIds, setCheckedGroupIds] = useState<string[]>([]);
+  const [scopeInitialized, setScopeInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!scopeInitialized && scope) {
+      setBrowseMode(scope.mode);
+      setCheckedGroupIds(scope.groupIds);
+      setScopeInitialized(true);
+    }
+  }, [scope, scopeInitialized]);
+
+  const handleBrowseModeChange = async (newMode: "public" | "groups") => {
+    if (newMode === browseMode || (newMode === "groups" && groups.length === 0)) return;
+
+    // First-ever switch to My Groups (nothing persisted yet): default to
+    // every current group, checked, rather than an empty (zero-result) scope.
+    let nextGroupIds = checkedGroupIds;
+    if (newMode === "groups" && (scope?.groupIds.length ?? 0) === 0) {
+      nextGroupIds = groups.map((g) => g.id);
+      setCheckedGroupIds(nextGroupIds);
+    }
+
+    setBrowseMode(newMode);
+    await updateScope({ mode: newMode, groupIds: newMode === "groups" ? nextGroupIds : undefined });
+  };
+
+  const toggleBrowseGroup = async (groupId: string) => {
+    const next = checkedGroupIds.includes(groupId)
+      ? checkedGroupIds.filter((id) => id !== groupId)
+      : [...checkedGroupIds, groupId];
+    setCheckedGroupIds(next);
+    await updateScope({ mode: "groups", groupIds: next });
+  };
+
+  const browseScopeIndicator = React.useMemo(() => {
+    if (browseMode !== "groups") return null;
+    const names = checkedGroupIds.map((id) => groups.find((g) => g.id === id)?.name).filter(Boolean) as string[];
+    if (names.length === 0) return "Showing items from no groups.";
+    if (names.length === 1) return `Showing items from ${names[0]}.`;
+    if (names.length === 2) return `Showing items from ${names[0]} and ${names[1]}.`;
+    return `Showing items from ${names[0]} and ${names.length - 1} others.`;
+  }, [browseMode, checkedGroupIds, groups]);
+
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
     conditions: selectedConditions.length > 0 ? selectedConditions : undefined,
@@ -55,6 +105,7 @@ export const Discover: React.FC = () => {
     // the radius bounds check entirely rather than erroring.
     lat: user?.latitude ?? null,
     lng: user?.longitude ?? null,
+    groupIds: browseMode === "groups" ? checkedGroupIds : undefined,
   });
   const { recordResponse, dailyLikeCount, likeLimit, getRespondedItems, undoResponse, undoResponseLoading } = useResponses();
 
@@ -284,6 +335,59 @@ export const Discover: React.FC = () => {
           await updateProfile({ discoverHintDismissedAt: new Date().toISOString() });
         }}
       />
+
+      <div className="mb-3">
+        <div className="grid grid-cols-2 gap-1 p-1 bg-[oklch(93%_0.01_95)] rounded-xl">
+          <button
+            onClick={() => handleBrowseModeChange("public")}
+            className={`py-2 rounded-lg text-sm font-semibold transition-colors ${
+              browseMode === "public" ? "bg-white text-[oklch(22%_0.02_100)] shadow-sm" : "text-[oklch(50%_0.02_95)]"
+            }`}
+          >
+            Public
+          </button>
+          <button
+            onClick={() => handleBrowseModeChange("groups")}
+            disabled={groups.length === 0}
+            className={`py-2 rounded-lg text-sm font-semibold transition-colors ${
+              groups.length === 0
+                ? "text-[oklch(75%_0.01_95)] cursor-not-allowed"
+                : browseMode === "groups"
+                ? "bg-white text-[oklch(22%_0.02_100)] shadow-sm"
+                : "text-[oklch(50%_0.02_95)]"
+            }`}
+          >
+            My groups
+          </button>
+        </div>
+
+        {groups.length === 0 ? (
+          <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">Join a group to browse privately.</p>
+        ) : browseMode === "groups" ? (
+          <>
+            <div className="mt-2 space-y-1.5">
+              {groups.map((group) => (
+                <label
+                  key={group.id}
+                  className="flex items-center space-x-2 text-sm text-gray-700 bg-white rounded-lg px-3 py-2 border border-[oklch(92%_0.01_95)]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkedGroupIds.includes(group.id)}
+                    onChange={() => toggleBrowseGroup(group.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+                  />
+                  <span>{group.name}</span>
+                </label>
+              ))}
+            </div>
+            {browseScopeIndicator && (
+              <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">{browseScopeIndicator}</p>
+            )}
+          </>
+        ) : null}
+      </div>
+
       <SwipeInterface
         currentItem={currentItem}
         hasMore={hasMore}

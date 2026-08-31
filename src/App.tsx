@@ -22,6 +22,8 @@ import { ResetPassword } from "./pages/ResetPassword";
 import { Account } from "./pages/Account";
 import { NotificationSettings } from "./pages/NotificationSettings";
 import { AccountDeleted } from "./pages/AccountDeleted";
+import { Groups } from "./pages/Groups";
+import { GroupDetail } from "./pages/GroupDetail";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { identifyUser } from "./lib/analytics";
@@ -123,6 +125,22 @@ const AppContent: React.FC = () => {
             element={
               <ProtectedRoute>
                 <NotificationSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups"
+            element={
+              <ProtectedRoute>
+                <Groups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:groupId"
+            element={
+              <ProtectedRoute>
+                <GroupDetail />
               </ProtectedRoute>
             }
           />

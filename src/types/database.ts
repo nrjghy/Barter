@@ -13,6 +13,8 @@ export interface Database {
           rating: number | null;
           total_ratings: number | null;
           rating_sum: number | null;
+          browse_mode: "public" | "groups";
+          browse_group_ids: string[];
         };
         Insert: {
           id: string;
@@ -25,6 +27,8 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
+          browse_mode?: "public" | "groups";
+          browse_group_ids?: string[];
         };
         Update: {
           id?: string;
@@ -37,6 +41,77 @@ export interface Database {
           rating?: number | null;
           total_ratings?: number | null;
           rating_sum?: number | null;
+          browse_mode?: "public" | "groups";
+          browse_group_ids?: string[];
+        };
+      };
+      groups: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          creator_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          creator_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          creator_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      group_memberships: {
+        Row: {
+          id: string;
+          group_id: string;
+          user_id: string;
+          role: "creator" | "member";
+          joined_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          user_id: string;
+          role?: "creator" | "member";
+          joined_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          user_id?: string;
+          role?: "creator" | "member";
+          joined_at?: string;
+        };
+      };
+      item_groups: {
+        Row: {
+          id: string;
+          item_id: string;
+          group_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          item_id: string;
+          group_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          item_id?: string;
+          group_id?: string;
+          created_at?: string;
         };
       };
       items: {
@@ -57,6 +132,7 @@ export interface Database {
           estimated_value: number | null;
           value_currency: string;
           source_url: string | null;
+          is_public: boolean;
         };
         Insert: {
           id?: string;
@@ -75,6 +151,7 @@ export interface Database {
           estimated_value?: number | null;
           value_currency: string;
           source_url?: string | null;
+          is_public?: boolean;
         };
         Update: {
           id?: string;
@@ -93,6 +170,7 @@ export interface Database {
           estimated_value?: number | null;
           value_currency?: string;
           source_url?: string | null;
+          is_public?: boolean;
         };
       };
       connections: {
@@ -479,7 +557,7 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval" | "group_invite" | "group_invite_accepted" | "group_invite_declined" | "group_ownership_transferred";
           title: string;
           content: string;
           data: any;
@@ -490,7 +568,7 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval";
+          type: "match" | "message" | "trade_completed" | "review" | "system" | "item_unavailable" | "review_reminder" | "issue_status" | "admin_daily_summary" | "trade_dispute" | "listing_expiry_reminder" | "pending_approval" | "group_invite" | "group_invite_accepted" | "group_invite_declined" | "group_ownership_transferred";
           title: string;
           content: string;
           data?: any;
@@ -529,3 +607,6 @@ export type UserBlock = Database["public"]["Tables"]["user_blocks"]["Row"];
 export type Report = Database["public"]["Tables"]["reports"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Issue = Database["public"]["Tables"]["issues"]["Row"];
+export type Group = Database["public"]["Tables"]["groups"]["Row"];
+export type GroupMembership = Database["public"]["Tables"]["group_memberships"]["Row"];
+export type ItemGroup = Database["public"]["Tables"]["item_groups"]["Row"];

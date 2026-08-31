@@ -3,12 +3,14 @@ import { X, Camera, Star, MapPin, Navigation } from "lucide-react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useAuth } from "../contexts/AuthContext";
+import { useUserGroups, useItemGroupIds } from "../hooks/useGroups";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { InfoTooltip } from "../components/InfoTooltip";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
+import { GroupService } from "../services/groupService";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase";
 
@@ -144,6 +146,17 @@ export const AddEditItem: React.FC = () => {
   const [prefilled, setPrefilled] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
 
+  // Visibility: Public listing toggle + which of the owner's groups this
+  // item is shared to. New items default to public/no groups; edit mode
+  // prefills the group checklist from item_groups once it loads.
+  const [isPublic, setIsPublic] = useState(true);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
+  const [groupsPrefilled, setGroupsPrefilled] = useState(false);
+  const { groups: userGroups } = useUserGroups();
+  const { groupIds: existingItemGroupIds, loading: itemGroupsLoading } = useItemGroupIds(
+    isEditMode ? itemId : undefined
+  );
+
   // Required-field inline validation (PRD §13): each required field tracks
   // its own touched state, so an error only surfaces once the person has
   // actually interacted with that field, not on initial render.
@@ -210,8 +223,18 @@ export const AddEditItem: React.FC = () => {
     setItemLocation(existingItem.location ?? "");
     setItemLatitude(existingItem.latitude ?? null);
     setItemLongitude(existingItem.longitude ?? null);
+    setIsPublic(existingItem.isPublic ?? true);
     setPrefilled(true);
   }, [isEditMode, existingItem, prefilled]);
+
+  // Share checklist prefill: waits for the item_groups fetch to actually
+  // resolve (rather than keying off array length) since an empty result --
+  // shared to none of the caller's groups -- is a valid, distinct state.
+  useEffect(() => {
+    if (!isEditMode || groupsPrefilled || itemGroupsLoading || !existingItem) return;
+    setSelectedGroupIds(existingItemGroupIds);
+    setGroupsPrefilled(true);
+  }, [isEditMode, existingItem, existingItemGroupIds, itemGroupsLoading, groupsPrefilled]);
 
   // Relist (PRD §4): MyStuff navigates here with relistFrom in location.state
   // for a Cancelled/Traded/Expired item. This pre-fills a brand-new listing --
@@ -390,6 +413,21 @@ export const AddEditItem: React.FC = () => {
     }
   };
 
+  // Best-effort, same pattern as the cancel-item notification in
+  // itemService.cancelItem: the item itself is already saved by this point,
+  // so a failure here shouldn't be surfaced as if the whole save failed --
+  // it would just mean the group-visibility change didn't stick.
+  const saveItemGroups = async (savedItemId: string) => {
+    try {
+      const result = await GroupService.setItemGroups(savedItemId, selectedGroupIds);
+      if (result.error) {
+        toast.error(`Listing saved, but group sharing didn't update: ${result.error.message}`);
+      }
+    } catch {
+      toast.error("Listing saved, but group sharing didn't update.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -451,12 +489,14 @@ export const AddEditItem: React.FC = () => {
             location: itemLocation.trim() || undefined,
             latitude: itemLatitude,
             longitude: itemLongitude,
+            isPublic,
           },
         })) as ServiceResult<ItemData>;
 
         if (result.error) {
           toast.error(result.error.message);
         } else {
+          await saveItemGroups(itemId);
           toast.success("Listing updated!");
           navigate("/my-stuff", { state: { highlightItemId: itemId } });
         }
@@ -476,6 +516,7 @@ export const AddEditItem: React.FC = () => {
           location: itemLocation.trim() || undefined,
           latitude: itemLatitude,
           longitude: itemLongitude,
+          isPublic,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         })) as ServiceResult<ItemData>;
@@ -483,6 +524,7 @@ export const AddEditItem: React.FC = () => {
         if (result.error) {
           toast.error(result.error.message);
         } else {
+          if (result.data?.id) await saveItemGroups(result.data.id);
           toast.success("Item added successfully!");
           // PRD §17 item-listing funnel, step 4 (final): listing published.
           trackEvent("listing_published", { itemId: result.data?.id });
@@ -610,6 +652,56 @@ export const AddEditItem: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Visibility */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+            <div className="flex items-center justify-between px-3.5 py-3 border border-gray-300 rounded-lg">
+              <div>
+                <div className="text-sm font-medium text-gray-900">Public listing</div>
+                <div className="text-xs text-gray-500 mt-0.5">Anyone browsing Barter can see this.</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 ml-3">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-[oklch(90%_0.01_95)] rounded-full peer peer-checked:bg-barter-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
+              </label>
+            </div>
+
+            <div className="mt-3">
+              <div className="text-sm font-medium text-gray-700 mb-2">Share to groups</div>
+              {userGroups.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  You're not in any groups yet. Create or join one to share listings privately.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {userGroups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center space-x-2 text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedGroupIds.includes(group.id)}
+                        onChange={(e) =>
+                          setSelectedGroupIds((prev) =>
+                            e.target.checked ? [...prev, group.id] : prev.filter((id) => id !== group.id)
+                          )
+                        }
+                        className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+                      />
+                      <span>{group.name}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Image Upload */}

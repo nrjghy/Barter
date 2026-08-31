@@ -226,6 +226,15 @@ export const Profile: React.FC = () => {
             >
               Notifications
             </button>
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                navigate("/groups");
+              }}
+              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+            >
+              Groups
+            </button>
             {user?.role === "admin" && (
               <button
                 onClick={() => {

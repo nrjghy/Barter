@@ -16,6 +16,7 @@ export * from "./accountService";
 export * from "./issuesService";
 export * from "./offerService";
 export * from "./adminService";
+export * from "./groupService";
 
 // Re-export commonly used types and constants
 export { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, SUCCESS_MESSAGES } from "./config";
@@ -32,3 +33,4 @@ export { TradeCompletionService } from "./tradeCompletionService";
 export { AccountService } from "./accountService";
 export { IssuesService } from "./issuesService";
 export { OfferService } from "./offerService";
+export { GroupService } from "./groupService";
