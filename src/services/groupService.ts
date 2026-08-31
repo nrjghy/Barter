@@ -308,6 +308,25 @@ export class GroupService {
     }
   }
 
+  static async deleteGroup(groupId: string): Promise<ServiceResult<{ groupName: string }>> {
+    try {
+      const { data, error } = await supabase.rpc("delete_group", { p_group_id: groupId });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to delete group", details: error } };
+      }
+      if (data?.error) {
+        return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      return { data: { groupName: data.groupName } };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
   /**
    * Full replace, not incremental -- always pass the item's complete desired
    * set of group ids.

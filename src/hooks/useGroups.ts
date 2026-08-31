@@ -59,6 +59,15 @@ export const useGroup = (groupId?: string) => {
     },
   });
 
+  const deleteGroup = useMutation({
+    mutationFn: () => GroupService.deleteGroup(groupId!),
+    onSuccess: (result) => {
+      if (!result.error) {
+        queryClient.invalidateQueries({ queryKey: ["groups", user?.id] });
+      }
+    },
+  });
+
   return {
     group: groupQuery.data?.data,
     groupLoading: groupQuery.isLoading,
@@ -75,6 +84,9 @@ export const useGroup = (groupId?: string) => {
 
     leaveGroup: leaveGroup.mutateAsync,
     leaveGroupLoading: leaveGroup.isPending,
+
+    deleteGroup: deleteGroup.mutateAsync,
+    deleteGroupLoading: deleteGroup.isPending,
   };
 };
 

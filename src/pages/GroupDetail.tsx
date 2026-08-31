@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { UserPlus, ArrowLeftRight } from "lucide-react";
+import { UserPlus, ArrowLeftRight, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -25,12 +25,16 @@ export const GroupDetail: React.FC = () => {
     transferOwnership,
     leaveGroup,
     leaveGroupLoading,
+    deleteGroup,
+    deleteGroupLoading,
   } = useGroup(groupId);
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferIsForLeaving, setTransferIsForLeaving] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   const myMembership = members.find((m) => m.userId === user?.id);
   const isCreator = myMembership?.role === "creator";
@@ -42,6 +46,17 @@ export const GroupDetail: React.FC = () => {
       toast.error(result.error.message);
     } else {
       toast.success("You left the group");
+      navigate("/groups");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    const result = await deleteGroup();
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      setConfirmingDelete(false);
+      toast.success("Group deleted");
       navigate("/groups");
     }
   };
@@ -131,7 +146,17 @@ export const GroupDetail: React.FC = () => {
             >
               Leave group
             </button>
-            <p className="text-xs text-gray-500 text-center">Transfer ownership to leave a group you created.</p>
+            <p className="text-xs text-gray-500 text-center mb-3">Transfer ownership to leave a group you created.</p>
+            <button
+              onClick={() => {
+                setDeleteConfirmText("");
+                setConfirmingDelete(true);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[oklch(50%_0.15_30_/_0.3)] text-[oklch(50%_0.15_30)] rounded-xl hover:bg-[oklch(50%_0.15_30_/_0.05)] transition-colors font-medium"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete group
+            </button>
           </div>
         ) : (
           <button
@@ -200,6 +225,43 @@ export const GroupDetail: React.FC = () => {
               className="w-full py-3.5 rounded-xl bg-transparent text-[oklch(50%_0.15_30)] text-sm font-bold disabled:opacity-50"
             >
               {leaveGroupLoading ? "Leaving…" : "Leave group"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setConfirmingDelete(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl p-5 pb-7">
+            <div className="text-base font-extrabold text-[oklch(22%_0.02_100)] mb-1.5">Delete {group.name}?</div>
+            <div className="text-[13px] text-[oklch(45%_0.02_95)] leading-relaxed mb-4">
+              This permanently deletes the group for all {members.length} {members.length === 1 ? "member" : "members"}, not just you.
+              Every member loses access to its private listings, and this can't be undone.
+            </div>
+            <label className="block text-xs font-semibold text-[oklch(45%_0.02_95)] mb-1.5">
+              Type <span className="font-bold text-[oklch(22%_0.02_100)]">{group.name}</span> to confirm
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-[oklch(50%_0.15_30)] focus:border-transparent"
+              placeholder={group.name}
+              autoFocus
+            />
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              className="w-full py-3.5 rounded-xl bg-barter-600 text-white text-sm font-bold mb-2"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              disabled={deleteGroupLoading || deleteConfirmText !== group.name}
+              className="w-full py-3.5 rounded-xl bg-[oklch(50%_0.15_30)] text-white text-sm font-bold disabled:opacity-40"
+            >
+              {deleteGroupLoading ? "Deleting…" : "Delete group for everyone"}
             </button>
           </div>
         </div>
