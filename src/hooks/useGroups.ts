@@ -68,6 +68,13 @@ export const useGroup = (groupId?: string) => {
     },
   });
 
+  const removeMember = useMutation({
+    mutationFn: (memberId: string) => GroupService.removeMember(groupId!, memberId),
+    onSuccess: (result) => {
+      if (!result.error) invalidateGroup();
+    },
+  });
+
   return {
     group: groupQuery.data?.data,
     groupLoading: groupQuery.isLoading,
@@ -87,6 +94,9 @@ export const useGroup = (groupId?: string) => {
 
     deleteGroup: deleteGroup.mutateAsync,
     deleteGroupLoading: deleteGroup.isPending,
+
+    removeMember: removeMember.mutateAsync,
+    removingMemberId: removeMember.isPending ? (removeMember.variables as string | undefined) : undefined,
   };
 };
 

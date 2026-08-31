@@ -308,6 +308,28 @@ export class GroupService {
     }
   }
 
+  static async removeMember(groupId: string, memberId: string): Promise<ServiceResult<{ removedUserId: string }>> {
+    try {
+      const { data, error } = await supabase.rpc("remove_group_member", {
+        p_group_id: groupId,
+        p_member_id: memberId,
+      });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to remove member", details: error } };
+      }
+      if (data?.error) {
+        return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      return { data: { removedUserId: data.removedUserId } };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
   static async deleteGroup(groupId: string): Promise<ServiceResult<{ groupName: string }>> {
     try {
       const { data, error } = await supabase.rpc("delete_group", { p_group_id: groupId });
