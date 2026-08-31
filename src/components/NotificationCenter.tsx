@@ -195,7 +195,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                             <p className="text-xs text-gray-500 mt-2">
                               {formatTimeAgo(notification.createdAt)}
                             </p>
-                            {notification.type === 'group_invite' && (() => {
+                            {notification.type === 'group_invite' && !notification.isRead && (() => {
                               const groupId = (notification.data as { groupId?: string } | undefined)?.groupId;
                               if (!groupId) return null;
                               const accepting = acceptingGroupId === groupId;
