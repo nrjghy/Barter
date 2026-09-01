@@ -292,11 +292,13 @@ export const GroupDetail: React.FC = () => {
         {showTransferModal && (
           <TransferOwnershipModal
             groupName={group.name}
+            members={members.filter((m) => m.userId !== user?.id)}
             leavingAfterTransfer={transferIsForLeaving}
             onClose={() => setShowTransferModal(false)}
-            onTransfer={async (newCreatorUsername) => {
-              const result = await transferOwnership(newCreatorUsername);
+            onTransfer={async (newCreatorId) => {
+              const result = await transferOwnership(newCreatorId);
               if (!result.error) {
+                const newCreatorUsername = members.find((m) => m.userId === newCreatorId)?.username ?? "the new owner";
                 toast.success(`Ownership transferred to ${newCreatorUsername}`);
                 if (transferIsForLeaving) {
                   const leaveResult = await leaveGroup();

@@ -44,7 +44,7 @@ export const useGroup = (groupId?: string) => {
   });
 
   const transferOwnership = useMutation({
-    mutationFn: (newCreatorUsername: string) => GroupService.transferGroupOwnership(groupId!, newCreatorUsername),
+    mutationFn: (newCreatorId: string) => GroupService.transferGroupOwnership(groupId!, newCreatorId),
     onSuccess: (result) => {
       if (!result.error) invalidateGroup();
     },

@@ -324,12 +324,12 @@ export class GroupService {
 
   static async transferGroupOwnership(
     groupId: string,
-    newCreatorUsername: string
+    newCreatorId: string
   ): Promise<ServiceResult<{ groupId: string; newCreatorId: string }>> {
     try {
       const { data, error } = await supabase.rpc("transfer_group_ownership", {
         p_group_id: groupId,
-        p_new_creator_username: newCreatorUsername,
+        p_new_creator_id: newCreatorId,
       });
 
       if (error) {

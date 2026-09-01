@@ -5,8 +5,9 @@ import { LoadingSpinner } from "./LoadingSpinner";
 
 interface TransferOwnershipModalProps {
   groupName: string;
+  members: { userId: string; username: string; role: string }[];
   onClose: () => void;
-  onTransfer: (newCreatorUsername: string) => Promise<{ error?: { message: string } }>;
+  onTransfer: (newCreatorId: string) => Promise<{ error?: { message: string } }>;
   // When set, the transfer is happening as part of a "Leave group" attempt --
   // shown as a hint above the field so the flow reads as one continuous action.
   leavingAfterTransfer?: boolean;
@@ -14,23 +15,24 @@ interface TransferOwnershipModalProps {
 
 export const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
   groupName,
+  members,
   onClose,
   onTransfer,
   leavingAfterTransfer,
 }) => {
-  const [username, setUsername] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username.trim()) {
-      setError("Enter the new owner's username");
+    if (!selectedUserId) {
+      setError("Choose the new owner");
       return;
     }
     setError(null);
     setLoading(true);
-    const result = await onTransfer(username.trim());
+    const result = await onTransfer(selectedUserId);
     setLoading(false);
     if (result.error) {
       setError(result.error.message);
@@ -67,18 +69,29 @@ export const TransferOwnershipModal: React.FC<TransferOwnershipModalProps> = ({
               Transfer ownership of {groupName} before you can leave. The new owner must already be a member.
             </p>
           )}
-          <label htmlFor="newCreatorUsername" className="block text-sm font-medium text-gray-700 mb-2">
-            New owner's username
-          </label>
-          <input
-            id="newCreatorUsername"
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-barter-600 focus:border-transparent"
-            placeholder="username"
-            autoFocus
-          />
+          <label className="block text-sm font-medium text-gray-700 mb-2">New owner</label>
+          {members.length === 0 ? (
+            <p className="text-xs text-gray-500">No other members to transfer ownership to.</p>
+          ) : (
+            <div className="space-y-2">
+              {members.map((member) => (
+                <label
+                  key={member.userId}
+                  className="flex items-center space-x-2 text-sm text-gray-700 border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <input
+                    type="radio"
+                    name="newCreatorId"
+                    value={member.userId}
+                    checked={selectedUserId === member.userId}
+                    onChange={() => setSelectedUserId(member.userId)}
+                    className="w-4 h-4 border-gray-300 text-barter-600 focus:ring-barter-600"
+                  />
+                  <span>{member.username}</span>
+                </label>
+              ))}
+            </div>
+          )}
           {error && <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">{error}</p>}
 
           <div className="flex gap-3 pt-4">
