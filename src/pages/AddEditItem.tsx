@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { X, Camera, Star, MapPin, Navigation } from "lucide-react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
@@ -120,6 +121,7 @@ export const AddEditItem: React.FC = () => {
   }, []);
 
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -524,7 +526,16 @@ export const AddEditItem: React.FC = () => {
         if (result.error) {
           toast.error(result.error.message);
         } else {
-          if (GROUPS_ENABLED) await saveItemGroups(itemId);
+          if (GROUPS_ENABLED) {
+            await saveItemGroups(itemId);
+            // updateItem's own onSuccess invalidation already fired before
+            // saveItemGroups (a plain async call, not a mutation) updated
+            // item_groups, so it refetched stale group associations. This
+            // second invalidation closes that gap.
+            queryClient.invalidateQueries({ queryKey: ["items"] });
+            queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["item"] });
+          }
           toast.success("Listing updated!");
           navigate("/my-stuff", { state: { highlightItemId: itemId } });
         }
@@ -552,7 +563,14 @@ export const AddEditItem: React.FC = () => {
         if (result.error) {
           toast.error(result.error.message);
         } else {
-          if (GROUPS_ENABLED && result.data?.id) await saveItemGroups(result.data.id);
+          if (GROUPS_ENABLED && result.data?.id) {
+            await saveItemGroups(result.data.id);
+            // Same gap as edit mode: createItem's own onSuccess invalidation
+            // already fired before saveItemGroups updated item_groups.
+            queryClient.invalidateQueries({ queryKey: ["items"] });
+            queryClient.invalidateQueries({ queryKey: ["userItems", user?.id] });
+            queryClient.invalidateQueries({ queryKey: ["item"] });
+          }
           // Best-effort, same as saveItemGroups -- the listing itself is
           // already published by this point, so a failure here shouldn't
           // block or surface as if the whole publish failed.
