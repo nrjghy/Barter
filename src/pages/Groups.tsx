@@ -125,7 +125,7 @@ export const Groups: React.FC = () => {
                     <span className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)]">{group.name}</span>
                     {group.role === "creator" && (
                       <span className="px-1.5 py-0.5 rounded-full bg-barter-100 text-barter-700 text-[10px] font-bold">
-                        Creator
+                        Owner
                       </span>
                     )}
                   </div>

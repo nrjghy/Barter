@@ -51,14 +51,14 @@ export const GroupInviteLinkModal: React.FC<GroupInviteLinkModalProps> = ({ grou
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4"
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md overflow-hidden max-h-[85vh] flex flex-col"
+        exit={{ y: -100, opacity: 0 }}
+        className="bg-white rounded-b-3xl sm:rounded-3xl w-full max-w-md overflow-hidden max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-[oklch(92%_0.01_95)] flex-shrink-0">

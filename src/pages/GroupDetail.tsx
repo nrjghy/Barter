@@ -178,7 +178,7 @@ export const GroupDetail: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)] truncate">{member.username}</div>
                     <div className="text-[12px] text-[oklch(50%_0.02_95)]">
-                      {member.role === "creator" ? "Creator" : member.role === "moderator" ? "Moderator" : "Member"}
+                      {member.role === "creator" ? "Owner" : member.role === "moderator" ? "Moderator" : "Member"}
                     </div>
                   </div>
                   {isCreator && !isSelf && member.role === "member" && (
