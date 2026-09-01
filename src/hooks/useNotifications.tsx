@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useAuth } from "./useAuth";
 import { NotificationService } from "../services";
-import { getNotificationRoute } from "../utils/notificationRouting";
 
 export const useNotifications = () => {
   const { user } = useAuth();
@@ -161,13 +160,13 @@ export const useNotificationToasts = () => {
     const newOnes = notifications.filter((n) => !n.isRead && !seenIds.current!.has(n.id));
     for (const n of newOnes) {
       seenIds.current.add(n.id);
-      const route = getNotificationRoute(n);
+      const actionPath = (n.data as { actionPath?: string } | undefined)?.actionPath;
       toast((t) => (
         <div
-          className={route ? "cursor-pointer" : ""}
+          className={actionPath ? "cursor-pointer" : ""}
           onClick={() => {
             toast.dismiss(t.id);
-            if (route) navigate(route);
+            if (actionPath) navigate(actionPath);
           }}
         >
           <div className="font-semibold">{n.title}</div>

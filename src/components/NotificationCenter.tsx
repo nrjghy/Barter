@@ -7,7 +7,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useGroupInviteActions } from '../hooks/useGroups';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { NotificationWithDetails } from '../services/notificationService';
-import { CONNECTION_NOTIFICATION_TYPES, getNotificationRoute } from '../utils/notificationRouting';
+import { CONNECTION_NOTIFICATION_TYPES } from '../utils/notificationRouting';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -47,10 +47,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
   }, [isOpen]);
 
   const handleNotificationClick = (notification: NotificationWithDetails) => {
-    const route = getNotificationRoute(notification);
-    if (!route) return;
+    const actionPath = (notification.data as { actionPath?: string } | undefined)?.actionPath;
+    if (!actionPath) return;
     onClose();
-    navigate(route);
+    navigate(actionPath);
   };
 
   const getNotificationIcon = (type: string) => {
