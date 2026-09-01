@@ -689,7 +689,13 @@ export const AddEditItem: React.FC = () => {
           {/* Visibility */}
           {GROUPS_ENABLED && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+            <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-2">
+              Visibility
+              <InfoTooltip
+                text="Public listings are visible to everyone, including all your groups. Turn Public off and pick specific groups to share privately with just them instead."
+                label="Visibility"
+              />
+            </label>
             <div className="flex items-center justify-between px-3.5 py-3 border border-gray-300 rounded-lg">
               <div>
                 <div className="text-sm font-medium text-gray-900">Public listing</div>
@@ -706,6 +712,7 @@ export const AddEditItem: React.FC = () => {
                       return;
                     }
                     setIsPublic(e.target.checked);
+                    if (e.target.checked) setSelectedGroupIds(userGroups.map((g) => g.id));
                   }}
                 />
                 <div className="w-11 h-6 bg-[oklch(90%_0.01_95)] rounded-full peer peer-checked:bg-barter-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
