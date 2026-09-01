@@ -717,11 +717,12 @@ export const AddEditItem: React.FC = () => {
                       <input
                         type="checkbox"
                         checked={selectedGroupIds.includes(group.id)}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setSelectedGroupIds((prev) =>
                             e.target.checked ? [...prev, group.id] : prev.filter((id) => id !== group.id)
-                          )
-                        }
+                          );
+                          if (e.target.checked) setIsPublic(false);
+                        }}
                         className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
                       />
                       <span>{group.name}</span>
