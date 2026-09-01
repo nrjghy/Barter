@@ -194,6 +194,14 @@ export const ItemDetail: React.FC = () => {
     );
   }
 
+  const visibilityLabel = item.isPublic
+    ? "Public"
+    : item.groupNames && item.groupNames.length > 0
+    ? item.groupNames.length === 1
+      ? `${item.groupNames[0]} only`
+      : `${item.groupNames.length} groups`
+    : null;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -397,6 +405,9 @@ export const ItemDetail: React.FC = () => {
                   <MapPin className="w-4 h-4 mr-1" />
                   <span>{item.location}</span>
                 </div>
+              )}
+              {user?.id === item.userId && visibilityLabel && (
+                <div className="text-gray-500 text-sm mt-2">{visibilityLabel}</div>
               )}
             </div>
 

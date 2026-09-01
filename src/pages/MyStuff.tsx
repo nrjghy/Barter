@@ -30,6 +30,13 @@ const ListingRow: React.FC<{
   const status = (item.status ?? "active") as ItemStatus;
   const meta = STATUS_META[status];
   const thumbnail = item.imageUrls?.[0];
+  const visibilityLabel = item.isPublic
+    ? "Public"
+    : item.groupNames && item.groupNames.length > 0
+    ? item.groupNames.length === 1
+      ? `${item.groupNames[0]} only`
+      : `${item.groupNames.length} groups`
+    : null;
 
   return (
     <div
@@ -48,11 +55,16 @@ const ListingRow: React.FC<{
       </button>
       <button onClick={onOpenDetail} className="flex-1 min-w-0 text-left">
         <div className="text-sm font-semibold text-[oklch(22%_0.02_100)] truncate">{item.title}</div>
-        <div
-          className="inline-block mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-          style={{ background: meta.bg, color: meta.color }}
-        >
-          {meta.label}
+        <div className="flex items-center gap-1.5 mt-1">
+          <div
+            className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold"
+            style={{ background: meta.bg, color: meta.color }}
+          >
+            {meta.label}
+          </div>
+          {visibilityLabel && (
+            <span className="text-[11px] text-[oklch(50%_0.02_95)] truncate">{visibilityLabel}</span>
+          )}
         </div>
       </button>
       <button onClick={() => shareItem(item)} className="p-1 text-[oklch(45%_0.02_95)] flex-shrink-0">

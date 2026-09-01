@@ -58,6 +58,10 @@ export interface ItemData {
   // Whether this listing shows up in Public browse mode (defaults to true).
   // Independent of group sharing -- see item_groups / set_item_groups.
   isPublic?: boolean;
+  // Names of the groups this listing is shared to. Only populated by
+  // getUserItems when GROUPS_ENABLED -- absent elsewhere rather than an
+  // empty array standing in for "not fetched".
+  groupNames?: string[];
 }
 
 export interface UserData {

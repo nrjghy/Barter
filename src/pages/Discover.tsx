@@ -27,6 +27,7 @@ export const Discover: React.FC = () => {
   const undoInFlightRef = useRef(false);
   const [showFilter, setShowFilter] = useState(false);
   const [showGroupPicker, setShowGroupPicker] = useState(false);
+  const [pendingGroupIds, setPendingGroupIds] = useState<string[]>([]);
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
   useEffect(() => {
@@ -82,12 +83,22 @@ export const Discover: React.FC = () => {
     await updateScope({ mode: newMode, groupIds: newMode === "groups" ? nextGroupIds : undefined });
   };
 
-  const toggleBrowseGroup = async (groupId: string) => {
-    const next = checkedGroupIds.includes(groupId)
-      ? checkedGroupIds.filter((id) => id !== groupId)
-      : [...checkedGroupIds, groupId];
-    setCheckedGroupIds(next);
-    await updateScope({ mode: "groups", groupIds: next });
+  // The sheet's checkboxes edit pendingGroupIds only -- no RPC call, no
+  // refetch per click. Re-seeded from the applied scope every time the
+  // sheet opens, so a discard (tap outside / X) just leaves it stale until
+  // the next open rather than needing an explicit reset.
+  useEffect(() => {
+    if (showGroupPicker) setPendingGroupIds(checkedGroupIds);
+  }, [showGroupPicker]);
+
+  const togglePendingGroup = (groupId: string) => {
+    setPendingGroupIds((prev) => (prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId]));
+  };
+
+  const handleGroupPickerDone = async () => {
+    await updateScope({ mode: "groups", groupIds: pendingGroupIds });
+    setCheckedGroupIds(pendingGroupIds);
+    setShowGroupPicker(false);
   };
 
   const browseScopeIndicator = React.useMemo(() => {
@@ -416,24 +427,27 @@ export const Discover: React.FC = () => {
                 </button>
               </div>
 
-              <div className="p-6 space-y-1.5">
-                {groups.map((group) => (
-                  <label
-                    key={group.id}
-                    className="flex items-center space-x-2 text-sm text-gray-700 bg-white rounded-lg px-3 py-2 border border-[oklch(92%_0.01_95)]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checkedGroupIds.includes(group.id)}
-                      onChange={() => toggleBrowseGroup(group.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
-                    />
-                    <span>{group.name}</span>
-                  </label>
-                ))}
+              <div className="p-6">
+                <div className="text-xs font-semibold text-[oklch(50%_0.02_95)] mb-2">Show items from:</div>
+                <div className="space-y-1.5">
+                  {groups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center space-x-2 text-sm text-gray-700 bg-white rounded-lg px-3 py-2 border border-[oklch(92%_0.01_95)]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={pendingGroupIds.includes(group.id)}
+                        onChange={() => togglePendingGroup(group.id)}
+                        className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+                      />
+                      <span>{group.name}</span>
+                    </label>
+                  ))}
+                </div>
 
                 <button
-                  onClick={() => setShowGroupPicker(false)}
+                  onClick={handleGroupPickerDone}
                   className="w-full mt-4 px-4 py-2.5 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors font-medium"
                 >
                   Done

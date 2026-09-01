@@ -114,10 +114,13 @@ export class ItemService {
         return { error: uuidError };
       }
 
-      const { data, error } = await supabase
-        .from(TABLES.ITEMS)
-        .select(
-          `
+      // Assigned to a `string`-typed variable, then passed by reference --
+      // a template literal expression passed directly as a .select() argument
+      // gets inferred as a template *literal type* rather than widened to
+      // plain `string`, which supabase-js's typed select parser then chokes
+      // on for the GROUPS_ENABLED-gated fragment. Routing through a
+      // variable forces the widening.
+      const userItemsSelectQuery: string = `
           *,
           users!inner (
             id,
@@ -125,9 +128,11 @@ export class ItemService {
             location,
             avatar_url,
             rating
-          )
-        `
-        )
+          )${GROUPS_ENABLED ? ", item_groups ( groups ( name ) )" : ""}
+        `;
+      const { data, error } = await supabase
+        .from(TABLES.ITEMS)
+        .select(userItemsSelectQuery)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
@@ -162,6 +167,9 @@ export class ItemService {
         isPublic: item.is_public,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
+        ...(GROUPS_ENABLED
+          ? { groupNames: (item.item_groups ?? []).map((ig: any) => ig.groups?.name).filter(Boolean) }
+          : {}),
         user: {
           id: item.users.id,
           username: item.users.username,
@@ -196,10 +204,14 @@ export class ItemService {
         return { error: uuidError };
       }
 
-      const { data, error } = await supabase
-        .from(TABLES.ITEMS)
-        .select(
-          `
+      // Assigned to a `string`-typed variable, then passed by reference --
+      // a template literal expression passed directly as a .select() argument
+      // gets inferred as a template *literal type* (preserving each
+      // interpolation's own type) rather than widened to plain `string`, so
+      // supabase-js's typed select parser still chokes on the
+      // GROUPS_ENABLED-gated fragment even though the fragment itself is
+      // string-typed. Routing through a variable forces the widening.
+      const itemSelectQuery: string = `
           *,
           users!inner (
             id,
@@ -208,9 +220,11 @@ export class ItemService {
             avatar_url,
             rating,
             created_at
-          )
-        `
-        )
+          )${GROUPS_ENABLED ? ", item_groups ( groups ( name ) )" : ""}
+        `;
+      const { data, error } = await supabase
+        .from(TABLES.ITEMS)
+        .select(itemSelectQuery)
         .eq("id", itemId)
         .single();
 
@@ -232,39 +246,48 @@ export class ItemService {
         };
       }
 
+      // Routing the select through a variable (see itemSelectQuery above)
+      // widens supabase-js's inferred row type to GenericStringError instead
+      // of the usual literal-parsed shape -- cast to any here, same idiom
+      // already used for getUserItems' row mapping below.
+      const record = data as any;
+
       const transformedData: ItemWithUser = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        category: data.category,
-        condition: data.condition,
-        imageUrls: data.image_urls, // ✅ Updated to use imageUrls array
-        tags: data.tags,
-        userId: data.user_id,
-        isActive: data.is_active,
-        status: data.status,
-        listingType: data.listing_type,
+        id: record.id,
+        title: record.title,
+        description: record.description,
+        category: record.category,
+        condition: record.condition,
+        imageUrls: record.image_urls, // ✅ Updated to use imageUrls array
+        tags: record.tags,
+        userId: record.user_id,
+        isActive: record.is_active,
+        status: record.status,
+        listingType: record.listing_type,
         // Update to use correct fields:
-        estimatedValue: data.estimated_value,
-        valueCurrency: data.value_currency,
-        sourceUrl: data.source_url,
-        categorySuggestion: data.category_suggestion,
-        isPublic: data.is_public,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        location: data.location,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
+        estimatedValue: record.estimated_value,
+        valueCurrency: record.value_currency,
+        sourceUrl: record.source_url,
+        categorySuggestion: record.category_suggestion,
+        isPublic: record.is_public,
+        latitude: record.latitude,
+        longitude: record.longitude,
+        location: record.location,
+        createdAt: record.created_at,
+        updatedAt: record.updated_at,
+        ...(GROUPS_ENABLED
+          ? { groupNames: (record.item_groups ?? []).map((ig: any) => ig.groups?.name).filter(Boolean) }
+          : {}),
         user: {
-          id: data.users.id,
-          username: data.users.username,
+          id: record.users.id,
+          username: record.users.username,
           email: "", // Not included in select
-          location: data.users.location,
-          avatarUrl: data.users.avatar_url,
+          location: record.users.location,
+          avatarUrl: record.users.avatar_url,
           role: "", // Not included in select
-          rating: data.users.rating,
+          rating: record.users.rating,
           totalRatings: 0, // Not included in select
-          createdAt: data.users.created_at,
+          createdAt: record.users.created_at,
         },
       };
 
