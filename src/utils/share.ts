@@ -71,3 +71,30 @@ export async function shareApp(): Promise<void> {
     toast.error("Couldn't copy the link.");
   }
 }
+
+/**
+ * Share a group invite link (Groups > invite via link). Same
+ * share-then-fallback-to-copy pattern as shareItem/shareApp.
+ */
+export async function shareGroupInvite(groupName: string, token: string): Promise<void> {
+  const url = `${APP_URL}/join/${token}`;
+  const text = `You're invited to join "${groupName}" on Barter:`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Barter group invite", text, url });
+    } catch (error) {
+      if ((error as Error)?.name !== "AbortError") {
+        toast.error("Couldn't open the share sheet.");
+      }
+    }
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    toast.success("Link copied to clipboard");
+  } catch {
+    toast.error("Couldn't copy the link.");
+  }
+}

@@ -24,6 +24,7 @@ import { NotificationSettings } from "./pages/NotificationSettings";
 import { AccountDeleted } from "./pages/AccountDeleted";
 import { Groups } from "./pages/Groups";
 import { GroupDetail } from "./pages/GroupDetail";
+import { GroupJoin } from "./pages/GroupJoin";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { identifyUser } from "./lib/analytics";
@@ -55,6 +56,7 @@ const AppContent: React.FC = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/account-deleted" element={<AccountDeleted />} />
+        <Route path="/join/:token" element={<GroupJoin />} />
         <Route path="/" element={<Layout />}>
           <Route
             index

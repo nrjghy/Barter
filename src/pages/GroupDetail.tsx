@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { UserPlus, ArrowLeftRight, Trash2, UserMinus } from "lucide-react";
+import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { InviteToGroupModal } from "../components/InviteToGroupModal";
 import { TransferOwnershipModal } from "../components/TransferOwnershipModal";
+import { GroupInviteLinkModal } from "../components/GroupInviteLinkModal";
 import { useAuth } from "../hooks/useAuth";
 import { useGroup } from "../hooks/useGroups";
 import { pickAvatarPalette } from "../utils/avatar";
@@ -32,6 +33,7 @@ export const GroupDetail: React.FC = () => {
   } = useGroup(groupId);
 
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferIsForLeaving, setTransferIsForLeaving] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
@@ -106,13 +108,24 @@ export const GroupDetail: React.FC = () => {
 
         <div className="flex items-center justify-between mb-3">
           <div className="text-[11px] font-bold text-[oklch(50%_0.02_95)] tracking-wide">MEMBERS</div>
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="flex items-center gap-1.5 text-sm font-semibold text-barter-600 hover:text-barter-700"
-          >
-            <UserPlus className="w-4 h-4" />
-            Invite
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="flex items-center gap-1.5 text-sm font-semibold text-barter-600 hover:text-barter-700"
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite
+            </button>
+            {isCreator && (
+              <button
+                onClick={() => setShowInviteLinkModal(true)}
+                className="flex items-center gap-1.5 text-sm font-semibold text-barter-600 hover:text-barter-700"
+              >
+                <Link2 className="w-4 h-4" />
+                Invite via link
+              </button>
+            )}
+          </div>
         </div>
 
         {membersLoading ? (
@@ -214,6 +227,13 @@ export const GroupDetail: React.FC = () => {
               if (!result.error) toast.success("Invite sent!");
               return result;
             }}
+          />
+        )}
+        {showInviteLinkModal && (
+          <GroupInviteLinkModal
+            groupId={group.id}
+            groupName={group.name}
+            onClose={() => setShowInviteLinkModal(false)}
           />
         )}
         {showTransferModal && (

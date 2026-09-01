@@ -135,6 +135,48 @@ export const useLastSelectedGroupIds = (enabled: boolean) => {
   };
 };
 
+/**
+ * Creator-only invite-link management for a group's detail page --
+ * creating, listing, and revoking shareable /join/:token links.
+ */
+export const useGroupInviteLinks = (groupId?: string, enabled = true) => {
+  const queryClient = useQueryClient();
+
+  const linksQuery = useQuery({
+    queryKey: ["groupInviteLinks", groupId],
+    queryFn: () => GroupService.listGroupInviteLinks(groupId!),
+    enabled: enabled && !!groupId,
+  });
+
+  const invalidateLinks = () => queryClient.invalidateQueries({ queryKey: ["groupInviteLinks", groupId] });
+
+  const createLink = useMutation({
+    mutationFn: () => GroupService.createGroupInviteLink(groupId!),
+    onSuccess: (result) => {
+      if (!result.error) invalidateLinks();
+    },
+  });
+
+  const revokeLink = useMutation({
+    mutationFn: (linkId: string) => GroupService.revokeGroupInviteLink(linkId),
+    onSuccess: (result) => {
+      if (!result.error) invalidateLinks();
+    },
+  });
+
+  return {
+    links: linksQuery.data?.data ?? [],
+    linksLoading: linksQuery.isLoading,
+    linksError: linksQuery.data?.error?.message,
+
+    createLink: createLink.mutateAsync,
+    createLinkLoading: createLink.isPending,
+
+    revokeLink: revokeLink.mutateAsync,
+    revokingLinkId: revokeLink.isPending ? (revokeLink.variables as string | undefined) : undefined,
+  };
+};
+
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
