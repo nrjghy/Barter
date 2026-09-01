@@ -3,7 +3,7 @@ import { X, Camera, Star, MapPin, Navigation } from "lucide-react";
 import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
 import { useAuth } from "../contexts/AuthContext";
-import { useUserGroups, useItemGroupIds } from "../hooks/useGroups";
+import { useUserGroups, useItemGroupIds, useLastSelectedGroupIds } from "../hooks/useGroups";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
@@ -152,9 +152,12 @@ export const AddEditItem: React.FC = () => {
   const [isPublic, setIsPublic] = useState(true);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [groupsPrefilled, setGroupsPrefilled] = useState(false);
-  const { groups: userGroups } = useUserGroups();
+  const { groups: userGroups, loading: userGroupsLoading } = useUserGroups();
   const { groupIds: existingItemGroupIds, loading: itemGroupsLoading } = useItemGroupIds(
     isEditMode ? itemId : undefined
+  );
+  const { groupIds: lastSelectedGroupIds, loading: lastSelectedGroupsLoading } = useLastSelectedGroupIds(
+    !isEditMode
   );
 
   // Required-field inline validation (PRD §13): each required field tracks
@@ -235,6 +238,17 @@ export const AddEditItem: React.FC = () => {
     setSelectedGroupIds(existingItemGroupIds);
     setGroupsPrefilled(true);
   }, [isEditMode, existingItem, existingItemGroupIds, itemGroupsLoading, groupsPrefilled]);
+
+  // Share checklist prefill, create mode: pre-checks whatever groups were
+  // checked on the person's last published listing, filtered against the
+  // groups the checklist is already showing so a stale id left over from a
+  // since-deleted group is silently dropped rather than needing cleanup.
+  useEffect(() => {
+    if (isEditMode || groupsPrefilled || lastSelectedGroupsLoading || userGroupsLoading) return;
+    const userGroupIdSet = new Set(userGroups.map((group) => group.id));
+    setSelectedGroupIds(lastSelectedGroupIds.filter((id) => userGroupIdSet.has(id)));
+    setGroupsPrefilled(true);
+  }, [isEditMode, lastSelectedGroupIds, lastSelectedGroupsLoading, userGroups, userGroupsLoading, groupsPrefilled]);
 
   // Relist (PRD §4): MyStuff navigates here with relistFrom in location.state
   // for a Cancelled/Traded/Expired item. This pre-fills a brand-new listing --
@@ -525,6 +539,10 @@ export const AddEditItem: React.FC = () => {
           toast.error(result.error.message);
         } else {
           if (result.data?.id) await saveItemGroups(result.data.id);
+          // Best-effort, same as saveItemGroups -- the listing itself is
+          // already published by this point, so a failure here shouldn't
+          // block or surface as if the whole publish failed.
+          void GroupService.updateLastSelectedGroups(selectedGroupIds);
           toast.success("Item added successfully!");
           // PRD §17 item-listing funnel, step 4 (final): listing published.
           trackEvent("listing_published", { itemId: result.data?.id });

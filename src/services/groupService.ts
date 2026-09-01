@@ -159,6 +159,50 @@ export class GroupService {
     }
   }
 
+  /**
+   * The group ids checked on the caller's last create-mode listing publish --
+   * used to pre-check AddEditItem's share checklist for a new listing.
+   */
+  static async getLastSelectedGroupIds(userId: string): Promise<ServiceResult<string[]>> {
+    try {
+      const { data, error } = await supabase
+        .from(TABLES.USERS)
+        .select("last_selected_group_ids")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to fetch last selected groups", details: error } };
+      }
+
+      return { data: data.last_selected_group_ids ?? [] };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
+  /**
+   * Remembers the group ids checked at create-mode publish time, so the next
+   * new listing's share checklist starts pre-checked instead of blank.
+   */
+  static async updateLastSelectedGroups(groupIds: string[]): Promise<ServiceResult<null>> {
+    try {
+      const { error } = await supabase.rpc("update_last_selected_groups", { p_group_ids: groupIds });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to save last selected groups", details: error } };
+      }
+
+      return { data: null };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
   static async getBrowseScope(userId: string): Promise<ServiceResult<BrowseScope>> {
     try {
       const { data, error } = await supabase

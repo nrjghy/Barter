@@ -117,6 +117,24 @@ export const useItemGroupIds = (itemId?: string) => {
   };
 };
 
+/**
+ * Group ids checked on the caller's last create-mode listing publish --
+ * used to prefill AddEditItem's share checklist for a brand-new listing.
+ */
+export const useLastSelectedGroupIds = (enabled: boolean) => {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: ["lastSelectedGroupIds", user?.id],
+    queryFn: () => GroupService.getLastSelectedGroupIds(user!.id),
+    enabled: enabled && !!user,
+  });
+
+  return {
+    groupIds: query.data?.data ?? [],
+    loading: query.isLoading,
+  };
+};
+
 export const useCreateGroup = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
