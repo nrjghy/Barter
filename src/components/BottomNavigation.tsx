@@ -1,14 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Home, Package, MessageCircle } from 'lucide-react';
+import { Home, Package, MessageCircle, Users } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { GROUPS_ENABLED } from '../services/config';
 
 // Below this, always show the bar regardless of scroll direction.
 const NEAR_TOP_THRESHOLD = 24;
 
-// Final 3-tab layout from the approved nav-shell design (Discover / My
-// Stuff / Chat). Profile lives behind the header avatar, and Admin console
-// is reached from Profile's settings menu -- neither is a bottom-nav tab.
+// Final nav-shell layout from the approved design (Discover / My Stuff /
+// Chat, plus Groups when GROUPS_ENABLED). Profile lives behind the header
+// avatar, and Admin console is reached from Profile's settings menu --
+// neither is a bottom-nav tab.
 const baseNavItems = [
   { icon: Home, label: 'Discover', path: '/' },
   { icon: Package, label: 'My Stuff', path: '/my-stuff' },
@@ -20,6 +22,9 @@ export const BottomNavigation: React.FC = () => {
   const location = useLocation();
   const [visible, setVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const navItems = GROUPS_ENABLED
+    ? [...baseNavItems, { icon: Users, label: 'Groups', path: '/groups' }]
+    : baseNavItems;
 
   // Reset to visible whenever the page changes -- new pages generally
   // start scrolled to the top, and we don't want a stale hidden state
@@ -58,7 +63,7 @@ export const BottomNavigation: React.FC = () => {
       }`}
     >
       <div className="max-w-md mx-auto mb-4 flex justify-around py-2 bg-white/90 backdrop-blur-lg rounded-full shadow-xl border border-barter-800/10 overflow-hidden">
-        {baseNavItems.map(({ icon: Icon, label, path }) => {
+        {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
           return (
             <motion.button

@@ -7,9 +7,11 @@ import { useNotificationToasts } from '../hooks/useNotifications';
 
 const TOP_LEVEL_PATHS = ['/', '/my-stuff', '/chat'];
 
-// Profile sub-tree: shows the bottom tab bar (Profile lives behind the
-// header avatar, not as its own tab) but keeps its own BackBar/padding,
-// so it's tracked separately from TOP_LEVEL_PATHS rather than folded in.
+// Profile sub-tree: shows the bottom tab bar but keeps its own
+// BackBar/padding, so it's tracked separately from TOP_LEVEL_PATHS rather
+// than folded in. Groups is its own primary bottom-nav tab now, but /groups
+// still needs to be listed here since it renders with BackBar/padding like
+// the rest of this sub-tree, not as a top-level page.
 const BOTTOM_NAV_PROFILE_PATHS = ['/profile', '/account', '/notification-settings', '/groups'];
 
 export const Layout: React.FC = () => {

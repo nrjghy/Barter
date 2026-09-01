@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { SwipeInterface } from "../components/SwipeInterface";
@@ -25,6 +26,7 @@ export const Discover: React.FC = () => {
   // whole loop's duration, not just a single in-flight network call.
   const undoInFlightRef = useRef(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
   useEffect(() => {
@@ -357,7 +359,13 @@ export const Discover: React.FC = () => {
             Public
           </button>
           <button
-            onClick={() => handleBrowseModeChange("groups")}
+            onClick={() => {
+              if (browseMode === "groups") {
+                setShowGroupPicker(true);
+              } else {
+                handleBrowseModeChange("groups");
+              }
+            }}
             disabled={groups.length === 0}
             className={`py-2 rounded-lg text-sm font-semibold transition-colors ${
               groups.length === 0
@@ -379,31 +387,62 @@ export const Discover: React.FC = () => {
             </Link>{" "}
             a group to browse privately.
           </p>
-        ) : browseMode === "groups" ? (
-          <>
-            <div className="mt-2 space-y-1.5">
-              {groups.map((group) => (
-                <label
-                  key={group.id}
-                  className="flex items-center space-x-2 text-sm text-gray-700 bg-white rounded-lg px-3 py-2 border border-[oklch(92%_0.01_95)]"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checkedGroupIds.includes(group.id)}
-                    onChange={() => toggleBrowseGroup(group.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
-                  />
-                  <span>{group.name}</span>
-                </label>
-              ))}
-            </div>
-            {browseScopeIndicator && (
-              <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">{browseScopeIndicator}</p>
-            )}
-          </>
+        ) : browseMode === "groups" && browseScopeIndicator ? (
+          <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">{browseScopeIndicator}</p>
         ) : null}
       </div>
       )}
+
+      <AnimatePresence>
+        {showGroupPicker && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={() => setShowGroupPicker(false)}
+          >
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[oklch(92%_0.01_95)]">
+                <h2 className="text-lg font-bold text-[oklch(22%_0.02_100)]">My groups</h2>
+                <button onClick={() => setShowGroupPicker(false)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-1.5">
+                {groups.map((group) => (
+                  <label
+                    key={group.id}
+                    className="flex items-center space-x-2 text-sm text-gray-700 bg-white rounded-lg px-3 py-2 border border-[oklch(92%_0.01_95)]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkedGroupIds.includes(group.id)}
+                      onChange={() => toggleBrowseGroup(group.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
+                    />
+                    <span>{group.name}</span>
+                  </label>
+                ))}
+
+                <button
+                  onClick={() => setShowGroupPicker(false)}
+                  className="w-full mt-4 px-4 py-2.5 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors font-medium"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <SwipeInterface
         currentItem={currentItem}

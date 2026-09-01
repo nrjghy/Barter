@@ -12,6 +12,10 @@ import {
   Lock,
   Shield,
   Star,
+  UserCog,
+  UserPlus,
+  Bell,
+  LogOut,
 } from "lucide-react";
 import countryToCurrency from "country-to-currency";
 import { supabase } from "../lib/supabase";
@@ -25,7 +29,6 @@ import { StatsCard } from "../components/StatsCard";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { shareApp } from "../utils/share";
-import { GROUPS_ENABLED } from "../services/config";
 
 export const Profile: React.FC = () => {
   const { user, signOut, updateProfile, updatePassword } = useAuth();
@@ -196,48 +199,41 @@ export const Profile: React.FC = () => {
                   defaultCurrency: user?.defaultCurrency,
                 });
               }}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
             >
-              Edit Profile
+              <Edit3 className="w-4 h-4" />
+              <span>Edit Profile</span>
             </button>
             <button
               onClick={() => {
                 setShowSettings(false);
                 navigate("/account");
               }}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
             >
-              Account
+              <UserCog className="w-4 h-4" />
+              <span>Account</span>
             </button>
             <button
               onClick={() => {
                 setShowSettings(false);
                 shareApp();
               }}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
             >
-              Invite friends
+              <UserPlus className="w-4 h-4" />
+              <span>Invite friends</span>
             </button>
             <button
               onClick={() => {
                 setShowSettings(false);
                 navigate("/notification-settings");
               }}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
             >
-              Notifications
+              <Bell className="w-4 h-4" />
+              <span>Notifications</span>
             </button>
-            {GROUPS_ENABLED && (
-            <button
-              onClick={() => {
-                setShowSettings(false);
-                navigate("/groups");
-              }}
-              className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
-            >
-              Groups
-            </button>
-            )}
             {user?.role === "admin" && (
               <button
                 onClick={() => {
@@ -252,9 +248,10 @@ export const Profile: React.FC = () => {
             )}
             <button
               onClick={handleSignOut}
-              className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              Sign Out
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
             </button>
           </motion.div>
         )}
