@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2, ShieldCheck, ShieldOff } from "lucide-react";
+import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2, ShieldCheck, ShieldOff, Crown } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -193,7 +193,15 @@ export const GroupDetail: React.FC = () => {
                     {member.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)] truncate">{member.username}</div>
+                    <div className="flex items-center gap-1 text-[13.5px] font-bold text-[oklch(22%_0.02_100)]">
+                      <span className="truncate">{member.username}</span>
+                      {member.role === "creator" && (
+                        <Crown className="w-3.5 h-3.5 text-[oklch(50%_0.02_95)] flex-shrink-0" />
+                      )}
+                      {member.role === "moderator" && (
+                        <ShieldCheck className="w-3.5 h-3.5 text-[oklch(50%_0.02_95)] flex-shrink-0" />
+                      )}
+                    </div>
                     <div className="text-[12px] text-[oklch(50%_0.02_95)]">
                       {member.role === "creator" ? "Owner" : member.role === "moderator" ? "Moderator" : "Member"}
                     </div>
