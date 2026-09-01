@@ -744,11 +744,7 @@ export const AddEditItem: React.FC = () => {
                             const next = e.target.checked
                               ? [...prev, group.id]
                               : prev.filter((id) => id !== group.id);
-                            if (e.target.checked) {
-                              setIsPublic(false);
-                            } else if (next.length === 0) {
-                              setIsPublic(true);
-                            }
+                            setIsPublic(next.length === 0);
                             return next;
                           });
                         }}

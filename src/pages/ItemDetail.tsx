@@ -218,6 +218,17 @@ export const ItemDetail: React.FC = () => {
               <Share2 className="w-5 h-5" />
             </button>
 
+            {user?.id === item.userId &&
+            item.status !== "cancelled" &&
+            item.status !== "traded" &&
+            item.status !== "expired" ? (
+              <button
+                onClick={() => navigate(`/edit/${item.id}`)}
+                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Pencil className="w-5 h-5" />
+              </button>
+            ) : (
             <div className="relative">
               <button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -281,6 +292,7 @@ export const ItemDetail: React.FC = () => {
                 )}
               </AnimatePresence>
             </div>
+            )}
           </div>
         }
       />
