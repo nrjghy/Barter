@@ -1,4 +1,5 @@
 import { toast } from "react-hot-toast";
+import { trackEvent } from "../lib/analytics";
 
 // Canonical app URL. Deliberately hardcoded rather than derived from
 // window.location.origin -- Netlify resolves both www.letsbarter.app and
@@ -61,6 +62,7 @@ export async function shareItem(item: { id: string; title: string }): Promise<vo
   if (navigator.share) {
     try {
       await navigator.share({ title: item.title, url });
+      trackEvent("item_shared");
     } catch (error) {
       // AbortError means the user cancelled the share sheet -- not a failure.
       if ((error as Error)?.name !== "AbortError") {
@@ -72,6 +74,7 @@ export async function shareItem(item: { id: string; title: string }): Promise<vo
 
   if (await copyToClipboard(url)) {
     toast.success("Link copied to clipboard");
+    trackEvent("item_shared");
   } else {
     toast.error("Couldn't copy the link.");
   }
@@ -89,6 +92,7 @@ export async function shareApp(): Promise<void> {
   if (navigator.share) {
     try {
       await navigator.share({ title: "Barter", text, url: APP_URL });
+      trackEvent("app_shared");
     } catch (error) {
       if ((error as Error)?.name !== "AbortError") {
         toast.error("Couldn't open the share sheet.");
@@ -99,6 +103,7 @@ export async function shareApp(): Promise<void> {
 
   if (await copyToClipboard(`${text}\n${APP_URL}`)) {
     toast.success("Link copied to clipboard");
+    trackEvent("app_shared");
   } else {
     toast.error("Couldn't copy the link.");
   }
