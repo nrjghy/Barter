@@ -120,7 +120,7 @@ export const AdminDashboard: React.FC = () => {
   const [editCategorySuggestion, setEditCategorySuggestion] = useState('');
   const [editCondition, setEditCondition] = useState('');
   const [editEstimatedValue, setEditEstimatedValue] = useState('');
-  const [editValueCurrency, setEditValueCurrency] = useState('USD');
+  const [editValueCurrency, setEditValueCurrency] = useState('PLN');
   const [editTagsInput, setEditTagsInput] = useState('');
   const [editPhotos, setEditPhotos] = useState<AdminPhotoItem[]>([]);
   const [editLocation, setEditLocation] = useState('');
@@ -928,7 +928,7 @@ export const AdminDashboard: React.FC = () => {
                             setEditCategorySuggestion(item.category_suggestion ?? '');
                             setEditCondition(item.condition);
                             setEditEstimatedValue(item.estimated_value != null ? String(item.estimated_value) : '');
-                            setEditValueCurrency(item.value_currency ?? 'USD');
+                            setEditValueCurrency(item.value_currency ?? 'PLN');
                             setEditTagsInput((item.tags ?? []).join(', '));
                             setEditPhotos((item.image_urls ?? []).map((url) => ({ type: 'existing', url })));
                             setEditLocation(item.location ?? '');

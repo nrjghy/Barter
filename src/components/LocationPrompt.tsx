@@ -43,8 +43,8 @@ export const LocationPrompt: React.FC = () => {
         const { location, countryCode } = geocodeData ?? {};
         const locationString = geocodeError || !location ? "Unknown location" : location;
         const defaultCurrency = countryCode
-          ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD"
-          : "USD";
+          ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "PLN"
+          : "PLN";
 
         const { error } = await updateProfile({
           location: locationString,
@@ -112,7 +112,7 @@ export const LocationPrompt: React.FC = () => {
     // normalized to city-level location text instead of storing the
     // raw (often neighborhood-level) suggestion label.
     let locationString = "Unknown location";
-    let defaultCurrency = "USD";
+    let defaultCurrency = "PLN";
     try {
       const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke("reverse-geocode", {
         body: { lat: place.lat, lng: place.lng },
@@ -122,10 +122,10 @@ export const LocationPrompt: React.FC = () => {
       }
       const countryCode = geocodeData?.countryCode;
       if (countryCode) {
-        defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD";
+        defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "PLN";
       }
     } catch {
-      // fall back to "Unknown location" / "USD" already set above
+      // fall back to "Unknown location" / "PLN" already set above
     }
 
     const { error } = await updateProfile({

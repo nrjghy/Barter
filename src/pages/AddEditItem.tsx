@@ -128,7 +128,7 @@ export const AddEditItem: React.FC = () => {
   const [condition, setCondition] = useState("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]); // Ordered photo list, position 0 is primary
   const [estimatedValue, setEstimatedValue] = useState("");
-  const [currency, setCurrency] = useState(user?.defaultCurrency ?? "USD");
+  const [currency, setCurrency] = useState(user?.defaultCurrency ?? "PLN");
   const [listingType, setListingType] = useState<"trade" | "giveaway">("trade");
   const [sourceUrl, setSourceUrl] = useState("");
   // Defaults to the owner's profile location; editable below via the same
@@ -226,7 +226,7 @@ export const AddEditItem: React.FC = () => {
         ? ""
         : String(existingItem.estimatedValue)
     );
-    setCurrency(existingItem.valueCurrency ?? "USD");
+    setCurrency(existingItem.valueCurrency ?? "PLN");
     setSourceUrl(existingItem.sourceUrl ?? "");
     setItemLocation(existingItem.location ?? "");
     setItemLatitude(existingItem.latitude ?? null);
@@ -275,7 +275,7 @@ export const AddEditItem: React.FC = () => {
         ? ""
         : String(relistFrom.estimatedValue)
     );
-    setCurrency(relistFrom.valueCurrency ?? "USD");
+    setCurrency(relistFrom.valueCurrency ?? "PLN");
     setSourceUrl(relistFrom.sourceUrl ?? "");
     setItemLocation(relistFrom.location ?? "");
     setItemLatitude(relistFrom.latitude ?? null);

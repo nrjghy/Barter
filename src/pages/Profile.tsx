@@ -92,8 +92,8 @@ export const Profile: React.FC = () => {
               : geocodeData.location;
           const countryCode = geocodeData?.countryCode;
           const defaultCurrency = countryCode
-            ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD"
-            : "USD";
+            ? countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "PLN"
+            : "PLN";
 
           const { error } = await updateProfile({
             ...profileData,
@@ -381,7 +381,7 @@ export const Profile: React.FC = () => {
                           // normalized to city-level location text instead of storing the
                           // raw (often neighborhood-level) suggestion label.
                           let locationString = suggestion.label;
-                          let defaultCurrency = "USD";
+                          let defaultCurrency = "PLN";
                           try {
                             const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke(
                               "reverse-geocode",
@@ -392,10 +392,10 @@ export const Profile: React.FC = () => {
                             }
                             const countryCode = geocodeData?.countryCode;
                             if (countryCode) {
-                              defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "USD";
+                              defaultCurrency = countryToCurrency[countryCode as keyof typeof countryToCurrency] ?? "PLN";
                             }
                           } catch (err) {
-                            // fall back to suggestion.label / "USD" already set above
+                            // fall back to suggestion.label / "PLN" already set above
                           }
                           setProfileData((prev) => ({
                             ...prev,
