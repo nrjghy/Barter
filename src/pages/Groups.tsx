@@ -5,17 +5,21 @@ import { Users, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { OnboardingHint } from "../components/OnboardingHint";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import { useUserGroups, useGroupInviteActions } from "../hooks/useGroups";
 import { useNotifications } from "../hooks/useNotifications";
+import { useAuth } from "../hooks/useAuth";
 
 export const Groups: React.FC = () => {
   const navigate = useNavigate();
+  const { user, updateProfile } = useAuth();
   const { groups, loading } = useUserGroups();
   const { unreadNotifications } = useNotifications();
   const { acceptInvite, declineInvite, acceptingGroupId, decliningGroupId } = useGroupInviteActions();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [dismissedGroupIds, setDismissedGroupIds] = useState<Set<string>>(new Set());
+  const [showGroupsHint, setShowGroupsHint] = useState(!!user && !user.groupsHintDismissedAt);
 
   const pendingInvites = unreadNotifications.filter(
     (n) => n.type === "group_invite" && (n.data as { groupId?: string } | undefined)?.groupId && !dismissedGroupIds.has((n.data as { groupId: string }).groupId)
@@ -45,6 +49,15 @@ export const Groups: React.FC = () => {
       <BackBar title="Groups" onBack={() => navigate("/profile")} />
 
       <div className="flex-1 px-5 py-5">
+        <OnboardingHint
+          isOpen={showGroupsHint}
+          text="Groups let you trade privately with people you trust, a building, a hobby circle, friends who already know each other. Create one or wait for an invite to join."
+          onDismiss={async () => {
+            setShowGroupsHint(false);
+            await updateProfile({ groupsHintDismissedAt: new Date().toISOString() });
+          }}
+        />
+
         {pendingInvites.length > 0 && (
           <div className="mb-5">
             <h2 className="text-xs font-bold uppercase tracking-wide text-[oklch(50%_0.02_95)] mb-2">

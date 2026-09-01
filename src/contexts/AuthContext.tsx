@@ -50,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         myStuffHintDismissedAt: data.my_stuff_hint_dismissed_at ?? undefined,
         chatHintDismissedAt: data.chat_hint_dismissed_at ?? undefined,
         myGroupsFilterHintDismissedAt: data.my_groups_filter_hint_dismissed_at ?? undefined,
+        groupsHintDismissedAt: data.groups_hint_dismissed_at ?? undefined,
         rating: data.rating ?? undefined,
         createdAt: data.created_at ?? undefined,
         notificationPreferences: data.notification_preferences ?? undefined,
@@ -252,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             my_stuff_hint_dismissed_at: updates.myStuffHintDismissedAt ?? user.myStuffHintDismissedAt,
             chat_hint_dismissed_at: updates.chatHintDismissedAt ?? user.chatHintDismissedAt,
             my_groups_filter_hint_dismissed_at: updates.myGroupsFilterHintDismissedAt ?? user.myGroupsFilterHintDismissedAt,
+            groups_hint_dismissed_at: updates.groupsHintDismissedAt ?? user.groupsHintDismissedAt,
           },
         ]);
 
@@ -279,6 +281,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           my_stuff_hint_dismissed_at: updates.myStuffHintDismissedAt,
           chat_hint_dismissed_at: updates.chatHintDismissedAt,
           my_groups_filter_hint_dismissed_at: updates.myGroupsFilterHintDismissedAt,
+          groups_hint_dismissed_at: updates.groupsHintDismissedAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
