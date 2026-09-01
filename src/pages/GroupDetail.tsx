@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2 } from "lucide-react";
+import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2, ShieldCheck, ShieldOff } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -30,6 +30,10 @@ export const GroupDetail: React.FC = () => {
     deleteGroupLoading,
     removeMember,
     removingMemberId,
+    setModerator,
+    settingModeratorId,
+    removeModerator,
+    removingModeratorId,
   } = useGroup(groupId);
 
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -43,6 +47,8 @@ export const GroupDetail: React.FC = () => {
 
   const myMembership = members.find((m) => m.userId === user?.id);
   const isCreator = myMembership?.role === "creator";
+  const isModerator = myMembership?.role === "moderator";
+  const canManageMembers = isCreator || isModerator;
 
   const handleConfirmLeave = async () => {
     const result = await leaveGroup();
@@ -75,6 +81,24 @@ export const GroupDetail: React.FC = () => {
       toast.success(`${confirmingRemoveMember.username} removed from the group`);
     }
     setConfirmingRemoveMember(null);
+  };
+
+  const handleMakeModerator = async (member: { userId: string; username: string }) => {
+    const result = await setModerator(member.userId);
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success(`${member.username} is now a moderator`);
+    }
+  };
+
+  const handleRemoveModerator = async (member: { userId: string; username: string }) => {
+    const result = await removeModerator(member.userId);
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      toast.success(`${member.username} is no longer a moderator`);
+    }
   };
 
   if (groupLoading) {
@@ -116,7 +140,7 @@ export const GroupDetail: React.FC = () => {
               <UserPlus className="w-4 h-4" />
               Invite
             </button>
-            {isCreator && (
+            {canManageMembers && (
               <button
                 onClick={() => setShowInviteLinkModal(true)}
                 className="flex items-center gap-1.5 text-sm font-semibold text-barter-600 hover:text-barter-700"
@@ -137,6 +161,8 @@ export const GroupDetail: React.FC = () => {
             {members.map((member) => {
               const palette = pickAvatarPalette(member.userId);
               const isSelf = member.userId === user?.id;
+              const canRemoveThisMember =
+                canManageMembers && !isSelf && !(isModerator && (member.role === "creator" || member.role === "moderator"));
               return (
                 <div
                   key={member.membershipId}
@@ -152,10 +178,36 @@ export const GroupDetail: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <div className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)] truncate">{member.username}</div>
                     <div className="text-[12px] text-[oklch(50%_0.02_95)]">
-                      {member.role === "creator" ? "Creator" : "Member"}
+                      {member.role === "creator" ? "Creator" : member.role === "moderator" ? "Moderator" : "Member"}
                     </div>
                   </div>
-                  {isCreator && !isSelf && (
+                  {isCreator && !isSelf && member.role === "member" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMakeModerator(member);
+                      }}
+                      disabled={settingModeratorId === member.userId}
+                      className="p-2 -m-2 text-barter-600 hover:bg-barter-50 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+                      title="Make moderator"
+                    >
+                      <ShieldCheck className="w-4 h-4" />
+                    </button>
+                  )}
+                  {isCreator && !isSelf && member.role === "moderator" && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveModerator(member);
+                      }}
+                      disabled={removingModeratorId === member.userId}
+                      className="p-2 -m-2 text-[oklch(50%_0.02_95)] hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
+                      title="Remove moderator"
+                    >
+                      <ShieldOff className="w-4 h-4" />
+                    </button>
+                  )}
+                  {canRemoveThisMember && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

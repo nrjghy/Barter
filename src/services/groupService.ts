@@ -8,7 +8,7 @@ export interface GroupSummary {
   description: string | null;
   creatorId: string;
   memberCount: number;
-  role: "creator" | "member";
+  role: "creator" | "moderator" | "member";
   createdAt: string;
 }
 
@@ -24,7 +24,7 @@ export interface GroupMember {
   membershipId: string;
   userId: string;
   username: string;
-  role: "creator" | "member";
+  role: "creator" | "moderator" | "member";
   joinedAt: string;
 }
 
@@ -89,7 +89,7 @@ export class GroupService {
         description: group.description,
         creatorId: group.creator_id,
         memberCount: group.group_memberships?.[0]?.count ?? 0,
-        role: (roleByGroupId.get(group.id) as "creator" | "member") ?? "member",
+        role: (roleByGroupId.get(group.id) as "creator" | "moderator" | "member") ?? "member",
         createdAt: group.created_at,
       }));
 
@@ -388,6 +388,50 @@ export class GroupService {
     }
   }
 
+  static async setGroupModerator(groupId: string, userId: string): Promise<ServiceResult<{ userId: string }>> {
+    try {
+      const { data, error } = await supabase.rpc("set_group_moderator", {
+        p_group_id: groupId,
+        p_user_id: userId,
+      });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to make moderator", details: error } };
+      }
+      if (data?.error) {
+        return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      return { data: { userId: data.userId } };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
+  static async removeGroupModerator(groupId: string, userId: string): Promise<ServiceResult<{ userId: string }>> {
+    try {
+      const { data, error } = await supabase.rpc("remove_group_moderator", {
+        p_group_id: groupId,
+        p_user_id: userId,
+      });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to remove moderator", details: error } };
+      }
+      if (data?.error) {
+        return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      return { data: { userId: data.userId } };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
   static async deleteGroup(groupId: string): Promise<ServiceResult<{ groupName: string }>> {
     try {
       const { data, error } = await supabase.rpc("delete_group", { p_group_id: groupId });
@@ -456,7 +500,7 @@ export class GroupService {
   }
 
   /**
-   * Creator-only. Creates a new shareable invite link for the group,
+   * Creator-or-moderator. Creates a new shareable invite link for the group,
    * expiring 7 days from creation (server-side default).
    */
   static async createGroupInviteLink(
@@ -481,7 +525,7 @@ export class GroupService {
   }
 
   /**
-   * Creator-only -- the RPC itself rejects non-creator callers, this just
+   * Creator-or-moderator -- the RPC itself rejects other callers, this just
    * surfaces that as a normal ServiceResult error.
    */
   static async listGroupInviteLinks(groupId: string): Promise<ServiceResult<GroupInviteLink[]>> {

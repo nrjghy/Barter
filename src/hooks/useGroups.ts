@@ -75,6 +75,20 @@ export const useGroup = (groupId?: string) => {
     },
   });
 
+  const setModerator = useMutation({
+    mutationFn: (memberId: string) => GroupService.setGroupModerator(groupId!, memberId),
+    onSuccess: (result) => {
+      if (!result.error) invalidateGroup();
+    },
+  });
+
+  const removeModerator = useMutation({
+    mutationFn: (memberId: string) => GroupService.removeGroupModerator(groupId!, memberId),
+    onSuccess: (result) => {
+      if (!result.error) invalidateGroup();
+    },
+  });
+
   return {
     group: groupQuery.data?.data,
     groupLoading: groupQuery.isLoading,
@@ -97,6 +111,12 @@ export const useGroup = (groupId?: string) => {
 
     removeMember: removeMember.mutateAsync,
     removingMemberId: removeMember.isPending ? (removeMember.variables as string | undefined) : undefined,
+
+    setModerator: setModerator.mutateAsync,
+    settingModeratorId: setModerator.isPending ? (setModerator.variables as string | undefined) : undefined,
+
+    removeModerator: removeModerator.mutateAsync,
+    removingModeratorId: removeModerator.isPending ? (removeModerator.variables as string | undefined) : undefined,
   };
 };
 
@@ -136,7 +156,7 @@ export const useLastSelectedGroupIds = (enabled: boolean) => {
 };
 
 /**
- * Creator-only invite-link management for a group's detail page --
+ * Creator-or-moderator invite-link management for a group's detail page --
  * creating, listing, and revoking shareable /join/:token links.
  */
 export const useGroupInviteLinks = (groupId?: string, enabled = true) => {
