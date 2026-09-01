@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ChevronDown } from "lucide-react";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { CategoryFilter } from "../components/CategoryFilter";
 import { SwipeInterface } from "../components/SwipeInterface";
@@ -34,6 +34,9 @@ export const Discover: React.FC = () => {
     trackEvent("discover_viewed");
   }, []);
   const [showDiscoverHint, setShowDiscoverHint] = useState(!!user && !user.discoverHintDismissedAt);
+  const [showMyGroupsFilterHint, setShowMyGroupsFilterHint] = useState(
+    !!user && !user.myGroupsFilterHintDismissedAt
+  );
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
@@ -378,7 +381,7 @@ export const Discover: React.FC = () => {
               }
             }}
             disabled={groups.length === 0}
-            className={`py-2 rounded-lg text-sm font-semibold transition-colors ${
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
               groups.length === 0
                 ? "text-[oklch(75%_0.01_95)] cursor-not-allowed"
                 : browseMode === "groups"
@@ -387,6 +390,11 @@ export const Discover: React.FC = () => {
             }`}
           >
             My groups
+            {browseMode === "groups" && groups.length > 0 && (
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform ${showGroupPicker ? "rotate-180" : ""}`}
+              />
+            )}
           </button>
         </div>
 
@@ -401,6 +409,15 @@ export const Discover: React.FC = () => {
         ) : browseMode === "groups" && browseScopeIndicator ? (
           <p className="text-xs text-[oklch(50%_0.02_95)] mt-1.5 text-center">{browseScopeIndicator}</p>
         ) : null}
+
+        <OnboardingHint
+          isOpen={browseMode === "groups" && showMyGroupsFilterHint}
+          text="Tap 'My groups' again to choose specific groups."
+          onDismiss={async () => {
+            setShowMyGroupsFilterHint(false);
+            await updateProfile({ myGroupsFilterHintDismissedAt: new Date().toISOString() });
+          }}
+        />
       </div>
       )}
 

@@ -11,6 +11,7 @@ export interface AuthUser {
   discoverHintDismissedAt?: string;
   myStuffHintDismissedAt?: string;
   chatHintDismissedAt?: string;
+  myGroupsFilterHintDismissedAt?: string;
   rating?: number;
   createdAt?: string;
   defaultCurrency?: string;
