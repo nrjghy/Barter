@@ -102,7 +102,15 @@ export const Groups: React.FC = () => {
               <Users className="w-6 h-6 text-barter-600" />
             </div>
             <h3 className="text-base font-bold text-[oklch(22%_0.02_100)] mb-1.5">No groups yet</h3>
-            <p className="text-sm text-gray-600">Join a neighborhood or hobby group to trade privately.</p>
+            <p className="text-sm text-gray-600">
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="text-barter-600 font-semibold hover:underline"
+              >
+                Create a group
+              </button>{" "}
+              or ask a friend to send you an invite link to join one.
+            </p>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-[oklch(92%_0.01_95)] divide-y divide-[oklch(92%_0.01_95)]">
