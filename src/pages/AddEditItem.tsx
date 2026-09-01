@@ -455,6 +455,15 @@ export const AddEditItem: React.FC = () => {
       return;
     }
 
+    // Defensive only -- the Public toggle and group checklist onChange
+    // handlers already keep this combination unreachable through normal
+    // interaction. This guards edit mode against an existing item whose
+    // stored data predates that constraint.
+    if (GROUPS_ENABLED && !isPublic && selectedGroupIds.length === 0) {
+      toast.error("Make this listing public or share it to at least one group.");
+      return;
+    }
+
     // PRD §13: a failed Save attempt marks every required field touched
     // (so all their errors show, not just the ones already blurred) and
     // shows the summary banner, then scrolls to the first invalid field in
@@ -691,7 +700,13 @@ export const AddEditItem: React.FC = () => {
                   type="checkbox"
                   className="sr-only peer"
                   checked={isPublic}
-                  onChange={(e) => setIsPublic(e.target.checked)}
+                  onChange={(e) => {
+                    if (!e.target.checked && selectedGroupIds.length === 0) {
+                      toast.error("Share to at least one group before turning Public off.");
+                      return;
+                    }
+                    setIsPublic(e.target.checked);
+                  }}
                 />
                 <div className="w-11 h-6 bg-[oklch(90%_0.01_95)] rounded-full peer peer-checked:bg-barter-600 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5"></div>
               </label>
@@ -718,10 +733,17 @@ export const AddEditItem: React.FC = () => {
                         type="checkbox"
                         checked={selectedGroupIds.includes(group.id)}
                         onChange={(e) => {
-                          setSelectedGroupIds((prev) =>
-                            e.target.checked ? [...prev, group.id] : prev.filter((id) => id !== group.id)
-                          );
-                          if (e.target.checked) setIsPublic(false);
+                          setSelectedGroupIds((prev) => {
+                            const next = e.target.checked
+                              ? [...prev, group.id]
+                              : prev.filter((id) => id !== group.id);
+                            if (e.target.checked) {
+                              setIsPublic(false);
+                            } else if (next.length === 0) {
+                              setIsPublic(true);
+                            }
+                            return next;
+                          });
                         }}
                         className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
                       />
