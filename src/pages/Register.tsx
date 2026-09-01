@@ -44,6 +44,15 @@ export const Register: React.FC = () => {
           setError('An account with this email already exists. Please try signing in instead.');
         } else if (error.message.includes('Password')) {
           setError('Password must be at least 6 characters long.');
+        } else if (error.message.includes('users_username_unique_ci')) {
+          // The username uniqueness check lives on a case-insensitive unique
+          // index (public.users.users_username_unique_ci), enforced by the
+          // handle_new_user trigger during signup. Supabase Auth wraps the
+          // raw Postgres unique_violation as error.message verbatim --
+          // confirmed against a real signup attempt with an already-taken
+          // username, rather than assumed -- so this matches on the
+          // constraint name substring instead of guessing at wording.
+          setError('Username already taken, please choose another');
         } else {
           setError(error.message);
         }
