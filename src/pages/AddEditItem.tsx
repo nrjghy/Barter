@@ -11,6 +11,7 @@ import { InfoTooltip } from "../components/InfoTooltip";
 import toast from "react-hot-toast";
 import { ServiceResult, ItemData } from "../services/types";
 import { GroupService } from "../services/groupService";
+import { GROUPS_ENABLED } from "../services/config";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase";
 
@@ -152,12 +153,16 @@ export const AddEditItem: React.FC = () => {
   const [isPublic, setIsPublic] = useState(true);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [groupsPrefilled, setGroupsPrefilled] = useState(false);
-  const { groups: userGroups, loading: userGroupsLoading } = useUserGroups();
+  // All three take an `enabled` flag rather than being called conditionally,
+  // so this respects the rules of hooks while making no network calls
+  // against Barter2 (which doesn't have the Groups schema deployed) when
+  // GROUPS_ENABLED is false.
+  const { groups: userGroups, loading: userGroupsLoading } = useUserGroups(GROUPS_ENABLED);
   const { groupIds: existingItemGroupIds, loading: itemGroupsLoading } = useItemGroupIds(
-    isEditMode ? itemId : undefined
+    GROUPS_ENABLED && isEditMode ? itemId : undefined
   );
   const { groupIds: lastSelectedGroupIds, loading: lastSelectedGroupsLoading } = useLastSelectedGroupIds(
-    !isEditMode
+    GROUPS_ENABLED && !isEditMode
   );
 
   // Required-field inline validation (PRD §13): each required field tracks
@@ -510,7 +515,7 @@ export const AddEditItem: React.FC = () => {
         if (result.error) {
           toast.error(result.error.message);
         } else {
-          await saveItemGroups(itemId);
+          if (GROUPS_ENABLED) await saveItemGroups(itemId);
           toast.success("Listing updated!");
           navigate("/my-stuff", { state: { highlightItemId: itemId } });
         }
@@ -538,11 +543,11 @@ export const AddEditItem: React.FC = () => {
         if (result.error) {
           toast.error(result.error.message);
         } else {
-          if (result.data?.id) await saveItemGroups(result.data.id);
+          if (GROUPS_ENABLED && result.data?.id) await saveItemGroups(result.data.id);
           // Best-effort, same as saveItemGroups -- the listing itself is
           // already published by this point, so a failure here shouldn't
           // block or surface as if the whole publish failed.
-          void GroupService.updateLastSelectedGroups(selectedGroupIds);
+          if (GROUPS_ENABLED) void GroupService.updateLastSelectedGroups(selectedGroupIds);
           toast.success("Item added successfully!");
           // PRD §17 item-listing funnel, step 4 (final): listing published.
           trackEvent("listing_published", { itemId: result.data?.id });
@@ -673,6 +678,7 @@ export const AddEditItem: React.FC = () => {
           </div>
 
           {/* Visibility */}
+          {GROUPS_ENABLED && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
             <div className="flex items-center justify-between px-3.5 py-3 border border-gray-300 rounded-lg">
@@ -725,6 +731,7 @@ export const AddEditItem: React.FC = () => {
               )}
             </div>
           </div>
+          )}
 
           {/* Image Upload */}
           <div ref={photosRef} onMouseDown={() => markTouched("photos")}>

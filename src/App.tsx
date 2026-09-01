@@ -28,6 +28,7 @@ import { GroupJoin } from "./pages/GroupJoin";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useEffect } from "react";
 import { identifyUser } from "./lib/analytics";
+import { GROUPS_ENABLED } from "./services/config";
 
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
@@ -56,7 +57,7 @@ const AppContent: React.FC = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/account-deleted" element={<AccountDeleted />} />
-        <Route path="/join/:token" element={<GroupJoin />} />
+        <Route path="/join/:token" element={GROUPS_ENABLED ? <GroupJoin /> : <Navigate to="/" replace />} />
         <Route path="/" element={<Layout />}>
           <Route
             index
@@ -133,17 +134,25 @@ const AppContent: React.FC = () => {
           <Route
             path="/groups"
             element={
-              <ProtectedRoute>
-                <Groups />
-              </ProtectedRoute>
+              GROUPS_ENABLED ? (
+                <ProtectedRoute>
+                  <Groups />
+                </ProtectedRoute>
+              ) : (
+                <Navigate to="/" replace />
+              )
             }
           />
           <Route
             path="/groups/:groupId"
             element={
-              <ProtectedRoute>
-                <GroupDetail />
-              </ProtectedRoute>
+              GROUPS_ENABLED ? (
+                <ProtectedRoute>
+                  <GroupDetail />
+                </ProtectedRoute>
+              ) : (
+                <Navigate to="/" replace />
+              )
             }
           />
           <Route

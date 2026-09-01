@@ -1,5 +1,11 @@
 import { AppConfig } from "./types";
 
+// Groups feature kill switch. Barter2 (the current backend project) doesn't
+// have the Groups schema/RPCs deployed yet -- this stays false there, and
+// flips true only once that migration has actually landed on whichever
+// project VITE_SUPABASE_URL points at.
+export const GROUPS_ENABLED = import.meta.env.VITE_GROUPS_ENABLED === 'true';
+
 // Application configuration
 export const APP_CONFIG: AppConfig = {
   itemsPerPage: 20,

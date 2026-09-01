@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { ItemData, UserData, ServiceResult, ServiceError, PaginationOptions, FilterOptions } from "./types";
-import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
+import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED, TABLES } from "./config";
 import { ValidationService } from "./validation";
 import { storageService } from "./storageService";
 
@@ -42,7 +42,11 @@ export class ItemService {
         p_max_age_days: options.maxAge ?? null,
         p_min_rating: options.minRating ?? null,
         p_include_unrated: options.includeUnrated ?? true,
-        p_group_ids: options.groupIds ?? null,
+        // Omitted entirely (not sent as null) when GROUPS_ENABLED is false --
+        // PostgREST does exact signature matching, and Barter2's current
+        // get_items_browse doesn't have this parameter at all, so sending it
+        // even as null fails the whole call.
+        ...(GROUPS_ENABLED ? { p_group_ids: options.groupIds ?? null } : {}),
         p_limit: options.limit,
         p_offset: options.page * options.limit,
       });
@@ -284,7 +288,9 @@ export class ItemService {
    */
   static async createItem(itemData: ItemData, userId: string): Promise<ServiceResult<ItemData>> {
     try {
-      // First, create the item without images to get the ID
+      // First, create the item without images to get the ID. is_public is
+      // only included when GROUPS_ENABLED -- Barter2's items table doesn't
+      // have that column yet, and sending it breaks the insert entirely.
       const { data, error } = await supabase
         .from(TABLES.ITEMS)
         .insert([
@@ -303,7 +309,7 @@ export class ItemService {
             value_currency: itemData.valueCurrency,
             source_url: itemData.sourceUrl,
             category_suggestion: itemData.categorySuggestion,
-            is_public: itemData.isPublic ?? true,
+            ...(GROUPS_ENABLED ? { is_public: itemData.isPublic ?? true } : {}),
             latitude: itemData.latitude,
             longitude: itemData.longitude,
             location: itemData.location,
@@ -422,7 +428,7 @@ export class ItemService {
           value_currency: updates.valueCurrency,
           source_url: updates.sourceUrl,
           category_suggestion: updates.categorySuggestion, // was previously dropped entirely
-          is_public: updates.isPublic,
+          ...(GROUPS_ENABLED ? { is_public: updates.isPublic } : {}),
           latitude: updates.latitude,
           longitude: updates.longitude,
           location: updates.location,

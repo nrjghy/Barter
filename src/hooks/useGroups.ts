@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { GroupService } from "../services/groupService";
 
-export const useUserGroups = () => {
+export const useUserGroups = (enabled = true) => {
   const { user } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["groups", user?.id],
     queryFn: () => GroupService.getUserGroups(user!.id),
-    enabled: !!user,
+    enabled: enabled && !!user,
   });
 
   return {
@@ -243,14 +243,14 @@ export const useGroupInviteActions = () => {
  * by a plain users-row read plus the update_browse_scope RPC, not a
  * dedicated table -- see users.browse_mode/browse_group_ids.
  */
-export const useBrowseScope = () => {
+export const useBrowseScope = (enabled = true) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const scopeQuery = useQuery({
     queryKey: ["browseScope", user?.id],
     queryFn: () => GroupService.getBrowseScope(user!.id),
-    enabled: !!user,
+    enabled: enabled && !!user,
   });
 
   const updateScope = useMutation({

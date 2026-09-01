@@ -25,6 +25,7 @@ import { StatsCard } from "../components/StatsCard";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { shareApp } from "../utils/share";
+import { GROUPS_ENABLED } from "../services/config";
 
 export const Profile: React.FC = () => {
   const { user, signOut, updateProfile, updatePassword } = useAuth();
@@ -226,6 +227,7 @@ export const Profile: React.FC = () => {
             >
               Notifications
             </button>
+            {GROUPS_ENABLED && (
             <button
               onClick={() => {
                 setShowSettings(false);
@@ -235,6 +237,7 @@ export const Profile: React.FC = () => {
             >
               Groups
             </button>
+            )}
             {user?.role === "admin" && (
               <button
                 onClick={() => {

@@ -13,7 +13,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useUserGroups, useBrowseScope } from "../hooks/useGroups";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
-import { ERROR_CODES, ERROR_MESSAGES } from "../services/config";
+import { ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED } from "../services/config";
 
 export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -43,17 +43,22 @@ export const Discover: React.FC = () => {
   const [includeUnrated, setIncludeUnrated] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Discover browse scope (Public vs. My Groups). Backed by
-  // users.browse_mode/browse_group_ids via useBrowseScope; local state
-  // mirrors it once loaded so toggling feels instant.
-  const { groups } = useUserGroups();
-  const { scope, updateScope } = useBrowseScope();
+  // Discover browse scope (Public vs. My Groups), entirely gated behind
+  // GROUPS_ENABLED -- Barter2 (the current backend project) doesn't have the
+  // Groups schema/RPCs deployed yet. useUserGroups/useBrowseScope take an
+  // `enabled` flag rather than being called conditionally here, so this
+  // still respects the rules of hooks while making no network calls when
+  // disabled. Backed by users.browse_mode/browse_group_ids via
+  // useBrowseScope; local state mirrors it once loaded so toggling feels
+  // instant.
+  const { groups } = useUserGroups(GROUPS_ENABLED);
+  const { scope, updateScope } = useBrowseScope(GROUPS_ENABLED);
   const [browseMode, setBrowseMode] = useState<"public" | "groups">("public");
   const [checkedGroupIds, setCheckedGroupIds] = useState<string[]>([]);
   const [scopeInitialized, setScopeInitialized] = useState(false);
 
   useEffect(() => {
-    if (!scopeInitialized && scope) {
+    if (GROUPS_ENABLED && !scopeInitialized && scope) {
       setBrowseMode(scope.mode);
       setCheckedGroupIds(scope.groupIds);
       setScopeInitialized(true);
@@ -106,7 +111,10 @@ export const Discover: React.FC = () => {
     // the radius bounds check entirely rather than erroring.
     lat: user?.latitude ?? null,
     lng: user?.longitude ?? null,
-    groupIds: browseMode === "groups" ? checkedGroupIds : undefined,
+    // Not passed at all when GROUPS_ENABLED is false -- belt and suspenders
+    // on top of the itemService.getItems fix, which is the one that
+    // actually matters for correctness against Barter2.
+    ...(GROUPS_ENABLED ? { groupIds: browseMode === "groups" ? checkedGroupIds : undefined } : {}),
   });
   const { recordResponse, dailyLikeCount, likeLimit, getRespondedItems, undoResponse, undoResponseLoading } = useResponses();
 
@@ -337,6 +345,7 @@ export const Discover: React.FC = () => {
         }}
       />
 
+      {GROUPS_ENABLED && (
       <div className="mb-3">
         <div className="grid grid-cols-2 gap-1 p-1 bg-[oklch(93%_0.01_95)] rounded-xl">
           <button
@@ -394,6 +403,7 @@ export const Discover: React.FC = () => {
           </>
         ) : null}
       </div>
+      )}
 
       <SwipeInterface
         currentItem={currentItem}
