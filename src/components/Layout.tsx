@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNavigation } from './BottomNavigation';
 import { Header } from './Header';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster, useToasterStore } from 'react-hot-toast';
 import { useNotificationToasts } from '../hooks/useNotifications';
 
 const TOP_LEVEL_PATHS = ['/', '/my-stuff', '/chat'];
+
+// With 164+ toast call sites (some inside loops, e.g. bulk image
+// upload/delete failures), an unbounded queue can stack into a wall.
+// This caps how many are visible at once, dismissing the oldest first --
+// the pattern react-hot-toast's own docs recommend, since the library has
+// no built-in toast-count limit.
+const TOAST_LIMIT = 2;
 
 // Profile sub-tree: shows the bottom tab bar but keeps its own
 // BackBar/padding, so it's tracked separately from TOP_LEVEL_PATHS rather
@@ -23,6 +30,14 @@ export const Layout: React.FC = () => {
     location.pathname.startsWith('/groups/');
   useNotificationToasts();
 
+  const { toasts } = useToasterStore();
+  useEffect(() => {
+    toasts
+      .filter((t) => t.visible)
+      .filter((_, i) => i >= TOAST_LIMIT)
+      .forEach((t) => toast.dismiss(t.id));
+  }, [toasts]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-barter-50 via-barter-100 to-barter-200 relative overflow-hidden">
       <div
@@ -35,8 +50,8 @@ export const Layout: React.FC = () => {
       />
 
       <Toaster
-        position="top-center"
-        containerStyle={{ top: 140 }}
+        position="bottom-center"
+        containerStyle={{ bottom: 110 }}
         toastOptions={{
           duration: 3000,
           style: {
@@ -48,6 +63,7 @@ export const Layout: React.FC = () => {
             boxShadow: '0 10px 15px -3px oklch(20% 0.02 100 / 0.1), 0 4px 6px -4px oklch(20% 0.02 100 / 0.1)',
           },
           success: {
+            duration: 2500,
             iconTheme: { primary: 'oklch(42% 0.1 148)', secondary: '#FFFFFF' },
             style: {
               background: '#FFFFFF',
@@ -60,6 +76,7 @@ export const Layout: React.FC = () => {
             },
           },
           error: {
+            duration: 4500,
             iconTheme: { primary: 'oklch(50% 0.15 30)', secondary: '#FFFFFF' },
             style: {
               background: '#FFFFFF',

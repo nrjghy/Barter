@@ -8,6 +8,7 @@ import { useOffers, useOffersByIds } from "../hooks/useOffers";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { toast } from "react-hot-toast";
+import { toastInfo } from "../utils/toast";
 import type { ItemData } from "../services/types";
 
 // Same picker shape as MarkTradeComplete.tsx's item-select + bottom-sheet
@@ -162,7 +163,7 @@ export const OfferComposer: React.FC = () => {
   // Mirrors the server-side guard in _offer_create_core.
   useEffect(() => {
     if (!connectionLoading && connection?.otherUser.isCurator) {
-      toast.error("Curated external listing, the exchange happens off Barter.");
+      toastInfo("Curated external listing, the exchange happens off Barter.");
       navigate(`/chat/${connectionId}`, { replace: true });
     }
   }, [connectionLoading, connection, connectionId, navigate]);

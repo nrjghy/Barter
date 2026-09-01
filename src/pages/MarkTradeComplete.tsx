@@ -7,6 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { toast } from "react-hot-toast";
+import { toastInfo } from "../utils/toast";
 import { TradeCompletionService, NotificationService } from "../services";
 import type { ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
@@ -178,7 +179,7 @@ export const MarkTradeComplete: React.FC = () => {
   // Mirrors the server-side guard in _complete_trade_core.
   useEffect(() => {
     if (!connectionLoading && connection?.otherUser.isCurator) {
-      toast.error("Curated external listing, the exchange happens off Barter.");
+      toastInfo("Curated external listing, the exchange happens off Barter.");
       navigate(`/chat/${connectionId}`, { replace: true });
     }
   }, [connectionLoading, connection, connectionId, navigate]);
