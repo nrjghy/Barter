@@ -4,7 +4,7 @@ import { X, Copy, Share2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { useGroupInviteLinks } from "../hooks/useGroups";
-import { shareGroupInvite } from "../utils/share";
+import { shareGroupInvite, copyToClipboard } from "../utils/share";
 import { GroupInviteLink } from "../services/groupService";
 
 const APP_URL = "https://letsbarter.app";
@@ -30,10 +30,9 @@ export const GroupInviteLinkModal: React.FC<GroupInviteLinkModalProps> = ({ grou
   };
 
   const handleCopy = async (token: string) => {
-    try {
-      await navigator.clipboard.writeText(`${APP_URL}/join/${token}`);
+    if (await copyToClipboard(`${APP_URL}/join/${token}`)) {
       toast.success("Link copied to clipboard");
-    } catch {
+    } else {
       toast.error("Couldn't copy the link.");
     }
   };
@@ -75,11 +74,13 @@ export const GroupInviteLinkModal: React.FC<GroupInviteLinkModalProps> = ({ grou
             disabled={createLinkLoading}
             className="w-full px-4 py-3 bg-barter-600 text-white rounded-lg hover:bg-barter-700 transition-colors font-medium disabled:opacity-50"
           >
-            {createLinkLoading ? <LoadingSpinner /> : "Create invite link"}
+            {createLinkLoading ? <LoadingSpinner /> : activeLinks.length > 0 ? "Create new invite link" : "Create invite link"}
           </button>
 
           <div>
-            <div className="text-[11px] font-bold text-[oklch(50%_0.02_95)] tracking-wide mb-2">ACTIVE LINKS</div>
+            <div className="text-[11px] font-bold text-[oklch(50%_0.02_95)] tracking-wide mb-2">
+              {activeLinks.length === 1 ? "ACTIVE LINK" : "ACTIVE LINKS"}
+            </div>
             {linksLoading ? (
               <div className="flex justify-center py-6">
                 <LoadingSpinner />

@@ -9,6 +9,40 @@ import { toast } from "react-hot-toast";
 const APP_URL = "https://letsbarter.app";
 
 /**
+ * Copies text to the clipboard, tried against navigator.clipboard first.
+ * That API is gated behind a secure context, which in practice means not
+ * just https:// or localhost -- a plain http:// LAN address (e.g. testing
+ * on a phone against a dev server by IP) is insecure too, and
+ * clipboard.writeText silently rejects there. Falls back to the older
+ * document.execCommand('copy') technique (hidden textarea, select,
+ * execCommand, remove), which isn't gated the same way.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall through to the execCommand fallback below.
+    }
+  }
+
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const succeeded = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return succeeded;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Share a link to an item listing (PRD §3/§13). Uses the native Web Share
  * API where available, falling back to copying the link to the clipboard.
  *
@@ -36,10 +70,9 @@ export async function shareItem(item: { id: string; title: string }): Promise<vo
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(url);
+  if (await copyToClipboard(url)) {
     toast.success("Link copied to clipboard");
-  } catch {
+  } else {
     toast.error("Couldn't copy the link.");
   }
 }
@@ -64,10 +97,9 @@ export async function shareApp(): Promise<void> {
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(`${text}\n${APP_URL}`);
+  if (await copyToClipboard(`${text}\n${APP_URL}`)) {
     toast.success("Link copied to clipboard");
-  } catch {
+  } else {
     toast.error("Couldn't copy the link.");
   }
 }
@@ -91,10 +123,9 @@ export async function shareGroupInvite(groupName: string, token: string): Promis
     return;
   }
 
-  try {
-    await navigator.clipboard.writeText(`${text}\n${url}`);
+  if (await copyToClipboard(`${text}\n${url}`)) {
     toast.success("Link copied to clipboard");
-  } catch {
+  } else {
     toast.error("Couldn't copy the link.");
   }
 }
