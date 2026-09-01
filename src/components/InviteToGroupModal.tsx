@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import toast from "react-hot-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { GroupService } from "../services/groupService";
+import { shareGroupInvite } from "../utils/share";
 
 interface InviteToGroupModalProps {
+  groupId: string;
   groupName: string;
   onClose: () => void;
   onInvite: (identifier: string) => Promise<{ error?: { message: string } }>;
 }
 
-export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupName, onClose, onInvite }) => {
+export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupId, groupName, onClose, onInvite }) => {
   const [identifier, setIdentifier] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [creatingInviteLink, setCreatingInviteLink] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,6 +33,17 @@ export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupNam
       setError(result.error.message);
     } else {
       onClose();
+    }
+  };
+
+  const handleInviteToBarter = async () => {
+    setCreatingInviteLink(true);
+    const result = await GroupService.createGroupInviteLink(groupId);
+    setCreatingInviteLink(false);
+    if (result.error) {
+      toast.error(result.error.message);
+    } else {
+      await shareGroupInvite(groupName, result.data!.token);
     }
   };
 
@@ -66,7 +82,20 @@ export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupNam
             placeholder="name@example.com"
             autoFocus
           />
-          {error ? (
+          {error === "No matching user found" ? (
+            <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">
+              No matching user found.{" "}
+              <button
+                type="button"
+                onClick={handleInviteToBarter}
+                disabled={creatingInviteLink}
+                className="underline text-barter-600 hover:text-barter-700 disabled:opacity-50"
+              >
+                {creatingInviteLink ? "Creating invite…" : "Invite user to Barter"}
+              </button>
+              ?
+            </p>
+          ) : error ? (
             <p className="text-xs font-semibold text-[oklch(50%_0.15_30)] mt-1.5">{error}</p>
           ) : (
             <p className="text-xs text-gray-500 mt-1.5">They'll get a notification to accept or decline.</p>

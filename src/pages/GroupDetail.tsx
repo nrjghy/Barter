@@ -272,6 +272,7 @@ export const GroupDetail: React.FC = () => {
       <AnimatePresence>
         {showInviteModal && (
           <InviteToGroupModal
+            groupId={group.id}
             groupName={group.name}
             onClose={() => setShowInviteModal(false)}
             onInvite={async (identifier) => {
