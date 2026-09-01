@@ -16,6 +16,7 @@ import {
   UserPlus,
   Bell,
   LogOut,
+  MessageSquareWarning,
 } from "lucide-react";
 import countryToCurrency from "country-to-currency";
 import { supabase } from "../lib/supabase";
@@ -25,6 +26,7 @@ import { useTradeCompletions } from "../hooks/useTradeCompletions";
 import { useReviews } from "../hooks/useReviews";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
+import { IssueReportDialog } from "../components/IssueReportDialog";
 import { StatsCard } from "../components/StatsCard";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -36,6 +38,7 @@ export const Profile: React.FC = () => {
   const { completedTradeCount } = useTradeCompletions();
   const { reviews, reviewsLoading, reviewsError } = useReviews();
   const [showSettings, setShowSettings] = useState(false);
+  const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -233,6 +236,16 @@ export const Profile: React.FC = () => {
             >
               <Bell className="w-4 h-4" />
               <span>Notifications</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowSettings(false);
+                setShowIssueDialog(true);
+              }}
+              className="w-full flex items-center space-x-2 text-left px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors mb-2"
+            >
+              <MessageSquareWarning className="w-4 h-4" />
+              <span>Report an issue</span>
             </button>
             {user?.role === "admin" && (
               <button
@@ -626,6 +639,8 @@ export const Profile: React.FC = () => {
           </div>
         )}
       </div>
+
+      <IssueReportDialog isOpen={showIssueDialog} onClose={() => setShowIssueDialog(false)} />
     </div>
   );
 };

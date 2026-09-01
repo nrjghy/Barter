@@ -2,17 +2,51 @@ import React, { useState } from 'react';
 import { Bell, User, Menu, HelpCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { NotificationCenter } from './NotificationCenter';
 import { IssueReportDialog } from './IssueReportDialog';
+import { HelpSheet } from './HelpSheet';
+
+const HELP_CONTENT: Record<string, { title: string; items: string[] }> = {
+  '/': {
+    title: 'Discover',
+    items: [
+      "Swipe or tap the heart/X to like or pass",
+      "Switch to 'My groups' to browse privately",
+      'Filter by category with the funnel icon',
+    ],
+  },
+  '/my-stuff': {
+    title: 'My Stuff',
+    items: ['Tap + to list something new', 'Tap any listing to edit, relist, or check its status'],
+  },
+  '/chat': {
+    title: 'Chat',
+    items: [
+      'Matches and group connections land here',
+      'Tap a conversation to message, propose a trade, or mark it complete',
+    ],
+  },
+  '/groups': {
+    title: 'Groups',
+    items: [
+      "Create a group or manage the ones you're in",
+      'Invite by username or share a link',
+      'Moderators can help manage members',
+    ],
+  },
+};
 
 export const Header: React.FC = () => {
   const { user } = useAuth();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showIssueDialog, setShowIssueDialog] = useState(false);
+  const [showHelpSheet, setShowHelpSheet] = useState(false);
+  const helpContent = HELP_CONTENT[location.pathname] ?? HELP_CONTENT['/'];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-br from-barter-600 to-barter-700 shadow-lg">
@@ -33,11 +67,11 @@ export const Header: React.FC = () => {
 
         <div className="flex items-center space-x-2">
           <motion.button
-            onClick={() => setShowIssueDialog(true)}
+            onClick={() => setShowHelpSheet(true)}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            title="Report an issue"
+            title="Help"
           >
             <HelpCircle className="w-5 h-5 text-white" />
           </motion.button>
@@ -82,6 +116,17 @@ export const Header: React.FC = () => {
       <NotificationCenter
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
+      />
+
+      <HelpSheet
+        isOpen={showHelpSheet}
+        onClose={() => setShowHelpSheet(false)}
+        title={helpContent.title}
+        items={helpContent.items}
+        onReportIssue={() => {
+          setShowHelpSheet(false);
+          setShowIssueDialog(true);
+        }}
       />
 
       <IssueReportDialog isOpen={showIssueDialog} onClose={() => setShowIssueDialog(false)} />

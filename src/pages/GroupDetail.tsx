@@ -50,6 +50,18 @@ export const GroupDetail: React.FC = () => {
   const isModerator = myMembership?.role === "moderator";
   const canManageMembers = isCreator || isModerator;
 
+  const groupHelpItems = isCreator
+    ? [
+        "Invite people by username or share a link",
+        "Promote a trusted member to moderator, or transfer ownership if you want to hand the group off",
+      ]
+    : isModerator
+    ? [
+        "You can invite people and remove regular members",
+        "Only the creator can remove another moderator, transfer ownership, or delete the group",
+      ]
+    : ["You can see everything shared to this group", "Leave anytime from the bottom of this page"];
+
   const handleConfirmLeave = async () => {
     const result = await leaveGroup();
     setConfirmingLeave(false);
@@ -123,7 +135,12 @@ export const GroupDetail: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto min-h-screen flex flex-col bg-[oklch(99%_0.006_95)] pt-16">
-      <BackBar title={group.name} subtitle={`${members.length} ${members.length === 1 ? "member" : "members"}`} onBack={() => navigate("/groups")} />
+      <BackBar
+        title={group.name}
+        subtitle={`${members.length} ${members.length === 1 ? "member" : "members"}`}
+        onBack={() => navigate("/groups")}
+        helpItems={groupHelpItems}
+      />
 
       <div className="flex-1 px-5 py-5">
         {group.description && (

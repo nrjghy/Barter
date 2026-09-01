@@ -767,6 +767,10 @@ export const ChatThread: React.FC = () => {
         title={connection?.otherUser.username ?? "Chat"}
         subtitle={itemLabel}
         onBack={() => navigate("/chat")}
+        helpItems={[
+          "Tap the camera to share a photo, the pin to share your location, or the handshake to propose a trade or mark it complete",
+          "Block or report from the menu in the top right if something's wrong",
+        ]}
         action={
           <div className="relative flex-shrink-0">
             <button onClick={() => setMenuOpen((v) => !v)} className="p-1.5">

@@ -212,6 +212,12 @@ export const ItemDetail: React.FC = () => {
       <BackBar
         title={item.title}
         onBack={() => navigate(-1)}
+        helpItems={[
+          "Tap the heart to like, X to pass",
+          "Like each other's items and you'll match and can chat",
+          "For giveaways, tap interested to connect directly",
+          "Edit your own listings or report someone else's from the menu",
+        ]}
         action={
           <div className="flex items-center space-x-2 flex-shrink-0">
             <button onClick={handleShare} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
