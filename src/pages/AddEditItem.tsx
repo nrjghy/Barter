@@ -826,41 +826,40 @@ export const AddEditItem: React.FC = () => {
                         type="checkbox"
                         checked={selectedGroupIds.includes(group.id)}
                         onChange={(e) => {
-                          // Three-way rule, applied on every check/uncheck,
-                          // in both create and edit mode (this handler is
+                          // Two-way rule, applied on every check/uncheck, in
+                          // both create and edit mode (this handler is
                           // shared by both):
                           //
-                          // - Reaching a genuine PARTIAL selection (some but
-                          //   not all groups) forces Public off. A partial
-                          //   selection is no longer "everyone," and Public
-                          //   staying on with only some groups checked is
-                          //   exactly the original inconsistent state this
-                          //   whole rule set exists to prevent -- including
-                          //   when it's reached by unchecking one box out
-                          //   of an all-checked, Public-on state, not just
-                          //   on initial load.
+                          // - Any non-empty selection forces Public off,
+                          //   including reaching every group checked. Found
+                          //   live: with a strict "< userGroups.length"
+                          //   condition here, an account with exactly one
+                          //   group could never turn Public off by checking
+                          //   it -- checking their only group always lands
+                          //   on "all groups checked," which read as FULL
+                          //   rather than PARTIAL and so never touched
+                          //   Public, leaving Public on and the box checked
+                          //   at the same time. Checking a box is always an
+                          //   explicit "share privately to this," and should
+                          //   never silently leave Public on regardless of
+                          //   how many groups the person happens to have.
                           // - Reaching EMPTY (unchecking the last remaining
                           //   group) forces Public back on instead of
                           //   leaving that uncheck blocked or the listing
                           //   invisible -- a listing that's neither Public
                           //   nor shared to any group must never exist,
                           //   even transiently.
-                          // - Reaching every group checked (FULL) via these
-                          //   checkboxes leaves Public untouched -- only the
-                          //   Public switch itself (below) forces that
-                          //   direction, so "private, shared to literally
-                          //   every group" stays reachable by checking
-                          //   boxes up from empty without the switch ever
-                          //   being touched.
+                          // - "Public AND every group checked" is still
+                          //   reachable, just only via the Public switch
+                          //   itself (below), which force-checks every
+                          //   group -- not via these checkboxes, which now
+                          //   always force Public off the moment anything
+                          //   is checked.
                           setSelectedGroupIds((prev) => {
                             const next = e.target.checked
                               ? [...prev, group.id]
                               : prev.filter((id) => id !== group.id);
-                            if (next.length === 0) {
-                              setIsPublic(true);
-                            } else if (next.length < userGroups.length) {
-                              setIsPublic(false);
-                            }
+                            setIsPublic(next.length === 0);
                             return next;
                           });
                         }}
