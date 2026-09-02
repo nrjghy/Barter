@@ -792,10 +792,19 @@ export const AddEditItem: React.FC = () => {
                     // items RLS policy), not something that needs to be
                     // collapsed back to a partial selection. The only
                     // invalid combination is private with zero groups
-                    // checked, which can only happen here if this person
-                    // has no groups to fall back on at all.
-                    if (userGroups.length === 0) {
-                      toast.error("Join a group to share this listing privately, or keep it Public.");
+                    // checked -- found live: this isn't only reachable
+                    // when someone has no groups to fall back on at all.
+                    // An account WITH groups but none currently checked
+                    // (the default state of a fresh listing, or after
+                    // unchecking back to empty) hit the same invalid
+                    // state silently, because the old guard only checked
+                    // group membership, not the current selection.
+                    if (selectedGroupIds.length === 0) {
+                      toast.error(
+                        userGroups.length === 0
+                          ? "Join a group to share this listing privately, or keep it Public."
+                          : "Select at least one group to share this listing privately, or keep it Public."
+                      );
                       return;
                     }
                     setIsPublic(false);
