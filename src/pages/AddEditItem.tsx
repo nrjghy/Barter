@@ -240,9 +240,20 @@ export const AddEditItem: React.FC = () => {
   // Share checklist prefill: waits for the item_groups fetch to actually
   // resolve (rather than keying off array length) since an empty result --
   // shared to none of the caller's groups -- is a valid, distinct state.
+  //
+  // Guards against loading an already-invisible item (not public, shared to
+  // no groups) -- shouldn't be reachable through this page any more, but
+  // this reads existingItem.isPublic directly (not the isPublic state var,
+  // whose own prefill effect above may not have committed yet) so a stored
+  // item from before these guards existed still self-heals to Public the
+  // moment it's opened here, rather than silently staying invisible to
+  // everyone while someone edits it.
   useEffect(() => {
     if (!isEditMode || groupsPrefilled || itemGroupsLoading || !existingItem) return;
     setSelectedGroupIds(existingItemGroupIds);
+    if (existingItem.isPublic === false && existingItemGroupIds.length === 0) {
+      setIsPublic(true);
+    }
     setGroupsPrefilled(true);
   }, [isEditMode, existingItem, existingItemGroupIds, itemGroupsLoading, groupsPrefilled]);
 
@@ -812,21 +823,29 @@ export const AddEditItem: React.FC = () => {
                         checked={selectedGroupIds.includes(group.id)}
                         onChange={(e) => {
                           // Checking or unchecking a group never touches
-                          // Public -- including reaching "every group
-                          // checked," which is a legitimate private state
-                          // (share with literally everyone I know, but
-                          // don't put it on the public feed), not an
-                          // implicit request to go public. Public is only
-                          // ever changed by its own toggle above. The one
-                          // guard that still matters -- private with zero
-                          // groups checked -- is caught at save time
-                          // (GROUPS_ENABLED && !isPublic && selectedGroupIds
-                          // .length === 0 below) rather than live here, so
-                          // unchecking mid-edit doesn't fight the person
-                          // while they're still rearranging their selection.
-                          setSelectedGroupIds((prev) =>
-                            e.target.checked ? [...prev, group.id] : prev.filter((id) => id !== group.id)
-                          );
+                          // Public on its own -- including reaching "every
+                          // group checked," which is a legitimate private
+                          // state (share with literally everyone I know,
+                          // but don't put it on the public feed), not an
+                          // implicit request to go public.
+                          //
+                          // The one exception: unchecking the very last
+                          // remaining group. A listing that's neither
+                          // Public nor shared to any group is invisible to
+                          // everyone but its owner -- not allowed to exist
+                          // even transiently, in create or edit mode alike
+                          // -- so rather than blocking that uncheck (which
+                          // would just trap the person unable to remove
+                          // their last group at all), it falls back to
+                          // Public instead. Applies in both modes since
+                          // this handler is shared by both.
+                          setSelectedGroupIds((prev) => {
+                            const next = e.target.checked
+                              ? [...prev, group.id]
+                              : prev.filter((id) => id !== group.id);
+                            if (next.length === 0) setIsPublic(true);
+                            return next;
+                          });
                         }}
                         className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
                       />
