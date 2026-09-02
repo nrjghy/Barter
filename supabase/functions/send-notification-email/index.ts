@@ -59,6 +59,22 @@
 // updates only the targeted category, a tampered signature is rejected,
 // POST returns a blank 200 (RFC 8058), GET returns a plain-text
 // confirmation.
+//
+// September 3, eighth revision: notification.content used to render as a
+// single <p> unconditionally, fine for every existing type since they're
+// all one short sentence, but too limiting for send_product_announcement's
+// longer, structured broadcast copy. renderContentHtml() below splits
+// content on blank lines into paragraphs, and renders a block as a <ul>
+// only when every one of its lines starts with "* "/"- " AND it has more
+// than one line -- that second condition matters, it's what stops a
+// single line that happens to start with "-" (e.g. from a concatenated
+// listing title) from silently turning into a one-item bullet list.
+// Deliberately still no button-styled CTA and no branded structure here,
+// that's the exact thing the sixth revision removed for Promotions-tab
+// placement; only the paragraph/list handling changed. Every pre-existing
+// notification type is a single line with no blank lines, so it takes the
+// plain-paragraph branch and renders byte-for-byte the same as before --
+// verified by comparing output for representative existing content.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -92,6 +108,35 @@ function escapeHtml(input: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function renderContentHtml(content: string): string {
+  const blocks = content.split(/\n\s*\n/);
+
+  return blocks
+    .map((block) => {
+      const lines = block
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      if (lines.length === 0) {
+        return "";
+      }
+
+      const isBulletBlock = lines.length > 1 && lines.every((line) => line.startsWith("* ") || line.startsWith("- "));
+
+      if (isBulletBlock) {
+        const items = lines
+          .map((line) => `<li style="margin: 0 0 8px 0;">${escapeHtml(line.replace(/^[*-]\s+/, ""))}</li>`)
+          .join("");
+        return `<ul style="margin: 0 0 16px 0; padding-left: 20px; font-size: 15px; line-height: 1.6;">${items}</ul>`;
+      }
+
+      const escaped = escapeHtml(block.trim()).replace(/\n/g, "<br>");
+      return `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6;">${escaped}</p>`;
+    })
+    .join("");
 }
 
 async function sign(secret: string, message: string): Promise<string> {
@@ -148,7 +193,7 @@ Deno.serve(async (req: Request) => {
 <body style="margin:0; padding:0; background-color:#ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#1a1a1a;">
   <div style="max-width: 480px; margin: 0 auto; padding: 24px 20px;">
     <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; line-height: 1.5;">${escapeHtml(notification.title)}</p>
-    <p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6;">${escapeHtml(notification.content)}</p>
+    ${renderContentHtml(notification.content)}
     ${actionLinkHtml}
     <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">&mdash; Barter</p>
     <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
