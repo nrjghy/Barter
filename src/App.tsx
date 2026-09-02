@@ -58,6 +58,17 @@ const AppContent: React.FC = () => {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/account-deleted" element={<AccountDeleted />} />
         <Route path="/join/:token" element={GROUPS_ENABLED ? <GroupJoin /> : <Navigate to="/" replace />} />
+        {/* /g/:token: same GroupJoin page, reached only via the
+            group-invite-preview edge function's redirect. That edge
+            function is itself bound to /join/:token (so shared invite
+            links keep working exactly as before, unchanged), which means
+            a redirect back to /join/:token would loop through the same
+            edge function forever instead of ever reaching the SPA --
+            found live, reproduced via the actual invite link. Redirecting
+            here instead lands on a path the edge function doesn't match,
+            so the app renders normally. Not linked to directly anywhere;
+            exists solely as that redirect's target. */}
+        <Route path="/g/:token" element={GROUPS_ENABLED ? <GroupJoin /> : <Navigate to="/" replace />} />
         <Route path="/" element={<Layout />}>
           <Route
             index

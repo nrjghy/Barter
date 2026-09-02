@@ -63,7 +63,17 @@ export default async (req: Request) => {
     const url = new URL(req.url);
     const segments = url.pathname.split("/").filter(Boolean);
     const token = segments[segments.length - 1];
-    const redirectUrl = `/join/${token ?? ""}`;
+    // Deliberately NOT /join/${token}: this function is itself bound to
+    // /join/:token (config.path below), so a redirect back to that same
+    // path would route straight back through this function again --
+    // infinite reload loop, found live via the actual invite link, never
+    // reaching the SPA. /g/:token is a second client route rendering the
+    // same GroupJoin page, not matched by this function's own path, so
+    // the redirect actually lands in the app. See src/App.tsx's /g/:token
+    // route comment for the other half of this fix. The public link
+    // itself is unchanged -- still /join/:token, still what share.ts
+    // generates -- only this internal redirect target moved.
+    const redirectUrl = `/g/${token ?? ""}`;
 
     if (!token) {
       return new Response(
