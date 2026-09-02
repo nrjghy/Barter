@@ -262,14 +262,18 @@ export const AddEditItem: React.FC = () => {
   // groups the checklist is already showing so a stale id left over from a
   // since-deleted group is silently dropped rather than needing cleanup.
   //
+  // A brand-new listing with no usable history starts with the checklist
+  // UNCHECKED (product direction, confirmed explicitly -- not the
+  // auto-all-checked default an earlier version of this page used).
+  // Public still defaults on, since empty groups + Public off is the one
+  // combination that's never allowed (see the checkbox handler below).
+  //
   // Public and "every group checked" are NOT the same thing and must not be
   // conflated -- confirmed against the actual RLS/RPC visibility rules
   // (items_rls_group_visibility.sql, get_items_browse.sql): is_public and
   // item_groups membership are independent OR'd conditions, so "share to
   // every one of my groups, but not the public feed" is a real, distinct,
-  // valid state. An earlier version of this effect wrongly forced Public on
-  // whenever the restored selection happened to equal every current group --
-  // that's what made an all-groups-private listing unreachable.
+  // valid state.
   //
   // One real ambiguity this can't fully resolve: turning Public on always
   // force-checks every group too (still correct -- see the toggle handler
@@ -295,8 +299,8 @@ export const AddEditItem: React.FC = () => {
       setIsPublic(true);
     } else {
       // No usable history (new user, or their groups have since changed):
-      // same Public/all-checked default the page always used.
-      setSelectedGroupIds(userGroups.map((group) => group.id));
+      // checklist starts empty, Public on.
+      setSelectedGroupIds([]);
       setIsPublic(true);
     }
     setGroupsPrefilled(true);
@@ -822,28 +826,41 @@ export const AddEditItem: React.FC = () => {
                         type="checkbox"
                         checked={selectedGroupIds.includes(group.id)}
                         onChange={(e) => {
-                          // Checking or unchecking a group never touches
-                          // Public on its own -- including reaching "every
-                          // group checked," which is a legitimate private
-                          // state (share with literally everyone I know,
-                          // but don't put it on the public feed), not an
-                          // implicit request to go public.
+                          // Three-way rule, applied on every check/uncheck,
+                          // in both create and edit mode (this handler is
+                          // shared by both):
                           //
-                          // The one exception: unchecking the very last
-                          // remaining group. A listing that's neither
-                          // Public nor shared to any group is invisible to
-                          // everyone but its owner -- not allowed to exist
-                          // even transiently, in create or edit mode alike
-                          // -- so rather than blocking that uncheck (which
-                          // would just trap the person unable to remove
-                          // their last group at all), it falls back to
-                          // Public instead. Applies in both modes since
-                          // this handler is shared by both.
+                          // - Reaching a genuine PARTIAL selection (some but
+                          //   not all groups) forces Public off. A partial
+                          //   selection is no longer "everyone," and Public
+                          //   staying on with only some groups checked is
+                          //   exactly the original inconsistent state this
+                          //   whole rule set exists to prevent -- including
+                          //   when it's reached by unchecking one box out
+                          //   of an all-checked, Public-on state, not just
+                          //   on initial load.
+                          // - Reaching EMPTY (unchecking the last remaining
+                          //   group) forces Public back on instead of
+                          //   leaving that uncheck blocked or the listing
+                          //   invisible -- a listing that's neither Public
+                          //   nor shared to any group must never exist,
+                          //   even transiently.
+                          // - Reaching every group checked (FULL) via these
+                          //   checkboxes leaves Public untouched -- only the
+                          //   Public switch itself (below) forces that
+                          //   direction, so "private, shared to literally
+                          //   every group" stays reachable by checking
+                          //   boxes up from empty without the switch ever
+                          //   being touched.
                           setSelectedGroupIds((prev) => {
                             const next = e.target.checked
                               ? [...prev, group.id]
                               : prev.filter((id) => id !== group.id);
-                            if (next.length === 0) setIsPublic(true);
+                            if (next.length === 0) {
+                              setIsPublic(true);
+                            } else if (next.length < userGroups.length) {
+                              setIsPublic(false);
+                            }
                             return next;
                           });
                         }}
