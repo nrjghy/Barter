@@ -4,7 +4,16 @@ import { GroupService } from "../services/groupService";
 
 export const useUserGroups = (enabled = true) => {
   const { user } = useAuth();
-  const { data, isLoading, error } = useQuery({
+  // isPending, not isLoading -- this query starts disabled (enabled requires
+  // `user`, which is briefly null before the async auth check resolves) and
+  // React Query v5's isLoading is `isPending && isFetching`, which is FALSE
+  // while a query is disabled even though it has no data yet. A caller that
+  // gates a run-once effect on "loading" (as AddEditItem's group-checklist
+  // prefill does) would see a false "not loading" during that window and
+  // fire with empty data, then never get to run again. isPending is true
+  // whenever data is still undefined regardless of enabled/fetching state,
+  // which is the semantics every caller here actually wants.
+  const { data, isPending, error } = useQuery({
     queryKey: ["groups", user?.id],
     queryFn: () => GroupService.getUserGroups(user!.id),
     enabled: enabled && !!user,
@@ -12,7 +21,7 @@ export const useUserGroups = (enabled = true) => {
 
   return {
     groups: data?.data ?? [],
-    loading: isLoading,
+    loading: isPending,
     error: error?.message,
   };
 };
@@ -125,6 +134,9 @@ export const useGroup = (groupId?: string) => {
  * own groups by RLS -- used to prefill AddEditItem's share checklist.
  */
 export const useItemGroupIds = (itemId?: string) => {
+  // isPending rather than isLoading -- see the comment on useUserGroups
+  // above; same v5 disabled-query gotcha, same fix, for consistency and
+  // because this hook's own "loading" is trusted the same way elsewhere.
   const query = useQuery({
     queryKey: ["itemGroups", itemId],
     queryFn: () => GroupService.getItemGroupIds(itemId!),
@@ -133,7 +145,7 @@ export const useItemGroupIds = (itemId?: string) => {
 
   return {
     groupIds: query.data?.data ?? [],
-    loading: query.isLoading,
+    loading: query.isPending,
   };
 };
 
@@ -143,6 +155,15 @@ export const useItemGroupIds = (itemId?: string) => {
  */
 export const useLastSelectedGroupIds = (enabled: boolean) => {
   const { user } = useAuth();
+  // isPending, not isLoading -- this is the hook that actually caused the
+  // bug: AddEditItem's create-mode prefill effect gates on this "loading"
+  // flag and only runs once (it latches a `groupsPrefilled` flag). Because
+  // this query is disabled until `user` resolves, isLoading (isPending &&
+  // isFetching) read FALSE during that disabled window even though no data
+  // had arrived, so the effect fired with an empty last-selection result and
+  // never got another chance to run once the real value loaded moments
+  // later -- the prefill silently never applied. isPending stays true until
+  // actual data exists, closing that window.
   const query = useQuery({
     queryKey: ["lastSelectedGroupIds", user?.id],
     queryFn: () => GroupService.getLastSelectedGroupIds(user!.id),
@@ -151,7 +172,7 @@ export const useLastSelectedGroupIds = (enabled: boolean) => {
 
   return {
     groupIds: query.data?.data ?? [],
-    loading: query.isLoading,
+    loading: query.isPending,
   };
 };
 
