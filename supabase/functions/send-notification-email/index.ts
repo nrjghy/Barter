@@ -75,6 +75,19 @@
 // notification type is a single line with no blank lines, so it takes the
 // plain-paragraph branch and renders byte-for-byte the same as before --
 // verified by comparing output for representative existing content.
+//
+// September 3, ninth revision: notification.content is also what
+// NotificationCenter.tsx renders in-app, raw, with no truncation or
+// line-clamp -- found live when the Groups launch broadcast's full
+// multi-paragraph email copy was about to go into that same field, which
+// would have made every user's in-app notification the entire email.
+// send_product_announcement now accepts an optional p_email_body, stored
+// as notification.data.emailBody, so a broadcast can have a short
+// notifications.content (what the in-app panel shows) and a separate,
+// longer data.emailBody (what this function renders). Below, the email
+// body prefers data.emailBody and falls back to content when it's absent
+// -- every pre-existing notification type has no emailBody, so this is a
+// no-op for them, byte-for-byte the same output as before.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -90,7 +103,7 @@ interface NotificationRow {
   type: string;
   title: string;
   content: string;
-  data: { actionPath?: string; actionLabel?: string } | null;
+  data: { actionPath?: string; actionLabel?: string; emailBody?: string } | null;
 }
 
 interface WebhookPayload {
@@ -193,7 +206,7 @@ Deno.serve(async (req: Request) => {
 <body style="margin:0; padding:0; background-color:#ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#1a1a1a;">
   <div style="max-width: 480px; margin: 0 auto; padding: 24px 20px;">
     <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; line-height: 1.5;">${escapeHtml(notification.title)}</p>
-    ${renderContentHtml(notification.content)}
+    ${renderContentHtml(notification.data?.emailBody ?? notification.content)}
     ${actionLinkHtml}
     <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">&mdash; Barter</p>
     <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
