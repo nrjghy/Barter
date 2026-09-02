@@ -29,6 +29,18 @@
 // separate secrets store from Supabase's Edge Function secrets):
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
+//
+// 2026-09-02: two fixes made after a live incident where every shared
+// listing link, regardless of item, showed "Listing no longer
+// available." Root cause was never confirmed from inside this function,
+// because a Supabase query error was silently folded into the same
+// generic "not found" response with no logging -- see the console.error
+// added below. If this happens again, check the Netlify function logs
+// first; if they're empty, the query is failing before it ever runs.
+// Separately: this previously returned a cancelled/traded/expired item's
+// real title and photo, since it never checked status. That's now
+// filtered explicitly rather than relying on the query to fail for a
+// non-active item, which it never did.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -89,11 +101,19 @@ export default async (req: Request) => {
 
     const { data: item, error } = await supabase
       .from("items")
-      .select("title, category, condition, image_urls")
+      .select("title, category, condition, image_urls, status")
       .eq("id", itemId)
       .maybeSingle();
 
-    if (error || !item) {
+    if (error) {
+      // This used to be silently swallowed into the generic "not found"
+      // response below, which is exactly why a systemic failure (bad
+      // SUPABASE_URL/SERVICE_ROLE_KEY, project unreachable, etc.) looked
+      // identical to a single missing item and left no trace in the logs.
+      console.error("item-preview: Supabase query failed", { itemId, error });
+    }
+
+    if (error || !item || item.status !== "active") {
       return new Response(
         renderPage({ title: "Listing no longer available", description: "This item may have been removed.", imageUrl: null, redirectUrl }),
         { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
