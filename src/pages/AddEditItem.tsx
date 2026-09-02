@@ -163,12 +163,8 @@ export const AddEditItem: React.FC = () => {
   const { groupIds: existingItemGroupIds, loading: itemGroupsLoading } = useItemGroupIds(
     GROUPS_ENABLED && isEditMode ? itemId : undefined
   );
-  // Fetched in both modes (not just create): edit mode's Public-off toggle
-  // handler also restores this as the private-group fallback, since without
-  // it there'd be nothing to fall back to on an existing item and turning
-  // Public off there would always have to be blocked.
   const { groupIds: lastSelectedGroupIds, loading: lastSelectedGroupsLoading } = useLastSelectedGroupIds(
-    GROUPS_ENABLED
+    GROUPS_ENABLED && !isEditMode
   );
 
   // Required-field inline validation (PRD §13): each required field tracks
@@ -255,28 +251,42 @@ export const AddEditItem: React.FC = () => {
   // groups the checklist is already showing so a stale id left over from a
   // since-deleted group is silently dropped rather than needing cleanup.
   //
-  // Public and the group checklist must never disagree about "all groups
-  // checked" (Public listings are visible to everyone, including all your
-  // groups -- so Public on and a partial group selection is a contradiction
-  // the UI shouldn't be able to show). The restored selection already
-  // encodes that correctly for anyone who has published before, since a
-  // prior Public listing would have saved *all* of that listing's groups as
-  // the "last selection" (see updateLastSelectedGroups below) and a prior
-  // private one would have saved just the subset picked. Only a person with
-  // no publishing history at all -- an empty restore despite having groups
-  // to choose from -- has no real preference to preserve, so that specific
-  // case falls back to the same Public/all-checked default the page always
-  // used before this existed.
+  // Public and "every group checked" are NOT the same thing and must not be
+  // conflated -- confirmed against the actual RLS/RPC visibility rules
+  // (items_rls_group_visibility.sql, get_items_browse.sql): is_public and
+  // item_groups membership are independent OR'd conditions, so "share to
+  // every one of my groups, but not the public feed" is a real, distinct,
+  // valid state. An earlier version of this effect wrongly forced Public on
+  // whenever the restored selection happened to equal every current group --
+  // that's what made an all-groups-private listing unreachable.
+  //
+  // One real ambiguity this can't fully resolve: turning Public on always
+  // force-checks every group too (still correct -- see the toggle handler
+  // below), so a restored selection that happens to equal "every current
+  // group" could mean either "was public last time" or "was private to
+  // literally every group last time" -- last_selected_group_ids alone can't
+  // tell those apart, since both save the same set. Defaulting to Public on
+  // in that specific case (unlike an unambiguous partial subset, which can
+  // only mean "was private to just these") is a best-effort choice, not a
+  // perfect memory -- flagging this rather than pretending it's exact.
   useEffect(() => {
     if (isEditMode || groupsPrefilled || lastSelectedGroupsLoading || userGroupsLoading) return;
     const userGroupIdSet = new Set(userGroups.map((group) => group.id));
     const restored = lastSelectedGroupIds.filter((id) => userGroupIdSet.has(id));
-    if (restored.length === 0 && userGroups.length > 0) {
-      setSelectedGroupIds(userGroups.map((group) => group.id));
+    if (restored.length > 0 && restored.length < userGroups.length) {
+      // Unambiguous: a proper subset can only come from a prior private
+      // share to exactly these groups.
+      setSelectedGroupIds(restored);
+      setIsPublic(false);
+    } else if (restored.length === userGroups.length && userGroups.length > 0) {
+      // Ambiguous (see comment above) -- default to Public, all checked.
+      setSelectedGroupIds(restored);
       setIsPublic(true);
     } else {
-      setSelectedGroupIds(restored);
-      setIsPublic(restored.length === userGroups.length);
+      // No usable history (new user, or their groups have since changed):
+      // same Public/all-checked default the page always used.
+      setSelectedGroupIds(userGroups.map((group) => group.id));
+      setIsPublic(true);
     }
     setGroupsPrefilled(true);
   }, [isEditMode, lastSelectedGroupIds, lastSelectedGroupsLoading, userGroups, userGroupsLoading, groupsPrefilled]);
@@ -750,28 +760,29 @@ export const AddEditItem: React.FC = () => {
                   checked={isPublic}
                   onChange={(e) => {
                     if (e.target.checked) {
-                      // Public means every group -- a partial selection
-                      // alongside Public on is a contradiction the UI
-                      // shouldn't be able to show.
+                      // Turning Public on always means every group, because
+                      // My Groups browsing (get_items_browse with
+                      // p_group_ids set) filters purely on item_groups and
+                      // ignores is_public -- a public item with an empty or
+                      // partial item_groups would be invisible to someone
+                      // browsing scoped to one of this person's groups.
                       setIsPublic(true);
                       setSelectedGroupIds(userGroups.map((g) => g.id));
                       return;
                     }
-                    // Turning Public off: fall back to whichever specific
-                    // groups this person last shared privately to, so they
-                    // don't have to manually uncheck down from "all" every
-                    // time. If there's nothing to restore to (never shared
-                    // privately before, or that selection no longer matches
-                    // any current group), there's no valid private state to
-                    // land on -- block rather than silently leaving Public on
-                    // with no visible change.
-                    const userGroupIdSet = new Set(userGroups.map((g) => g.id));
-                    const restored = lastSelectedGroupIds.filter((id) => userGroupIdSet.has(id));
-                    if (restored.length === 0 || restored.length === userGroups.length) {
-                      toast.error("Pick at least one group to share privately before turning Public off.");
+                    // Turning Public off does NOT touch which groups are
+                    // checked -- "private, shared to every one of my
+                    // groups" is a real, distinct, valid state (is_public
+                    // and item_groups are independent conditions in the
+                    // items RLS policy), not something that needs to be
+                    // collapsed back to a partial selection. The only
+                    // invalid combination is private with zero groups
+                    // checked, which can only happen here if this person
+                    // has no groups to fall back on at all.
+                    if (userGroups.length === 0) {
+                      toast.error("Join a group to share this listing privately, or keep it Public.");
                       return;
                     }
-                    setSelectedGroupIds(restored);
                     setIsPublic(false);
                   }}
                 />
@@ -800,16 +811,22 @@ export const AddEditItem: React.FC = () => {
                         type="checkbox"
                         checked={selectedGroupIds.includes(group.id)}
                         onChange={(e) => {
-                          setSelectedGroupIds((prev) => {
-                            const next = e.target.checked
-                              ? [...prev, group.id]
-                              : prev.filter((id) => id !== group.id);
-                            // Every group checked -> Public (matches what
-                            // the toggle itself does); anything less,
-                            // including none, is a private/partial share.
-                            setIsPublic(next.length === userGroups.length);
-                            return next;
-                          });
+                          // Checking or unchecking a group never touches
+                          // Public -- including reaching "every group
+                          // checked," which is a legitimate private state
+                          // (share with literally everyone I know, but
+                          // don't put it on the public feed), not an
+                          // implicit request to go public. Public is only
+                          // ever changed by its own toggle above. The one
+                          // guard that still matters -- private with zero
+                          // groups checked -- is caught at save time
+                          // (GROUPS_ENABLED && !isPublic && selectedGroupIds
+                          // .length === 0 below) rather than live here, so
+                          // unchecking mid-edit doesn't fight the person
+                          // while they're still rearranging their selection.
+                          setSelectedGroupIds((prev) =>
+                            e.target.checked ? [...prev, group.id] : prev.filter((id) => id !== group.id)
+                          );
                         }}
                         className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
                       />
