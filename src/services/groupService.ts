@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { ServiceResult } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
+import { trackEvent } from "../lib/analytics";
 
 export interface GroupSummary {
   id: string;
@@ -251,6 +252,8 @@ export class GroupService {
         return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
       }
 
+      trackEvent("group_created", { groupId: data.groupId });
+
       return { data: { groupId: data.groupId } };
     } catch (error) {
       return {
@@ -276,6 +279,8 @@ export class GroupService {
         return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
       }
 
+      trackEvent("group_invite_sent", { groupId: data.groupId });
+
       return { data: { groupId: data.groupId, invitedUserId: data.invitedUserId } };
     } catch (error) {
       return {
@@ -294,6 +299,8 @@ export class GroupService {
       if (data?.error) {
         return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
       }
+
+      trackEvent("group_joined", { groupId: data.groupId, method: "invite" });
 
       return { data: { groupId: data.groupId } };
     } catch (error) {
@@ -516,6 +523,8 @@ export class GroupService {
         return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
       }
 
+      trackEvent("group_invite_link_created", { groupId });
+
       return { data: { linkId: data.linkId, token: data.token, expiresAt: data.expiresAt } };
     } catch (error) {
       return {
@@ -618,6 +627,14 @@ export class GroupService {
       }
       if (data?.error) {
         return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      // Only a genuine new join, not a revisit by someone who's already a
+      // member (alreadyMember: true, e.g. re-opening a link they used
+      // before), counts toward "members joined" -- otherwise the metric
+      // would inflate with page views, not actual joins.
+      if (!data.alreadyMember) {
+        trackEvent("group_joined", { groupId: data.groupId, method: "link" });
       }
 
       return { data: { groupId: data.groupId, alreadyMember: data.alreadyMember } };

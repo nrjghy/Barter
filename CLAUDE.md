@@ -57,3 +57,14 @@ Never commit, paste, or otherwise place secrets (the DB password, API
 keys, tokens) into code, commit messages, or chat. Secrets live only in
 the local `.env` file or a password manager. This is a repeat of the
 mistake that required rotating the Barter2 DB password once already.
+
+## Definition of done
+
+Any new user-facing feature is not done until it also has PostHog
+instrumentation (`trackEvent()` calls, see `src/lib/analytics.ts`) for
+its key actions — creation, completion, and any other step someone would
+actually want to track activity/adoption by later. Groups shipped
+(September 1-2, 2026) with zero instrumentation and had to have it added
+after the fact once real metrics were wanted; don't repeat that. When
+scoping a new feature, decide what the 2-4 events worth tracking are as
+part of the initial build, not as a follow-up.
