@@ -76,6 +76,19 @@ export const GroupJoin: React.FC = () => {
     navigate("/register");
   };
 
+  // Same redirect-preservation as handleSignUpToJoin, for a visitor who
+  // already has an account. Without this there was no way back to the
+  // group post-login except detouring through Register's "already
+  // registered" error and its Sign In link -- which happened to work only
+  // because it left these same two keys in place, not because this screen
+  // offered a real log-in path.
+  const handleLogInToJoin = () => {
+    if (!token) return;
+    sessionStorage.setItem("barter_redirect_after_login", `/join/${token}`);
+    sessionStorage.setItem(PENDING_JOIN_KEY, token);
+    navigate("/login");
+  };
+
   if (authLoading || previewLoading) {
     return (
       <div className="max-w-md mx-auto min-h-screen flex items-center justify-center">
@@ -128,12 +141,20 @@ export const GroupJoin: React.FC = () => {
           Join group
         </button>
       ) : (
-        <button
-          onClick={handleSignUpToJoin}
-          className="mt-2 px-7 py-3 rounded-2xl bg-barter-600 text-white text-sm font-bold"
-        >
-          Sign up to join
-        </button>
+        <div className="mt-2 flex flex-col items-center gap-2">
+          <button
+            onClick={handleSignUpToJoin}
+            className="px-7 py-3 rounded-2xl bg-barter-600 text-white text-sm font-bold"
+          >
+            Sign up to join
+          </button>
+          <button
+            onClick={handleLogInToJoin}
+            className="text-sm text-barter-600 hover:text-barter-700 font-medium transition-colors hover:underline"
+          >
+            Already have an account? Log in
+          </button>
+        </div>
       )}
     </div>
   );
