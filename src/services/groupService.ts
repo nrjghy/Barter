@@ -329,6 +329,35 @@ export class GroupService {
     }
   }
 
+  static async updateGroupDetails(
+    groupId: string,
+    name: string,
+    description: string
+  ): Promise<ServiceResult<{ groupId: string; name: string; description: string | null }>> {
+    try {
+      const { data, error } = await supabase.rpc("update_group_details", {
+        p_group_id: groupId,
+        p_name: name,
+        p_description: description,
+      });
+
+      if (error) {
+        return { error: { code: ERROR_CODES.NETWORK_ERROR, message: "Failed to update group details", details: error } };
+      }
+      if (data?.error) {
+        return { error: { code: ERROR_CODES.VALIDATION_ERROR, message: data.error } };
+      }
+
+      trackEvent("group_details_updated", { groupId: data.groupId });
+
+      return { data: { groupId: data.groupId, name: data.name, description: data.description } };
+    } catch (error) {
+      return {
+        error: { code: ERROR_CODES.UNKNOWN_ERROR, message: ERROR_MESSAGES[ERROR_CODES.UNKNOWN_ERROR], details: error },
+      };
+    }
+  }
+
   static async transferGroupOwnership(
     groupId: string,
     newCreatorId: string

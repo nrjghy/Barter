@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2, ShieldCheck, ShieldOff, Crown } from "lucide-react";
+import { UserPlus, ArrowLeftRight, Trash2, UserMinus, Link2, ShieldCheck, ShieldOff, Crown, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 import { BackBar } from "../components/BackBar";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { InviteToGroupModal } from "../components/InviteToGroupModal";
+import { EditGroupDetailsModal } from "../components/EditGroupDetailsModal";
 import { TransferOwnershipModal } from "../components/TransferOwnershipModal";
 import { GroupInviteLinkModal } from "../components/GroupInviteLinkModal";
 import { useAuth } from "../hooks/useAuth";
@@ -23,6 +24,7 @@ export const GroupDetail: React.FC = () => {
     members,
     membersLoading,
     inviteToGroup,
+    updateGroupDetails,
     transferOwnership,
     leaveGroup,
     leaveGroupLoading,
@@ -38,6 +40,7 @@ export const GroupDetail: React.FC = () => {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showInviteLinkModal, setShowInviteLinkModal] = useState(false);
+  const [showEditDetailsModal, setShowEditDetailsModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferIsForLeaving, setTransferIsForLeaving] = useState(false);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
@@ -254,6 +257,13 @@ export const GroupDetail: React.FC = () => {
         {isCreator ? (
           <div className="space-y-2">
             <button
+              onClick={() => setShowEditDetailsModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit group details
+            </button>
+            <button
               onClick={() => {
                 setTransferIsForLeaving(false);
                 setShowTransferModal(true);
@@ -312,6 +322,18 @@ export const GroupDetail: React.FC = () => {
             groupId={group.id}
             groupName={group.name}
             onClose={() => setShowInviteLinkModal(false)}
+          />
+        )}
+        {showEditDetailsModal && (
+          <EditGroupDetailsModal
+            groupName={group.name}
+            groupDescription={group.description}
+            onClose={() => setShowEditDetailsModal(false)}
+            onSave={async (name, description) => {
+              const result = await updateGroupDetails({ name, description });
+              if (!result.error) toast.success("Group details updated");
+              return result;
+            }}
           />
         )}
         {showTransferModal && (

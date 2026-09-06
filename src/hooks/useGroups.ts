@@ -52,6 +52,14 @@ export const useGroup = (groupId?: string) => {
     mutationFn: (identifier: string) => GroupService.inviteToGroup(groupId!, identifier),
   });
 
+  const updateGroupDetails = useMutation({
+    mutationFn: ({ name, description }: { name: string; description: string }) =>
+      GroupService.updateGroupDetails(groupId!, name, description),
+    onSuccess: (result) => {
+      if (!result.error) invalidateGroup();
+    },
+  });
+
   const transferOwnership = useMutation({
     mutationFn: (newCreatorId: string) => GroupService.transferGroupOwnership(groupId!, newCreatorId),
     onSuccess: (result) => {
@@ -108,6 +116,9 @@ export const useGroup = (groupId?: string) => {
 
     inviteToGroup: inviteToGroup.mutateAsync,
     inviteToGroupLoading: inviteToGroup.isPending,
+
+    updateGroupDetails: updateGroupDetails.mutateAsync,
+    updateGroupDetailsLoading: updateGroupDetails.isPending,
 
     transferOwnership: transferOwnership.mutateAsync,
     transferOwnershipLoading: transferOwnership.isPending,
