@@ -7,6 +7,7 @@ import type { ReviewContext } from "../services/reviewService";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { pickAvatarPalette } from "../utils/avatar";
+import { useShowError } from "../hooks/useShowError";
 
 const STAR_VALUES = [1, 2, 3, 4, 5];
 
@@ -14,6 +15,7 @@ export const ReviewWrite: React.FC = () => {
   const { tradeCompletionId } = useParams<{ tradeCompletionId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const showError = useShowError();
 
   const [loading, setLoading] = useState(true);
   const [context, setContext] = useState<ReviewContext | null>(null);
@@ -80,7 +82,7 @@ export const ReviewWrite: React.FC = () => {
       );
 
       if (error) {
-        toast.error(error.message || "Couldn't submit your review. Please try again.");
+        showError(error);
         return;
       }
 

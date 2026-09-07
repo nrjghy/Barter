@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import { Database } from '../types/database';
+import { recordCapturedError } from './errorTracker';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -37,12 +38,15 @@ const fetchWithPostgrestErrorReporting: typeof fetch = async (input, init) => {
     }
 
     const method = init?.method ?? (input instanceof Request ? input.method : 'GET');
+    const message = body.message ?? 'Postgrest error';
 
-    Sentry.captureMessage(body.message ?? 'Postgrest error', {
+    const eventId = Sentry.captureMessage(message, {
       level: 'error',
       tags: { postgres_code: code },
       extra: { details: body.details, hint: body.hint, url, method },
     });
+
+    recordCapturedError({ eventId, code, message, timestamp: Date.now() });
   } catch {
     // Non-JSON or unreadable body -- nothing to report, return untouched.
   }

@@ -15,6 +15,7 @@ import { GroupService } from "../services/groupService";
 import { GROUPS_ENABLED } from "../services/config";
 import { trackEvent } from "../lib/analytics";
 import { supabase } from "../lib/supabase";
+import { useShowError } from "../hooks/useShowError";
 
 // PRD §2 required fields, in on-screen order -- used both to decide which
 // fields need a touched/error state and, on a failed Save, to find the
@@ -108,6 +109,7 @@ export const AddEditItem: React.FC = () => {
   const { itemId } = useParams<{ itemId?: string }>();
   const isEditMode = Boolean(itemId);
   const location = useLocation();
+  const showApiError = useShowError();
   const relistFrom = (location.state as { relistFrom?: ItemData } | null)?.relistFrom;
 
   // PRD §17 item-listing funnel, step 1: Add-listing form opened. Create
@@ -491,7 +493,7 @@ export const AddEditItem: React.FC = () => {
     try {
       const result = await GroupService.setItemGroups(savedItemId, selectedGroupIds);
       if (result.error) {
-        toast.error(`Listing saved, but group sharing didn't update: ${result.error.message}`);
+        showApiError(result.error);
       }
     } catch {
       toast.error("Listing saved, but group sharing didn't update.");
@@ -573,7 +575,7 @@ export const AddEditItem: React.FC = () => {
         })) as ServiceResult<ItemData>;
 
         if (result.error) {
-          toast.error(result.error.message);
+          showApiError(result.error);
         } else {
           if (GROUPS_ENABLED) {
             await saveItemGroups(itemId);
@@ -610,7 +612,7 @@ export const AddEditItem: React.FC = () => {
         })) as ServiceResult<ItemData>;
 
         if (result.error) {
-          toast.error(result.error.message);
+          showApiError(result.error);
         } else {
           if (GROUPS_ENABLED && result.data?.id) {
             await saveItemGroups(result.data.id);

@@ -15,6 +15,7 @@ import { useUserGroups, useBrowseScope } from "../hooks/useGroups";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED } from "../services/config";
+import { useShowError } from "../hooks/useShowError";
 
 export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -28,6 +29,7 @@ export const Discover: React.FC = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [pendingGroupIds, setPendingGroupIds] = useState<string[]>([]);
+  const showError = useShowError();
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
   useEffect(() => {
@@ -272,7 +274,7 @@ export const Discover: React.FC = () => {
               // Already matched, can't undo this one -- try the next most recent instead.
               continue;
             }
-            toast.error(result.error.message, { id: "undo-toast" });
+            showError(result.error, { id: "undo-toast" });
             return;
           }
 

@@ -10,6 +10,7 @@ import { BackBar } from "../components/BackBar";
 import { toast } from "react-hot-toast";
 import { toastInfo } from "../utils/toast";
 import type { ItemData } from "../services/types";
+import { useShowError } from "../hooks/useShowError";
 
 // Same picker shape as MarkTradeComplete.tsx's item-select + bottom-sheet
 // confirm screen -- reused here for both creating a new offer and
@@ -120,6 +121,7 @@ export const OfferComposer: React.FC = () => {
   const { items: myItems, loading: myItemsLoading } = useUserItems(user?.id);
   const { items: theirItems, loading: theirItemsLoading } = useUserItems(connection?.otherUser.id);
   const { createOffer, createOfferLoading, counterOffer, counterOfferLoading } = useOffers(connectionId);
+  const showError = useShowError();
 
   const counterOfferId = (location.state as { counterOfferId?: string } | null)?.counterOfferId;
   const isCounter = !!counterOfferId;
@@ -213,7 +215,7 @@ export const OfferComposer: React.FC = () => {
         : await createOffer({ connectionId, myItemIds, theirItemIds });
 
       if (error) {
-        toast.error(error.message || "Couldn't send the offer. Please try again.");
+        showError(error);
         return;
       }
 

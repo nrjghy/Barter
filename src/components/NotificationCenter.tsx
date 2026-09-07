@@ -8,6 +8,7 @@ import { useGroupInviteActions } from '../hooks/useGroups';
 import { LoadingSpinner } from './LoadingSpinner';
 import type { NotificationWithDetails } from '../services/notificationService';
 import { CONNECTION_NOTIFICATION_TYPES } from '../utils/notificationRouting';
+import { useShowError } from '../hooks/useShowError';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -18,12 +19,13 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
   const { notifications, notificationsLoading, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const { acceptInvite, declineInvite, acceptingGroupId, decliningGroupId } = useGroupInviteActions();
   const navigate = useNavigate();
+  const showError = useShowError();
 
   const handleAcceptInvite = async (e: React.MouseEvent, groupId: string) => {
     e.stopPropagation();
     const result = await acceptInvite(groupId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success("You've joined the group!");
     }
@@ -33,7 +35,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
     e.stopPropagation();
     const result = await declineInvite(groupId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     }
   };
 

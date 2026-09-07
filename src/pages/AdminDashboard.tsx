@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound, MapPin, Navigation, Camera, Star, X } from 'lucide-react';
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from '../types';
 import { AdminService, AdminUserRow, ItemService } from '../services';
+import { useShowError } from '../hooks/useShowError';
 
 // Curated dropdown list, mirrors AddEditItem.tsx -- not the full ISO 4217 list.
 const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CZK', 'HUF', 'RON', 'SEK', 'NOK', 'DKK', 'CHF', 'UAH'];
@@ -98,6 +99,7 @@ interface AdminDisputeRow {
 export const AdminDashboard: React.FC = () => {
   const { user, loading: authLoading, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const showError = useShowError();
   const [listings, setListings] = useState<AdminListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -437,7 +439,7 @@ export const AdminDashboard: React.FC = () => {
   const handleResetPassword = async (row: AdminUserRow) => {
     const { error } = await resetPassword(row.email);
     if (error) {
-      toast.error(error.message || 'Failed to send reset email');
+      showError(error);
       return;
     }
     toast.success(`Password reset email sent to ${row.email}`);
@@ -448,7 +450,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const { error } = await AdminService.setUserBanned(row.id, banned);
       if (error) {
-        toast.error(error.message);
+        showError(error);
         return;
       }
       toast.success(banned ? `${row.username} suspended` : `${row.username} unbanned`);
@@ -464,7 +466,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const { error } = await AdminService.deleteUser(row.id);
       if (error) {
-        toast.error(error.message);
+        showError(error);
         return;
       }
       toast.success(`${row.username}'s account deleted`);
@@ -480,7 +482,7 @@ export const AdminDashboard: React.FC = () => {
     try {
       const { error } = await AdminService.setUserRole(row.id, role);
       if (error) {
-        toast.error(error.message);
+        showError(error);
         return;
       }
       toast.success(role === 'admin' ? `${row.username} promoted to admin` : `${row.username} demoted to user`);
@@ -594,7 +596,7 @@ export const AdminDashboard: React.FC = () => {
       );
 
       if (error) {
-        toast.error(error.message);
+        showError(error);
         return;
       }
 
@@ -1280,7 +1282,7 @@ export const AdminDashboard: React.FC = () => {
                     target_item_id: cancelingItem.id,
                   });
                   if (error || data?.error) {
-                    toast.error(data?.error ?? error?.message ?? 'Failed to cancel listing');
+                    showError({ message: data?.error ?? error?.message ?? 'Failed to cancel listing', code: error?.code });
                     return;
                   }
                   toast.success('Listing cancelled');

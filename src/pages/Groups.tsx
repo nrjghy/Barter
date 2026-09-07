@@ -10,10 +10,12 @@ import { CreateGroupModal } from "../components/CreateGroupModal";
 import { useUserGroups, useGroupInviteActions } from "../hooks/useGroups";
 import { useNotifications } from "../hooks/useNotifications";
 import { useAuth } from "../hooks/useAuth";
+import { useShowError } from "../hooks/useShowError";
 
 export const Groups: React.FC = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
+  const showError = useShowError();
   const { groups, loading } = useUserGroups();
   const { unreadNotifications } = useNotifications();
   const { acceptInvite, declineInvite, acceptingGroupId, decliningGroupId } = useGroupInviteActions();
@@ -28,7 +30,7 @@ export const Groups: React.FC = () => {
   const handleAcceptInvite = async (groupId: string) => {
     const result = await acceptInvite(groupId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success("You've joined the group!");
       navigate(`/groups/${groupId}`);
@@ -38,7 +40,7 @@ export const Groups: React.FC = () => {
   const handleDeclineInvite = async (groupId: string) => {
     const result = await declineInvite(groupId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       setDismissedGroupIds((prev) => new Set(prev).add(groupId));
     }

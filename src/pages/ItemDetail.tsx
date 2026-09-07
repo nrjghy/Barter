@@ -29,12 +29,14 @@ import { ItemService, ItemWithUser } from "../services/itemService";
 import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { shareItem } from "../utils/share";
+import { useShowError } from "../hooks/useShowError";
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { recordResponse } = useResponses();
+  const showError = useShowError();
 
   const [item, setItem] = useState<ItemWithUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,7 +119,7 @@ export const ItemDetail: React.FC = () => {
     try {
       const { error } = await ItemService.confirmStillAvailable(item.id);
       if (error) {
-        toast.error(error.message || "Couldn't confirm this listing. Please try again.");
+        showError(error);
         return;
       }
       // Confirming doesn't clear inactivityReminderSentAt server-side (the

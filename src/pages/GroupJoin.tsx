@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { GroupService, GroupInvitePreview } from "../services/groupService";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { useShowError } from "../hooks/useShowError";
 
 // Set right before bouncing an unauthenticated visitor to /register, read
 // back once they land here again with a session (post email-verification or
@@ -20,6 +21,7 @@ export const GroupJoin: React.FC = () => {
   const { token } = useParams<{ token: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const showError = useShowError();
 
   const [preview, setPreview] = useState<GroupInvitePreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
@@ -49,7 +51,7 @@ export const GroupJoin: React.FC = () => {
     setJoining(false);
 
     if (result.error || !result.data) {
-      toast.error(result.error?.message ?? "Couldn't join the group.");
+      showError(result.error ?? { message: "Couldn't join the group." });
       setAutoJoining(false);
       return;
     }

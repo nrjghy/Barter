@@ -1,14 +1,30 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Camera, HelpCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { IssuesService } from "../services";
 import type { IssueType } from "../services/issuesService";
+import { trackEvent } from "../lib/analytics";
+import { useShowError } from "../hooks/useShowError";
+
+/** Technical details prefilled from an app-error "Report" action -- see
+ * useReportError/ReportErrorProvider. There's no jsonb column on `issues`
+ * for structured metadata (checked supabase/migrations/20260803000000_adopt_issues_table.sql:
+ * just title/description/issue_type/status/priority/image_urls), so the
+ * error's code and Sentry event id are folded into the description text
+ * itself rather than a separate field. */
+export interface IssueReportPrefill {
+  message: string;
+  code?: string;
+  eventId?: string;
+}
 
 interface IssueReportDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  prefill?: IssueReportPrefill | null;
+  initialFile?: File | null;
 }
 
 const ISSUE_TYPES: { value: IssueType; label: string }[] = [
@@ -18,7 +34,14 @@ const ISSUE_TYPES: { value: IssueType; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
-export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, onClose }) => {
+const formatPrefillDescription = (prefill: IssueReportPrefill): string => {
+  const lines = [`Technical details: ${prefill.message}`];
+  if (prefill.code) lines.push(`Error code: ${prefill.code}`);
+  if (prefill.eventId) lines.push(`Sentry event: ${prefill.eventId}`);
+  return lines.join("\n");
+};
+
+export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, onClose, prefill, initialFile }) => {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
@@ -27,6 +50,14 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const showError = useShowError();
+  // Screenshot capture (html2canvas, in ReportErrorProvider) is async and
+  // typically resolves after the dialog is already open with initialFile
+  // still null -- so applying it can't be tied to the isOpen transition
+  // alone, it needs its own effect reacting to initialFile arriving. This
+  // ref stops that effect from re-attaching a screenshot the user already
+  // removed via handleRemoveImage.
+  const userClearedImageRef = useRef(false);
 
   const resetForm = () => {
     setTitle("");
@@ -35,6 +66,29 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
     setImageFile(null);
     setImagePreviewUrl(null);
   };
+
+  // Applies prefill whenever the dialog transitions to open, so a fresh
+  // error report always starts from the latest error rather than whatever
+  // was left over from a previous manual open.
+  useEffect(() => {
+    if (!isOpen) return;
+    userClearedImageRef.current = false;
+
+    if (prefill) {
+      setTitle("Something went wrong");
+      setDescription(formatPrefillDescription(prefill));
+      setIssueType("bug");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  // Applies the screenshot once it arrives, whether that's before or after
+  // this render -- see the comment on userClearedImageRef above.
+  useEffect(() => {
+    if (!isOpen || !initialFile || userClearedImageRef.current) return;
+    setImageFile(initialFile);
+    setImagePreviewUrl(URL.createObjectURL(initialFile));
+  }, [isOpen, initialFile]);
 
   const handleClose = () => {
     if (submitting) return;
@@ -52,6 +106,7 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
   };
 
   const handleRemoveImage = () => {
+    userClearedImageRef.current = true;
     setImageFile(null);
     setImagePreviewUrl(null);
   };
@@ -74,9 +129,15 @@ export const IssueReportDialog: React.FC<IssueReportDialogProps> = ({ isOpen, on
       );
 
       if (error) {
-        toast.error(error.message || "Couldn't submit your report. Please try again.");
+        showError(error);
         return;
       }
+
+      trackEvent("issue_report_submitted", {
+        issueType,
+        hasScreenshot: !!imageFile,
+        fromErrorReport: !!prefill,
+      });
 
       toast.success("Thanks — your report was submitted");
       onClose();

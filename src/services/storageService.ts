@@ -1,5 +1,21 @@
 import { supabase } from "../lib/supabase";
 import { toast } from "react-hot-toast";
+import { showErrorToast } from "../utils/toast";
+import { getReportErrorController } from "../contexts/ReportErrorContext";
+import { getLastCapturedError } from "../lib/errorTracker";
+
+// storageService calls toast directly from the service layer rather than
+// returning a ServiceResult for the component to display -- a pre-existing
+// architecture wrinkle (see the friendly-error-toast investigation), not
+// something this helper changes. Same shape as useShowError, but as a plain
+// function: services aren't components, so they can't use that hook and
+// instead reach the report-dialog controller via its module-level
+// singleton (registered by ReportErrorProvider on mount).
+function showServiceError(message: string): void {
+  showErrorToast({ message }, () => {
+    getReportErrorController()?.openReport({ message, eventId: getLastCapturedError()?.eventId });
+  });
+}
 
 export interface StorageService {
   uploadImages: (files: File[], userId: string, itemId: string) => Promise<string[]>;
@@ -65,7 +81,7 @@ class StorageServiceImpl implements StorageService {
       return uploadedUrls;
     } catch (error) {
       console.error("Image upload failed:", error);
-      toast.error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showServiceError(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       throw error;
     }
   }
@@ -110,7 +126,7 @@ class StorageServiceImpl implements StorageService {
       return urlData.publicUrl;
     } catch (error) {
       console.error("Message image upload failed:", error);
-      toast.error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showServiceError(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       throw error;
     }
   }
@@ -153,7 +169,7 @@ class StorageServiceImpl implements StorageService {
       return urlData.publicUrl;
     } catch (error) {
       console.error("Issue image upload failed:", error);
-      toast.error(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showServiceError(`Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`);
       throw error;
     }
   }
@@ -180,7 +196,7 @@ class StorageServiceImpl implements StorageService {
       return true;
     } catch (error) {
       console.error("Image deletion failed:", error);
-      toast.error(`Failed to delete image: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showServiceError(`Failed to delete image: ${error instanceof Error ? error.message : "Unknown error"}`);
       return false;
     }
   }
@@ -210,7 +226,7 @@ class StorageServiceImpl implements StorageService {
       return true;
     } catch (error) {
       console.error("Bulk image deletion failed:", error);
-      toast.error(`Failed to delete images: ${error instanceof Error ? error.message : "Unknown error"}`);
+      showServiceError(`Failed to delete images: ${error instanceof Error ? error.message : "Unknown error"}`);
       return false;
     }
   }

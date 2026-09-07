@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { AccountService } from "../services";
 import { BackBar } from "../components/BackBar";
+import { useShowError } from "../hooks/useShowError";
 
 // Danger-zone-only for now -- matches the "Account" frame in
 // design/Barter Nav Shell.dc.html, but only the section this pass builds.
@@ -12,6 +12,7 @@ import { BackBar } from "../components/BackBar";
 export const Account: React.FC = () => {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const showError = useShowError();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -21,7 +22,7 @@ export const Account: React.FC = () => {
       const { error } = await AccountService.deleteOwnAccount();
 
       if (error) {
-        toast.error(error.message || "Couldn't delete your account. Please try again.");
+        showError(error);
         return;
       }
 

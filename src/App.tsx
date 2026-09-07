@@ -26,6 +26,7 @@ import { Groups } from "./pages/Groups";
 import { GroupDetail } from "./pages/GroupDetail";
 import { GroupJoin } from "./pages/GroupJoin";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ReportErrorProvider } from "./contexts/ReportErrorContext";
 import { useEffect } from "react";
 import { identifyUser } from "./lib/analytics";
 import { GROUPS_ENABLED } from "./services/config";
@@ -223,7 +224,9 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <AppContent />
+      <ReportErrorProvider>
+        <AppContent />
+      </ReportErrorProvider>
     </AuthProvider>
   );
 };

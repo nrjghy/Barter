@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import toast from "react-hot-toast";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { GroupService } from "../services/groupService";
 import { shareGroupInvite } from "../utils/share";
+import { useShowError } from "../hooks/useShowError";
 
 interface InviteToGroupModalProps {
   groupId: string;
@@ -18,6 +18,7 @@ export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupId,
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [creatingInviteLink, setCreatingInviteLink] = useState(false);
+  const showError = useShowError();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +42,7 @@ export const InviteToGroupModal: React.FC<InviteToGroupModalProps> = ({ groupId,
     const result = await GroupService.createGroupInviteLink(groupId);
     setCreatingInviteLink(false);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       await shareGroupInvite(groupName, result.data!.token);
     }

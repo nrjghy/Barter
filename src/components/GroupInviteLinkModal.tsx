@@ -6,6 +6,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 import { useGroupInviteLinks } from "../hooks/useGroups";
 import { shareGroupInvite, copyToClipboard } from "../utils/share";
 import { GroupInviteLink } from "../services/groupService";
+import { useShowError } from "../hooks/useShowError";
 
 const APP_URL = "https://letsbarter.app";
 
@@ -19,13 +20,14 @@ const formatDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, 
 
 export const GroupInviteLinkModal: React.FC<GroupInviteLinkModalProps> = ({ groupId, groupName, onClose }) => {
   const { links, linksLoading, createLink, createLinkLoading, revokeLink, revokingLinkId } = useGroupInviteLinks(groupId);
+  const showError = useShowError();
 
   const activeLinks = links.filter((link) => !link.revokedAt);
 
   const handleCreate = async () => {
     const result = await createLink();
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     }
   };
 
@@ -40,7 +42,7 @@ export const GroupInviteLinkModal: React.FC<GroupInviteLinkModalProps> = ({ grou
   const handleRevoke = async (link: GroupInviteLink) => {
     const result = await revokeLink(link.id);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success("Invite link revoked");
     }

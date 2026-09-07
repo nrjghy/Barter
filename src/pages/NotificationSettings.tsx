@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 import { NotificationService } from "../services";
 import { BackBar } from "../components/BackBar";
+import { useShowError } from "../hooks/useShowError";
 
 type Category = "match" | "message" | "product_update" | "review_reminder" | "onboarding";
 
@@ -22,6 +22,7 @@ const TOGGLES: { category: Category; label: string; description: string }[] = [
 export const NotificationSettings: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const showError = useShowError();
   const [preferences, setPreferences] = useState<Record<string, Record<string, boolean>>>(
     user?.notificationPreferences ?? {}
   );
@@ -40,7 +41,7 @@ export const NotificationSettings: React.FC = () => {
 
     if (error) {
       setPreferences(previous);
-      toast.error(error.message || "Couldn't update that preference. Please try again.");
+      showError(error);
     } else if (data) {
       setPreferences(data);
     }

@@ -12,11 +12,13 @@ import { GroupInviteLinkModal } from "../components/GroupInviteLinkModal";
 import { useAuth } from "../hooks/useAuth";
 import { useGroup } from "../hooks/useGroups";
 import { pickAvatarPalette } from "../utils/avatar";
+import { useShowError } from "../hooks/useShowError";
 
 export const GroupDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const showError = useShowError();
   const {
     group,
     groupLoading,
@@ -69,7 +71,7 @@ export const GroupDetail: React.FC = () => {
     const result = await leaveGroup();
     setConfirmingLeave(false);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success("You left the group");
       navigate("/groups");
@@ -79,7 +81,7 @@ export const GroupDetail: React.FC = () => {
   const handleConfirmDelete = async () => {
     const result = await deleteGroup();
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       setConfirmingDelete(false);
       toast.success("Group deleted");
@@ -91,7 +93,7 @@ export const GroupDetail: React.FC = () => {
     if (!confirmingRemoveMember) return;
     const result = await removeMember(confirmingRemoveMember.id);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success(`${confirmingRemoveMember.username} removed from the group`);
     }
@@ -101,7 +103,7 @@ export const GroupDetail: React.FC = () => {
   const handleMakeModerator = async (member: { userId: string; username: string }) => {
     const result = await setModerator(member.userId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success(`${member.username} is now a moderator`);
     }
@@ -110,7 +112,7 @@ export const GroupDetail: React.FC = () => {
   const handleRemoveModerator = async (member: { userId: string; username: string }) => {
     const result = await removeModerator(member.userId);
     if (result.error) {
-      toast.error(result.error.message);
+      showError(result.error);
     } else {
       toast.success(`${member.username} is no longer a moderator`);
     }
@@ -350,7 +352,7 @@ export const GroupDetail: React.FC = () => {
                 if (transferIsForLeaving) {
                   const leaveResult = await leaveGroup();
                   if (leaveResult.error) {
-                    toast.error(leaveResult.error.message);
+                    showError(leaveResult.error);
                   } else {
                     toast.success("You left the group");
                     navigate("/groups");

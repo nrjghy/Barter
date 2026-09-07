@@ -11,6 +11,7 @@ import { toastInfo } from "../utils/toast";
 import { TradeCompletionService, NotificationService } from "../services";
 import type { ItemData } from "../services/types";
 import { trackEvent } from "../lib/analytics";
+import { useShowError } from "../hooks/useShowError";
 
 // Step 4a built the item picker + confirmation screen UI, matching the
 // approved mockup exactly (checklists, bottom-sheet confirm, dispute-date
@@ -128,6 +129,7 @@ export const MarkTradeComplete: React.FC = () => {
   const { connection, loading: connectionLoading } = useConnection(connectionId);
   const { items: myItems, loading: myItemsLoading } = useUserItems(user?.id);
   const { items: theirItems, loading: theirItemsLoading } = useUserItems(connection?.otherUser.id);
+  const showError = useShowError();
 
   // Passed by ChatThread's pinned-strip "Confirm Now" button as a flat
   // array of item ids covering both sides of the agreed offer -- absent
@@ -213,7 +215,7 @@ export const MarkTradeComplete: React.FC = () => {
       const { error } = await TradeCompletionService.completeTrade(connectionId, itemIds);
 
       if (error) {
-        toast.error(error.message || "Couldn't complete the trade. Please try again.");
+        showError(error);
         return;
       }
 

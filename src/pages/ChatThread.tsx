@@ -18,6 +18,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { InfoTooltip } from "../components/InfoTooltip";
 import { LocationSharePicker } from "../components/LocationSharePicker";
+import { useShowError } from "../hooks/useShowError";
 import { trackEvent } from "../lib/analytics";
 import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
@@ -383,6 +384,7 @@ export const ChatThread: React.FC = () => {
   const queryClient = useQueryClient();
   const { connection, loading: connectionLoading } = useConnection(connectionId);
   const { user } = useAuth();
+  const showError = useShowError();
   const { markConnectionOpened } = useConnections();
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
   // Shared across all four sendMessage call sites below -- computed once
@@ -446,7 +448,7 @@ export const ChatThread: React.FC = () => {
     try {
       const { error } = await acceptOffer(offerId);
       if (error) {
-        toast.error(error.message || "Couldn't accept this offer. Please try again.");
+        showError(error);
         return;
       }
       toast.success("Offer accepted!");
@@ -476,7 +478,7 @@ export const ChatThread: React.FC = () => {
     try {
       const { error } = await withdrawOffer(currentOffer.id);
       if (error) {
-        toast.error(error.message || "Couldn't withdraw this trade. Please try again.");
+        showError(error);
         return;
       }
       toast.success("Trade withdrawn");
@@ -497,7 +499,7 @@ export const ChatThread: React.FC = () => {
         disputeReason.trim() || undefined
       );
       if (error) {
-        toast.error(error.message || "Couldn't file the dispute. Please try again.");
+        showError(error);
         return;
       }
       toast.success("Dispute filed — a moderator will review it");
@@ -518,7 +520,7 @@ export const ChatThread: React.FC = () => {
     try {
       const { error } = await TradeCompletionService.approveGiveawayCompletion(user.id, approveTradeCompletionId);
       if (error) {
-        toast.error(error.message || "Couldn't approve this claim. Please try again.");
+        showError(error);
         return;
       }
       toast.success("Claim approved!");
@@ -699,7 +701,7 @@ export const ChatThread: React.FC = () => {
         selectedClaimItemId
       );
       if (error) {
-        toast.error(error.message || "Couldn't claim this item. Please try again.");
+        showError(error);
         return;
       }
       toast.success("Claimed! Waiting for the lister to approve.");
