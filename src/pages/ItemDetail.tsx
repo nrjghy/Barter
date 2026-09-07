@@ -6,7 +6,6 @@ import {
   Share2,
   MapPin,
   Calendar,
-  Tag,
   Star,
   ChevronLeft,
   ChevronRight,

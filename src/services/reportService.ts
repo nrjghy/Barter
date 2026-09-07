@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { ServiceResult, ServiceError, ReportData } from "./types";
+import { ServiceResult, ServiceError } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES, BUSINESS_RULES } from "./config";
 import { ValidationService } from "./validation";
 import { REPORT_REASONS } from "../types";

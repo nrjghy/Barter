@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
-import { ItemData, UserData, ServiceResult, ServiceError, PaginationOptions, FilterOptions } from "./types";
-import { APP_CONFIG, ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED, TABLES } from "./config";
+import { ItemData, UserData, ServiceResult, PaginationOptions, FilterOptions } from "./types";
+import { ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED, TABLES } from "./config";
 import { ValidationService } from "./validation";
 import { storageService } from "./storageService";
 
@@ -772,25 +772,6 @@ export class ItemService {
         },
       };
     }
-  }
-
-  /**
-   * Private helper methods
-   */
-  private static validateItemData(itemData: Omit<ItemData, "id">): ServiceError | null {
-    const titleError = ValidationService.validateItemTitle(itemData.title);
-    if (titleError) return titleError;
-
-    const descError = ValidationService.validateItemDescription(itemData.description);
-    if (descError) return descError;
-
-    const categoryError = ValidationService.validateRequired(itemData.category, "Category");
-    if (categoryError) return categoryError;
-
-    const conditionError = ValidationService.validateRequired(itemData.condition, "Condition");
-    if (conditionError) return conditionError;
-
-    return null;
   }
 
   /**

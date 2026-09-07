@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import { UserData, ServiceResult, ServiceError } from "./types";
+import { ServiceResult } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
 
@@ -209,7 +209,7 @@ export class UserService {
         return { error: usernameError };
       }
 
-      const { data, error } = await supabase.from(TABLES.USERS).select("id").eq("username", username).single();
+      const { error } = await supabase.from(TABLES.USERS).select("id").eq("username", username).single();
 
       if (error && error.code === "PGRST116") {
         return { data: true }; // Username is available

@@ -231,7 +231,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       // First check if user exists in users table
-      const { data: existingUser, error: fetchError } = await supabase
+      const { error: fetchError } = await supabase
         .from("users")
         .select("id")
         .eq("id", user.id)

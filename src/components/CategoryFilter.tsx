@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Filter, X, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Filter, X } from "lucide-react";
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from "../types";
 
 interface CategoryFilterProps {

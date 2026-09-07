@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bell, User, Menu, HelpCircle } from 'lucide-react';
+import { Bell, HelpCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNotifications } from '../hooks/useNotifications';
 import { useNavigate, useLocation } from 'react-router-dom';

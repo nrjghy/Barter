@@ -15,7 +15,6 @@ export const useResponses = () => {
 
   // Get responded items
   const {
-    data: respondedItemsData,
     isLoading: respondedItemsLoading,
     refetch: refetchRespondedItems,
   } = useQuery({
@@ -84,7 +83,7 @@ export const useResponses = () => {
         }
       }
     },
-    onError: (error, variables) => {
+    onError: (error) => {
       // On error, we might need to revert optimistic updates
       // This is handled in the Discover component now
       console.error("Response recording failed:", error);

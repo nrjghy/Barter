@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { PackageSearch } from "lucide-react";
 import { SwipeCard } from "./SwipeCard";
 import { LoadingSpinner } from "./LoadingSpinner";

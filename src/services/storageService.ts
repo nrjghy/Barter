@@ -59,7 +59,7 @@ class StorageServiceImpl implements StorageService {
         const fileName = this.generateFileName(file, userId, itemId, index);
         const filePath = `${userId}/${itemId}/${fileName}`;
 
-        const { data, error } = await supabase.storage.from(this.BUCKET_NAME).upload(filePath, file, {
+        const { error } = await supabase.storage.from(this.BUCKET_NAME).upload(filePath, file, {
           cacheControl: "3600",
           upsert: false,
         });
@@ -260,7 +260,7 @@ class StorageServiceImpl implements StorageService {
    * @param index - File index
    * @returns string - Generated filename
    */
-  private generateFileName(file: File, userId: string, itemId: string, index: number): string {
+  private generateFileName(file: File, _userId: string, _itemId: string, index: number): string {
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 15);
     const extension = file.name.split(".").pop() || "jpg";

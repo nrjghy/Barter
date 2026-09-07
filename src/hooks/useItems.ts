@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { ItemService, ItemWithUser } from "../services/itemService";
-import { ServiceResult, ItemData } from "../services/types";
+import { ServiceResult } from "../services/types";
 
 /**
  * Items belonging to a given user (any user, not just the current one).
