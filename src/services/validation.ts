@@ -1,4 +1,4 @@
-import { VALIDATION_RULES, ERROR_CODES, ERROR_MESSAGES } from "./config";
+import { VALIDATION_RULES, BUSINESS_RULES, ERROR_CODES, ERROR_MESSAGES } from "./config";
 import { ServiceError } from "./types";
 
 export class ValidationService {
@@ -169,7 +169,7 @@ export class ValidationService {
       };
     }
 
-    if (rating < VALIDATION_RULES.review.minRating || rating > VALIDATION_RULES.review.maxRating) {
+    if (rating < BUSINESS_RULES.review.minRating || rating > BUSINESS_RULES.review.maxRating) {
       return {
         code: ERROR_CODES.INVALID_RATING,
         message: ERROR_MESSAGES[ERROR_CODES.INVALID_RATING],
