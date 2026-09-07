@@ -7,10 +7,11 @@ import { TABLES } from '../services/config';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound, MapPin, Navigation, Camera, Star, X } from 'lucide-react';
+import { Eye, Trash2, Edit3, Search, ChevronLeft, ChevronRight, Shield, AlertCircle, Flag, MessageSquare, Tag, AlertTriangle, Users, Ban, ShieldCheck, ShieldOff, KeyRound, MapPin, Navigation, Camera, Star, X, Copy } from 'lucide-react';
 import { ITEM_CATEGORIES, ITEM_CONDITIONS } from '../types';
 import { AdminService, AdminUserRow, ItemService } from '../services';
 import { useShowError } from '../hooks/useShowError';
+import { copyToClipboard } from '../utils/share';
 
 // Curated dropdown list, mirrors AddEditItem.tsx -- not the full ISO 4217 list.
 const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CZK', 'HUF', 'RON', 'SEK', 'NOK', 'DKK', 'CHF', 'UAH'];
@@ -20,6 +21,34 @@ const CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CZK', 'HUF', 'RON', 'SEK', 'NOK
 type AdminPhotoItem = { type: 'existing'; url: string } | { type: 'new'; file: File; preview: string };
 
 type AdminTab = 'listings' | 'reports' | 'issues' | 'suggestions' | 'disputes' | 'users';
+
+const AdminDetailField: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div>
+    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</div>
+    <div className="text-sm text-gray-900 whitespace-pre-wrap break-words">{children}</div>
+  </div>
+);
+
+const formatFullTimestamp = (iso: string) => new Date(iso).toLocaleString();
+
+// An issue's description sometimes embeds technical details written by
+// IssueReportDialog's prefill (see ReportErrorContext/openReport) -- a
+// Sentry event ID and/or an ERROR_CODES-style token -- inline as plain
+// text, since `issues` has no dedicated jsonb column for this (see README).
+// Simple pattern match, not a real parser: a Sentry event ID is a 32-char
+// hex string, an error code is an UPPER_SNAKE_CASE token. Never throws --
+// a non-match just means no extract row renders.
+const SENTRY_EVENT_ID_PATTERN = /\b[0-9a-f]{32}\b/i;
+const ERROR_CODE_PATTERN = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/;
+
+function extractTechnicalTokens(description: string): { sentryEventId: string | null; errorCode: string | null } {
+  const sentryMatch = description.match(SENTRY_EVENT_ID_PATTERN);
+  const errorCodeMatch = description.match(ERROR_CODE_PATTERN);
+  return {
+    sentryEventId: sentryMatch ? sentryMatch[0] : null,
+    errorCode: errorCodeMatch ? errorCodeMatch[0] : null,
+  };
+}
 
 interface AdminListingRow {
   id: string;
@@ -151,6 +180,17 @@ export const AdminDashboard: React.FC = () => {
   const [disputes, setDisputes] = useState<AdminDisputeRow[]>([]);
   const [disputesLoading, setDisputesLoading] = useState(false);
   const [disputesError, setDisputesError] = useState<string | null>(null);
+
+  // Click-to-expand detail view, shared across the four raw-data tabs
+  // (Reports, Issues, Category Suggestions, Disputes) -- Listings and Users
+  // already have real interactivity and aren't part of this.
+  const [detailRow, setDetailRow] = useState<
+    | { tab: 'reports'; data: AdminReportRow }
+    | { tab: 'issues'; data: AdminIssueRow }
+    | { tab: 'suggestions'; data: AdminCategorySuggestionRow }
+    | { tab: 'disputes'; data: AdminDisputeRow }
+    | null
+  >(null);
 
   const [users, setUsers] = useState<AdminUserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -435,6 +475,23 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     setUsersPage(0);
   }, [usersSearch]);
+
+  useEffect(() => {
+    if (!detailRow) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDetailRow(null);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [detailRow]);
+
+  const handleCopyToken = async (label: string, value: string) => {
+    if (await copyToClipboard(value)) {
+      toast.success(`${label} copied`);
+    } else {
+      toast.error("Couldn't copy to clipboard");
+    }
+  };
 
   const handleResetPassword = async (row: AdminUserRow) => {
     const { error } = await resetPassword(row.email);
@@ -1328,7 +1385,11 @@ export const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reports.map((report) => (
-                      <tr key={report.id} className="hover:bg-gray-50">
+                      <tr
+                        key={report.id}
+                        onClick={() => setDetailRow({ tab: 'reports', data: report })}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{report.reason}</td>
                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{report.description || '—'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -1378,7 +1439,11 @@ export const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {issues.map((issue) => (
-                      <tr key={issue.id} className="hover:bg-gray-50">
+                      <tr
+                        key={issue.id}
+                        onClick={() => setDetailRow({ tab: 'issues', data: issue })}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           {issue.image_urls && issue.image_urls.length > 0 ? (
                             <img src={issue.image_urls[0]} alt="Attached" className="h-12 w-12 rounded-lg object-cover" />
@@ -1431,7 +1496,11 @@ export const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {suggestions.map((suggestion) => (
-                      <tr key={suggestion.id} className="hover:bg-gray-50">
+                      <tr
+                        key={suggestion.id}
+                        onClick={() => setDetailRow({ tab: 'suggestions', data: suggestion })}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate">{suggestion.title}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.category_suggestion}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{suggestion.owner?.username ?? '—'}</td>
@@ -1473,7 +1542,11 @@ export const AdminDashboard: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {disputes.map((dispute) => (
-                      <tr key={dispute.id} className="hover:bg-gray-50">
+                      <tr
+                        key={dispute.id}
+                        onClick={() => setDetailRow({ tab: 'disputes', data: dispute })}
+                        className="hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {dispute.connection?.user_1?.username ?? '—'} ↔ {dispute.connection?.user_2?.username ?? '—'}
                         </td>
@@ -1488,6 +1561,114 @@ export const AdminDashboard: React.FC = () => {
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {detailRow && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[oklch(20%_0.02_100_/_0.45)]" onClick={() => setDetailRow(null)} />
+            <div className="relative w-full max-w-lg bg-white rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-base font-extrabold text-[oklch(22%_0.02_100)]">
+                  {detailRow.tab === 'reports' && 'Report details'}
+                  {detailRow.tab === 'issues' && 'Issue details'}
+                  {detailRow.tab === 'suggestions' && 'Category suggestion details'}
+                  {detailRow.tab === 'disputes' && 'Dispute details'}
+                </div>
+                <button onClick={() => setDetailRow(null)} className="p-1.5 rounded-lg hover:bg-gray-100">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              {detailRow.tab === 'reports' && (
+                <div className="space-y-4">
+                  <AdminDetailField label="Reason">{detailRow.data.reason}</AdminDetailField>
+                  <AdminDetailField label="Status">{detailRow.data.status}</AdminDetailField>
+                  <AdminDetailField label="Description">{detailRow.data.description || '—'}</AdminDetailField>
+                  <AdminDetailField label="Reporter">{detailRow.data.reporter?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Reported user">{detailRow.data.reported_user?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Reported item">{detailRow.data.reported_item?.title ?? 'No item (user report)'}</AdminDetailField>
+                  <AdminDetailField label="Created">{formatFullTimestamp(detailRow.data.created_at)}</AdminDetailField>
+                </div>
+              )}
+
+              {detailRow.tab === 'issues' && (
+                <div className="space-y-4">
+                  <AdminDetailField label="Title">{detailRow.data.title}</AdminDetailField>
+                  <AdminDetailField label="Type">{detailRow.data.issue_type}</AdminDetailField>
+                  <AdminDetailField label="Status">{detailRow.data.status}</AdminDetailField>
+                  <AdminDetailField label="Description">
+                    {detailRow.data.description}
+                    {(() => {
+                      const { sentryEventId, errorCode } = extractTechnicalTokens(detailRow.data.description);
+                      if (!sentryEventId && !errorCode) return null;
+                      return (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {sentryEventId && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToken('Sentry event ID', sentryEventId)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-mono text-gray-700 hover:bg-gray-200"
+                            >
+                              <Copy className="w-3 h-3" /> {sentryEventId}
+                            </button>
+                          )}
+                          {errorCode && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyToken('Error code', errorCode)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100 text-xs font-mono text-gray-700 hover:bg-gray-200"
+                            >
+                              <Copy className="w-3 h-3" /> {errorCode}
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </AdminDetailField>
+                  <AdminDetailField label="Reporter">{detailRow.data.reporter?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Created">{formatFullTimestamp(detailRow.data.created_at)}</AdminDetailField>
+                  {detailRow.data.image_urls && detailRow.data.image_urls.length > 0 && (
+                    <AdminDetailField label={detailRow.data.image_urls.length > 1 ? 'Images' : 'Image'}>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {detailRow.data.image_urls.map((url) => (
+                          <a key={url} href={url} target="_blank" rel="noopener noreferrer">
+                            <img
+                              src={url}
+                              alt="Attached"
+                              className="max-h-80 w-auto rounded-lg object-contain border border-gray-200"
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </AdminDetailField>
+                  )}
+                </div>
+              )}
+
+              {detailRow.tab === 'suggestions' && (
+                <div className="space-y-4">
+                  <AdminDetailField label="Item title">{detailRow.data.title}</AdminDetailField>
+                  <AdminDetailField label="Suggested category">{detailRow.data.category_suggestion}</AdminDetailField>
+                  <AdminDetailField label="Owner">{detailRow.data.owner?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Created">{formatFullTimestamp(detailRow.data.created_at)}</AdminDetailField>
+                </div>
+              )}
+
+              {detailRow.tab === 'disputes' && (
+                <div className="space-y-4">
+                  <AdminDetailField label="Connection">
+                    {detailRow.data.connection?.user_1?.username ?? '—'} ↔ {detailRow.data.connection?.user_2?.username ?? '—'}
+                  </AdminDetailField>
+                  <AdminDetailField label="Completed by">{detailRow.data.completed_by_user?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Disputed by">{detailRow.data.disputed_by_user?.username ?? '—'}</AdminDetailField>
+                  <AdminDetailField label="Dispute reason">{detailRow.data.dispute_reason || '—'}</AdminDetailField>
+                  <AdminDetailField label="Trade completed at">{formatFullTimestamp(detailRow.data.completed_at)}</AdminDetailField>
+                  <AdminDetailField label="Disputed at">{formatFullTimestamp(detailRow.data.disputed_at)}</AdminDetailField>
+                  <AdminDetailField label="Dispute deadline">{formatFullTimestamp(detailRow.data.dispute_deadline)}</AdminDetailField>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
