@@ -489,7 +489,7 @@ export const Profile: React.FC = () => {
           {reviewsLoading ? (
             <LoadingSpinner />
           ) : reviewsError ? (
-            <div className="text-center py-8 text-red-600">Error loading reviews: {reviewsError.message}</div>
+            <div className="text-center py-8 text-red-600">Error loading reviews: {reviewsError}</div>
           ) : reviews.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -522,7 +522,7 @@ export const Profile: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-500">{new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
 
                 {review.comment && <p className="text-gray-700 mb-3">{review.comment}</p>}
