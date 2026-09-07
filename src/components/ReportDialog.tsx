@@ -14,7 +14,7 @@ interface ReportDialogProps {
 }
 
 export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, item }) => {
-  const { createReport, checkExistingReport, loading } = useReports();
+  const { createReport, canReportItem, createReportLoading } = useReports();
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [hasExistingReport, setHasExistingReport] = useState(false);
@@ -27,8 +27,8 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
   }, [isOpen, item]);
 
   const checkExisting = async () => {
-    const exists = await checkExistingReport(item.id);
-    setHasExistingReport(!!exists);
+    const canReport = await canReportItem(item.id);
+    setHasExistingReport(!canReport);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,8 +106,8 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden">
-                  {item.imageUrl && item.imageUrl.trim() !== "" ? (
-                    <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                  {item.imageUrls?.[0] && item.imageUrls?.[0].trim() !== "" ? (
+                    <img src={item.imageUrls?.[0]} alt={item.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-gray-200" />
                   )}
@@ -198,10 +198,10 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || !reason}
+                    disabled={createReportLoading || !reason}
                     className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
+                    {createReportLoading ? (
                       <LoadingSpinner />
                     ) : (
                       <>
