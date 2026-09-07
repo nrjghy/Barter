@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { ReportService } from "../services";
+import type { CreateReportData } from "../services/reportService";
 
 export const useReports = () => {
   const { user } = useAuth();
@@ -40,7 +41,7 @@ export const useReports = () => {
 
   // Create report mutation
   const createReport = useMutation({
-    mutationFn: ({ reportData }: { reportData: any }) => ReportService.createReport(reportData, user!.id),
+    mutationFn: ({ reportData }: { reportData: CreateReportData }) => ReportService.createReport(reportData, user!.id),
     onSuccess: () => {
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ["reports", user?.id] });
@@ -84,7 +85,7 @@ export const useReports = () => {
     reportStatsError: reportStatsError?.message,
 
     // Actions
-    createReport: (reportData: any) => createReport.mutateAsync({ reportData }),
+    createReport: (reportData: CreateReportData) => createReport.mutateAsync({ reportData }),
     createReportLoading: createReport.isPending,
     createReportError: createReport.error?.message,
 

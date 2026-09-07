@@ -41,8 +41,8 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
 
     try {
       const { error } = await createReport({
-        reported_item_id: item.id,
-        reported_user_id: item.userId,
+        reportedItemId: item.id,
+        reportedUserId: item.userId,
         reason,
         description: description.trim() || undefined,
       });
