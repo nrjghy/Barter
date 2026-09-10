@@ -10,7 +10,7 @@ export interface CreateOfferResult {
 
 export interface AcceptOfferResult {
   offerId: string;
-  autoCompleteAt: string;
+  agreedExpiresAt: string;
 }
 
 export interface WithdrawOfferResult {
@@ -34,7 +34,7 @@ export interface OfferSummary {
   status: OfferStatus;
   expiresAt: string;
   agreedAt: string | null;
-  autoCompleteAt: string | null;
+  agreedExpiresAt: string | null;
   items: OfferItemSummary[];
 }
 
@@ -45,7 +45,7 @@ const OFFER_SELECT = `
   status,
   expires_at,
   agreed_at,
-  auto_complete_at,
+  agreed_expires_at,
   offer_items ( item_id, offered_by, items ( title, image_urls ) )
 `;
 
@@ -56,7 +56,7 @@ interface OfferRow {
   status: OfferStatus;
   expires_at: string;
   agreed_at: string | null;
-  auto_complete_at: string | null;
+  agreed_expires_at: string | null;
   offer_items: Array<{
     item_id: string;
     offered_by: string;
@@ -72,7 +72,7 @@ function toOfferSummary(row: OfferRow): OfferSummary {
     status: row.status,
     expiresAt: row.expires_at,
     agreedAt: row.agreed_at,
-    autoCompleteAt: row.auto_complete_at,
+    agreedExpiresAt: row.agreed_expires_at,
     items: (row.offer_items || []).map((offerItem) => ({
       id: offerItem.item_id,
       title: offerItem.items?.title ?? "",
@@ -255,7 +255,7 @@ export class OfferService {
       return {
         data: {
           offerId: result.offerId,
-          autoCompleteAt: result.autoCompleteAt,
+          agreedExpiresAt: result.agreedExpiresAt,
         },
       };
     } catch (error) {

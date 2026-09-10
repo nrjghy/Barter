@@ -314,7 +314,7 @@ export interface Database {
           status: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
           expires_at: string;
           agreed_at: string | null;
-          auto_complete_at: string | null;
+          agreed_expires_at: string | null;
           trade_completion_id: string | null;
           superseded_by: string | null;
           reminder_sent_at: string | null;
@@ -327,7 +327,7 @@ export interface Database {
           status?: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
           expires_at: string;
           agreed_at?: string | null;
-          auto_complete_at?: string | null;
+          agreed_expires_at?: string | null;
           trade_completion_id?: string | null;
           superseded_by?: string | null;
           reminder_sent_at?: string | null;
@@ -340,7 +340,7 @@ export interface Database {
           status?: "pending" | "agreed" | "superseded" | "withdrawn" | "expired" | "completed";
           expires_at?: string;
           agreed_at?: string | null;
-          auto_complete_at?: string | null;
+          agreed_expires_at?: string | null;
           trade_completion_id?: string | null;
           superseded_by?: string | null;
           reminder_sent_at?: string | null;

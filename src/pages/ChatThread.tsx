@@ -336,7 +336,7 @@ const AgreedOfferStrip: React.FC<{
   onConfirmNow: () => void;
   onWithdraw: () => void;
 }> = ({ offer, currentUserId, onConfirmNow, onWithdraw }) => {
-  const countdown = useCountdownLabel(offer.autoCompleteAt);
+  const countdown = useCountdownLabel(offer.agreedExpiresAt);
   const myItems = offer.items.filter((i) => i.offeredBy === currentUserId);
   const theirItems = offer.items.filter((i) => i.offeredBy !== currentUserId);
   const summary = [myItems.map((i) => i.title).join(", "), theirItems.map((i) => i.title).join(", ")]
