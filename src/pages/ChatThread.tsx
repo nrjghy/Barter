@@ -351,10 +351,10 @@ const AgreedOfferStrip: React.FC<{
         </span>
         {countdown && (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-[oklch(45%_0.02_95)]">
-            Auto-completes in {countdown}
+            Auto-withdraws in {countdown}
             <InfoTooltip
-              text="If neither of you confirms or withdraws by then, this trade completes automatically and the items are marked traded."
-              label="Auto-complete"
+              text="If neither of you confirms or withdraws by then, this agreement is automatically withdrawn and the items become available to others again. You can still mark the trade complete afterward if it happened."
+              label="Auto-withdraw"
             />
           </span>
         )}
