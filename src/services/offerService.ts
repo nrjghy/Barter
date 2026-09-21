@@ -2,6 +2,7 @@ import { supabase } from "../lib/supabase";
 import { ServiceResult } from "./types";
 import { ERROR_CODES, ERROR_MESSAGES, TABLES } from "./config";
 import { ValidationService } from "./validation";
+import { trackEvent } from "../lib/analytics";
 
 export interface CreateOfferResult {
   offerId: string;
@@ -138,6 +139,8 @@ export class OfferService {
         };
       }
 
+      trackEvent("offer_created", { connectionId, offerId: result.offerId });
+
       return {
         data: {
           offerId: result.offerId,
@@ -203,6 +206,8 @@ export class OfferService {
         };
       }
 
+      trackEvent("offer_countered", { offerId: result.offerId, supersededOfferId: offerId });
+
       return {
         data: {
           offerId: result.offerId,
@@ -251,6 +256,8 @@ export class OfferService {
           },
         };
       }
+
+      trackEvent("offer_accepted", { offerId });
 
       return {
         data: {
@@ -302,6 +309,8 @@ export class OfferService {
           },
         };
       }
+
+      trackEvent("offer_withdrawn", { offerId });
 
       return {
         data: {
