@@ -212,6 +212,7 @@ export class ResponseService {
           matchCheckNeeded: result?.matchCheckNeeded || false,
           giveawayConnectionNeeded: result?.giveawayConnectionNeeded || false,
           curatorConnectionNeeded: result?.curatorConnectionNeeded || false,
+          responderHasItems: result?.responderHasItems,
         },
       };
     } catch (error) {

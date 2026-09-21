@@ -19,6 +19,9 @@ export interface ResponseResult {
   matchCheckNeeded: boolean;
   giveawayConnectionNeeded: boolean;
   curatorConnectionNeeded: boolean;
+  // Present only on real trade-item likes from non-system, non-curator owners.
+  // false = responder owns zero active items, so mutual-like matching can't resolve.
+  responderHasItems?: boolean;
 }
 
 export interface MatchData {

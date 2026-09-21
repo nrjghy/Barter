@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         chatHintDismissedAt: data.chat_hint_dismissed_at ?? undefined,
         myGroupsFilterHintDismissedAt: data.my_groups_filter_hint_dismissed_at ?? undefined,
         groupsHintDismissedAt: data.groups_hint_dismissed_at ?? undefined,
+        tradeBlockedHintDismissedAt: data.trade_blocked_hint_dismissed_at ?? undefined,
         rating: data.rating ?? undefined,
         createdAt: data.created_at ?? undefined,
         notificationPreferences: data.notification_preferences ?? undefined,
@@ -254,6 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             chat_hint_dismissed_at: updates.chatHintDismissedAt ?? user.chatHintDismissedAt,
             my_groups_filter_hint_dismissed_at: updates.myGroupsFilterHintDismissedAt ?? user.myGroupsFilterHintDismissedAt,
             groups_hint_dismissed_at: updates.groupsHintDismissedAt ?? user.groupsHintDismissedAt,
+            trade_blocked_hint_dismissed_at: updates.tradeBlockedHintDismissedAt ?? user.tradeBlockedHintDismissedAt,
           },
         ]);
 
@@ -282,6 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           chat_hint_dismissed_at: updates.chatHintDismissedAt,
           my_groups_filter_hint_dismissed_at: updates.myGroupsFilterHintDismissedAt,
           groups_hint_dismissed_at: updates.groupsHintDismissedAt,
+          trade_blocked_hint_dismissed_at: updates.tradeBlockedHintDismissedAt,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -8,7 +8,7 @@ import { SwipeInterface } from "../components/SwipeInterface";
 import { SwipeControls } from "../components/SwipeControls";
 import { ItemStatus } from "../components/ItemStatus";
 import { OnboardingHint } from "../components/OnboardingHint";
-import { useItems } from "../hooks/useItems";
+import { useItems, useUserItems } from "../hooks/useItems";
 import { useResponses } from "../hooks/useResponses";
 import { useAuth } from "../hooks/useAuth";
 import { useUserGroups, useBrowseScope } from "../hooks/useGroups";
@@ -19,6 +19,7 @@ import { useShowError } from "../hooks/useShowError";
 
 export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());
   // handleUndo loops through candidates sequentially, and undoResponseLoading
@@ -39,6 +40,20 @@ export const Discover: React.FC = () => {
   const [showMyGroupsFilterHint, setShowMyGroupsFilterHint] = useState(
     !!user && !user.myGroupsFilterHintDismissedAt
   );
+  const [tradeBlockedHintDismissed, setTradeBlockedHintDismissed] = useState(
+    !!user?.tradeBlockedHintDismissedAt
+  );
+  const { items: ownItems, loading: ownItemsLoading } = useUserItems(user?.id);
+  const hasZeroActiveItems =
+    !!user && !ownItemsLoading && !ownItems.some((i) => i.status === "active");
+  const showTradeBlockedHint = hasZeroActiveItems && !tradeBlockedHintDismissed;
+  const tradeBlockedHintTrackedRef = useRef(false);
+  useEffect(() => {
+    if (showTradeBlockedHint && !tradeBlockedHintTrackedRef.current) {
+      tradeBlockedHintTrackedRef.current = true;
+      trackEvent("trade_blocked_hint_shown", { surface: "hint" });
+    }
+  }, [showTradeBlockedHint]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
 
@@ -214,14 +229,38 @@ export const Discover: React.FC = () => {
       return nextIndex < availableItems.length ? nextIndex : prev;
     });
 
-    // Show immediate feedback
+    // Show immediate feedback. Toast id lets the blocked-message below
+    // replace this one in place once the RPC result is known.
     if (direction === "like") {
-      toast.success("Liked!");
+      toast.success("Liked!", { id: `like-${respondedItemId}` });
     }
 
     // Record response in background
     try {
-      await recordResponse({ itemId: respondedItemId, direction });
+      const result = await recordResponse({ itemId: respondedItemId, direction });
+
+      // responderHasItems is absent (not false) on system/curator/giveaway
+      // paths, so only an explicit false means matching is blocked.
+      if (direction === "like" && result.data?.responderHasItems === false) {
+        toast(
+          (t) => (
+            <span className="text-sm">
+              Liked! To be eligible for trade matches, list an item first.{" "}
+              <button
+                className="font-semibold underline"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                  navigate("/add");
+                }}
+              >
+                Add item
+              </button>
+            </span>
+          ),
+          { id: `like-${respondedItemId}`, duration: 8000, icon: "🔁" }
+        );
+        trackEvent("trade_blocked_hint_shown", { surface: "toast", itemId: respondedItemId });
+      }
 
       // PRD §17 core conversion funnel, step 3: Like/Pass. Tracked after
       // genuine success, not at the optimistic-UI point above, so a swipe
@@ -360,6 +399,15 @@ export const Discover: React.FC = () => {
         onDismiss={async () => {
           setShowDiscoverHint(false);
           await updateProfile({ discoverHintDismissedAt: new Date().toISOString() });
+        }}
+      />
+
+      <OnboardingHint
+        isOpen={showTradeBlockedHint}
+        text="You don't have any active items listed. List one to become eligible for trade matches — likes on trade items can't turn into matches until you do."
+        onDismiss={async () => {
+          setTradeBlockedHintDismissed(true);
+          await updateProfile({ tradeBlockedHintDismissedAt: new Date().toISOString() });
         }}
       />
 

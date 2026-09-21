@@ -13,6 +13,7 @@ export interface AuthUser {
   chatHintDismissedAt?: string;
   myGroupsFilterHintDismissedAt?: string;
   groupsHintDismissedAt?: string;
+  tradeBlockedHintDismissedAt?: string;
   rating?: number;
   createdAt?: string;
   defaultCurrency?: string;
