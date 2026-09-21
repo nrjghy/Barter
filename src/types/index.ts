@@ -80,6 +80,7 @@ export const REPORT_REASONS = [
   { value: "prohibited_item", label: "Prohibited Item" },
   { value: "spam", label: "Spam" },
   { value: "fake_listing", label: "Fake Listing" },
+  { value: "listing_unavailable", label: "No Longer Available" },
   { value: "offensive_language", label: "Offensive Language" },
   { value: "other", label: "Other" },
 ] as const;
