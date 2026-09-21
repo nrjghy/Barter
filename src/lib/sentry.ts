@@ -24,5 +24,11 @@ export function initSentry(): void {
     // Small pilot (10-15 people) -- capture everything rather than sample,
     // same philosophy as PostHog's unsampled session recording.
     tracesSampleRate: 1.0,
+    // Browser-extension noise: injected scripts reject with plain objects
+    // (no stack, no app network spans), e.g. JAVASCRIPT-REACT-2's
+    // {Id, MethodName, ParamCount}. Substring match covers every Id/
+    // MethodName/ParamCount variant. Kept narrow on purpose -- a blanket
+    // non-Error-rejection filter could mask real bugs later.
+    ignoreErrors: ["Object Not Found Matching Id"],
   });
 }
