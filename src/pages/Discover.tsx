@@ -20,7 +20,6 @@ import { useShowError } from "../hooks/useShowError";
 export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [respondedItems, setRespondedItems] = useState<Set<string>>(new Set());
   // handleUndo loops through candidates sequentially, and undoResponseLoading
   // genuinely goes false between each await -- a click during that gap
@@ -176,16 +175,12 @@ export const Discover: React.FC = () => {
     return items.filter((item) => !respondedItems.has(item.id));
   }, [items, respondedItems]);
 
-  // Ensure currentIndex is within bounds
-  const safeCurrentIndex = Math.min(currentIndex, Math.max(0, availableItems.length - 1));
-  const currentItem = availableItems[safeCurrentIndex];
-
-  // Auto-adjust currentIndex if it's out of bounds
-  React.useEffect(() => {
-    if (currentIndex !== safeCurrentIndex) {
-      setCurrentIndex(safeCurrentIndex);
-    }
-  }, [currentIndex, safeCurrentIndex]);
+  // availableItems already drops every responded item, so the card on
+  // screen is always its first entry. Do NOT also keep a separate advancing
+  // index: swiping both grows respondedItems (shifting the list left) and
+  // would bump the index, skipping an item on every swipe. Undo works the
+  // same way -- un-responding an item puts it back at the front.
+  const currentItem = availableItems[0];
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -219,15 +214,10 @@ export const Discover: React.FC = () => {
     // Optimistic UI update - update immediately
     setRespondedItems((prev) => new Set(prev).add(respondedItemId));
 
-    // Move to next item (increment instead of reset to 0)
-    setCurrentIndex((prev) => {
-      const nextIndex = prev + 1;
-      // If we've reached the end of available items, try to load more
-      if (nextIndex >= availableItems.length - 1 && hasMore && !loadingMore) {
-        loadMoreItems();
-      }
-      return nextIndex < availableItems.length ? nextIndex : prev;
-    });
+    // Prefetch the next page when few items remain after this swipe
+    if (availableItems.length - 1 <= 3 && hasMore && !loadingMore) {
+      loadMoreItems();
+    }
 
     // Show immediate feedback. Toast id lets the blocked-message below
     // replace this one in place once the RPC result is known.
@@ -286,9 +276,6 @@ export const Discover: React.FC = () => {
         return newSet;
       });
 
-      // Rollback currentIndex
-      setCurrentIndex((prev) => Math.max(0, prev - 1));
-
       if (error.message && error.message.includes("Daily like limit reached")) {
         toast.error(ERROR_MESSAGES[ERROR_CODES.LIKE_LIMIT_EXCEEDED]);
         return;
@@ -322,9 +309,6 @@ export const Discover: React.FC = () => {
             newSet.delete(candidateItemId);
             return newSet;
           });
-          if (currentIndex > 0) {
-            setCurrentIndex((prev) => prev - 1);
-          }
           toast.success("Undo successful!", { id: "undo-toast" });
           return;
         } catch (error) {
