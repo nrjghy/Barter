@@ -43,7 +43,8 @@ const OfferMessage: React.FC<{
   offer?: OfferSummary;
   onAccept: (offerId: string) => void;
   onModify: (offerId: string) => void;
-}> = ({ message, currentUserId, offer, onAccept, onModify }) => {
+  onWithdraw: (offerId: string) => void;
+}> = ({ message, currentUserId, offer, onAccept, onModify, onWithdraw }) => {
   const offerId = (message.data as { offerId?: string } | undefined)?.offerId;
 
   if (!offerId || !offer) {
@@ -55,6 +56,7 @@ const OfferMessage: React.FC<{
   }
 
   const canRespond = offer.status === "pending" && !!currentUserId && offer.proposedBy !== currentUserId;
+  const canWithdraw = offer.status === "pending" && !!currentUserId && offer.proposedBy === currentUserId;
   const myItems = offer.items.filter((i) => i.offeredBy === currentUserId);
   const theirItems = offer.items.filter((i) => i.offeredBy !== currentUserId);
 
@@ -88,6 +90,14 @@ const OfferMessage: React.FC<{
             Modify
           </button>
         </div>
+      )}
+      {canWithdraw && (
+        <button
+          onClick={() => onWithdraw(offerId)}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[oklch(50%_0.15_30_/_0.4)] text-[oklch(50%_0.15_30)] text-[11px] font-bold"
+        >
+          Withdraw
+        </button>
       )}
     </>
   );
@@ -132,6 +142,7 @@ const MessageBubble: React.FC<{
   offersById: Record<string, OfferSummary>;
   onAcceptOffer: (offerId: string) => void;
   onModifyOffer: (offerId: string) => void;
+  onWithdrawOffer: (offerId: string) => void;
 }> = ({
   message,
   isMine,
@@ -142,6 +153,7 @@ const MessageBubble: React.FC<{
   offersById,
   onAcceptOffer,
   onModifyOffer,
+  onWithdrawOffer,
 }) => {
   if (message.messageType === "system") {
     const curatorSourceUrl = (message.data as { sourceUrl?: string } | undefined)?.sourceUrl;
@@ -163,6 +175,7 @@ const MessageBubble: React.FC<{
             offer={offersById[offerId]}
             onAccept={onAcceptOffer}
             onModify={onModifyOffer}
+            onWithdraw={onWithdrawOffer}
           />
         </div>
       );
@@ -873,6 +886,7 @@ export const ChatThread: React.FC = () => {
               offersById={offersById}
               onAcceptOffer={handleAcceptOffer}
               onModifyOffer={handleModifyOffer}
+              onWithdrawOffer={() => setWithdrawConfirmOpen(true)}
             />
           ))}
         <div ref={bottomRef} />
