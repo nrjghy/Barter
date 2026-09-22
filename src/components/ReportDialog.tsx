@@ -140,7 +140,13 @@ export const ReportDialog: React.FC<ReportDialogProps> = ({ isOpen, onClose, ite
                     Why are you reporting this listing? *
                   </label>
                   <div className="space-y-2">
-                    {REPORT_REASONS.map(({ value, label }) => (
+                    {/* "listing_unavailable" is deliberately excluded here --
+                        it's now a one-click "No longer available" action in
+                        ItemDetail's "..." menu, so it doesn't need to also be
+                        a reason in this form. Still a valid reason value for
+                        reportService's validation and for existing reports
+                        filed with it, just not offered as a choice here. */}
+                    {REPORT_REASONS.filter(({ value }) => value !== "listing_unavailable").map(({ value, label }) => (
                       <label
                         key={value}
                         className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"

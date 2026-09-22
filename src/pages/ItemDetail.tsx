@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useResponses } from "../hooks/useResponses";
+import { useReports } from "../hooks/useReports";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { ReportDialog } from "../components/ReportDialog";
@@ -35,6 +36,7 @@ export const ItemDetail: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { recordResponse } = useResponses();
+  const { createReport } = useReports();
   const showError = useShowError();
 
   const [item, setItem] = useState<ItemWithUser | null>(null);
@@ -109,6 +111,30 @@ export const ItemDetail: React.FC = () => {
       await shareItem(item);
     }
     setShowMoreMenu(false);
+  };
+
+  // One-click version of the "listing_unavailable" report reason, promoted
+  // out of ReportDialog's reason list into its own "..." menu action (see
+  // ReportDialog.tsx). Reuses the exact same report pipeline -- same table,
+  // same per-item duplicate-report check server-side in reportService.ts --
+  // just skips the dialog and description field.
+  const handleNoLongerAvailable = async () => {
+    if (!item) return;
+    setShowMoreMenu(false);
+    try {
+      const { error } = await createReport({
+        reportedItemId: item.id,
+        reportedUserId: item.userId,
+        reason: "listing_unavailable",
+      });
+      if (error) {
+        toast.error(error.message || "Failed to report this listing");
+      } else {
+        toast.success("Thanks, we'll take a look");
+      }
+    } catch (error) {
+      toast.error("Failed to report this listing");
+    }
   };
 
   const handleConfirmStillAvailable = async () => {
@@ -284,16 +310,25 @@ export const ItemDetail: React.FC = () => {
                         )}
                       </>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setShowReportDialog(true);
-                          setShowMoreMenu(false);
-                        }}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
-                      >
-                        <Flag className="w-4 h-4" />
-                        <span>Report</span>
-                      </button>
+                      <>
+                        <button
+                          onClick={handleNoLongerAvailable}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors"
+                        >
+                          <AlertCircle className="w-4 h-4 text-gray-600" />
+                          <span>No longer available</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setShowReportDialog(true);
+                            setShowMoreMenu(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 transition-colors text-red-600"
+                        >
+                          <Flag className="w-4 h-4" />
+                          <span>Report Listing</span>
+                        </button>
+                      </>
                     )}
                   </motion.div>
                 )}
