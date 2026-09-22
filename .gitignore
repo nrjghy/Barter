@@ -25,3 +25,6 @@ dist-ssr
 .env
 supabase/.temp/
 .playwright-mcp/
+
+# Standalone barter-sourcing-agent repo lives here but is its own separate git repo, not part of this one
+barter-sourcing-agent/
