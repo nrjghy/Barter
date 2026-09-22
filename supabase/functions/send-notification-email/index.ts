@@ -103,7 +103,18 @@ interface NotificationRow {
   type: string;
   title: string;
   content: string;
-  data: { actionPath?: string; actionLabel?: string; emailBody?: string } | null;
+  data: {
+    actionPath?: string;
+    actionLabel?: string;
+    emailBody?: string;
+    // Optional list of additional plain inline links (e.g. several item
+    // links in one broadcast). Rendered the same way as actionPath/
+    // actionLabel below -- plain inline text, no button, no box -- so a
+    // multi-link broadcast stays within the plain, text-dominant design
+    // the sixth revision moved to for Promotions-tab avoidance. Additive:
+    // existing single-actionPath notification types are unaffected.
+    links?: { label: string; url: string }[];
+  } | null;
 }
 
 interface WebhookPayload {
@@ -196,6 +207,13 @@ Deno.serve(async (req: Request) => {
       ? `<p style="margin: 0 0 16px 0; font-size: 15px; line-height: 1.6;"><a href="${escapeHtml(actionUrl)}" style="color:#1D5B2B;">${escapeHtml(actionLabel)}</a></p>`
       : "";
 
+    const linksHtml = (notification.data?.links ?? [])
+      .map(
+        (link) =>
+          `<p style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.6;"><a href="${escapeHtml(link.url)}" style="color:#1D5B2B;">${escapeHtml(link.label)}</a></p>`
+      )
+      .join("");
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -207,6 +225,7 @@ Deno.serve(async (req: Request) => {
   <div style="max-width: 480px; margin: 0 auto; padding: 24px 20px;">
     <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; line-height: 1.5;">${escapeHtml(notification.title)}</p>
     ${renderContentHtml(notification.data?.emailBody ?? notification.content)}
+    ${linksHtml}
     ${actionLinkHtml}
     <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">&mdash; Barter</p>
     <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
