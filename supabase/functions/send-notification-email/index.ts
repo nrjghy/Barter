@@ -114,6 +114,13 @@ interface NotificationRow {
     // the sixth revision moved to for Promotions-tab avoidance. Additive:
     // existing single-actionPath notification types are unaffected.
     links?: { label: string; url: string }[];
+    // Optional trailing content rendered after linksHtml (paragraphs/
+    // bullets, same rules as emailBody/content via renderContentHtml).
+    // Needed because emailBody/content and linksHtml were the only two
+    // blocks before this -- anything that has to read *after* the item
+    // links (a caveat, a closing line) had nowhere to go. Additive: absent
+    // for every existing notification type, so unaffected.
+    emailBodyAfter?: string;
   } | null;
 }
 
@@ -226,8 +233,9 @@ Deno.serve(async (req: Request) => {
     <p style="margin: 0 0 16px 0; font-size: 15px; font-weight: 700; line-height: 1.5;">${escapeHtml(notification.title)}</p>
     ${renderContentHtml(notification.data?.emailBody ?? notification.content)}
     ${linksHtml}
+    ${notification.data?.emailBodyAfter ? renderContentHtml(notification.data.emailBodyAfter) : ""}
     ${actionLinkHtml}
-    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">&mdash; Barter</p>
+    <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.6; color:#6b7280;">Barter</p>
     <p style="margin: 12px 0 0 0; font-size: 12px; line-height: 1.6; color:#9ca3af;">
       <a href="https://letsbarter.app/invite.html" style="color:#9ca3af;">Invite a friend</a> &middot; <a href="https://letsbarter.app/notification-settings" style="color:#9ca3af;">Manage email preferences</a>
     </p>
