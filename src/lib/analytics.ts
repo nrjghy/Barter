@@ -17,6 +17,7 @@ import posthog from "posthog-js";
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com";
 
+// Guards against double-initializing posthog-js (e.g. React StrictMode remounts).
 let initialized = false;
 
 export function initAnalytics(): void {
