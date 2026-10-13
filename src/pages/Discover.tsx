@@ -132,7 +132,7 @@ export const Discover: React.FC = () => {
   const { items, loading, error, hasMore, loadMoreItems, refetch, loadingMore } = useItems({
     categories: selectedCategories.length > 0 ? selectedCategories : undefined,
     conditions: selectedConditions.length > 0 ? selectedConditions : undefined,
-    radius: radius !== 50 ? radius : undefined,
+    radius,
     minValue: minValue !== "" ? minValue : undefined,
     maxValue: maxValue !== "" ? maxValue : undefined,
     maxAge: maxAge !== 30 ? maxAge : undefined,
