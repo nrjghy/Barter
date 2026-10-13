@@ -186,13 +186,13 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Search Radius</h3>
             <div className="space-y-4">
               <div className="flex justify-between text-sm text-gray-600">
-                <span>0 km</span>
+                <span>1 km</span>
                 <span className="font-medium text-barter-600">{localRadius} km</span>
                 <span>100 km</span>
               </div>
               <input
                 type="range"
-                min="0"
+                min="1"
                 max="100"
                 value={localRadius}
                 onChange={(e) => setLocalRadius(Number(e.target.value))}
