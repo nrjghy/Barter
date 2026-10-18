@@ -3,6 +3,8 @@ import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
 import { Heart, X, MapPin, Clock, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ItemWithUser } from "../services/itemService";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
+import { ListingLanguageSwitch } from "./ListingLanguageSwitch";
 
 interface SwipeCardProps {
   item: ItemWithUser;
@@ -12,6 +14,8 @@ interface SwipeCardProps {
 
 export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) => {
   const navigate = useNavigate();
+  const { getText } = useListingLanguage();
+  const text = getText(item);
   const [exitX, setExitX] = useState(0);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-25, 25]);
@@ -87,7 +91,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
         {/* Image */}
         <div className="absolute inset-0 bg-gradient-to-br from-barter-50 to-barter-100 overflow-hidden">
           {item.imageUrls && item.imageUrls.length > 0 && item.imageUrls[0]?.trim() !== "" ? (
-            <img src={item.imageUrls[0]} alt={item.title} className="w-full h-full object-cover object-top" draggable={false} />
+            <img src={item.imageUrls[0]} alt={text.title} className="w-full h-full object-cover object-top" draggable={false} />
           ) : (
             <div className="w-full h-full bg-gray-100" />
           )}
@@ -109,7 +113,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
           <div className="mb-3">
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-1 line-clamp-1">{item.title}</h3>
+                <h3 lang={text.lang} className="text-xl font-bold text-white mb-1 line-clamp-1">{text.title}</h3>
                 <p className="text-barter-200 font-medium">{item.category}</p>
               </div>
               <div className="flex items-center text-white/70 text-sm ml-4">
@@ -118,7 +122,16 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
               </div>
             </div>
 
-            {item.description && <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>}
+            {text.description && (
+              <p lang={text.lang} className="text-white/80 text-sm line-clamp-2">
+                {text.description}
+              </p>
+            )}
+            {text.translated && (
+              <div className="mt-2">
+                <ListingLanguageSwitch item={item} variant="card" />
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-white/20">
