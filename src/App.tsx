@@ -27,6 +27,7 @@ import { GroupDetail } from "./pages/GroupDetail";
 import { GroupJoin } from "./pages/GroupJoin";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ReportErrorProvider } from "./contexts/ReportErrorContext";
+import { ListingLanguageProvider } from "./contexts/ListingLanguageContext";
 import { useEffect } from "react";
 import { identifyUser } from "./lib/analytics";
 import { GROUPS_ENABLED } from "./services/config";
@@ -225,7 +226,9 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <ReportErrorProvider>
-        <AppContent />
+        <ListingLanguageProvider>
+          <AppContent />
+        </ListingLanguageProvider>
       </ReportErrorProvider>
     </AuthProvider>
   );
