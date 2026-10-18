@@ -30,6 +30,8 @@ import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { shareItem } from "../utils/share";
 import { useShowError } from "../hooks/useShowError";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
+import { ListingLanguageSwitch } from "../components/ListingLanguageSwitch";
 
 export const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +40,7 @@ export const ItemDetail: React.FC = () => {
   const { recordResponse } = useResponses();
   const { createReport } = useReports();
   const showError = useShowError();
+  const { getText } = useListingLanguage();
 
   const [item, setItem] = useState<ItemWithUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +51,9 @@ export const ItemDetail: React.FC = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const [stillAvailableConfirmed, setStillAvailableConfirmed] = useState(false);
   const [confirmingStillAvailable, setConfirmingStillAvailable] = useState(false);
+
+  // Title/description in the language currently chosen for this listing
+  const itemText = item ? getText(item) : undefined;
 
   // Get images from the item data
   const itemImages = item?.imageUrls && item.imageUrls.length > 0 ? item.imageUrls : [];
@@ -73,7 +79,12 @@ export const ItemDetail: React.FC = () => {
 
       setItem(result.data);
       // PRD §17 core conversion funnel, step 2: item detail view.
-      trackEvent("item_detail_viewed", { itemId: result.data.id });
+      const shown = getText(result.data);
+      trackEvent("item_detail_viewed", {
+        itemId: result.data.id,
+        translated: shown.translated,
+        showing: shown.translated ? (shown.showingEnglish ? "english" : "original") : undefined,
+      });
     } catch (error) {
       console.error("Error fetching item:", error);
       setError("Failed to load item details");
@@ -444,7 +455,7 @@ export const ItemDetail: React.FC = () => {
           >
             {/* Title and Category */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{item.title}</h1>
+              <h1 lang={itemText?.lang} className="text-3xl font-bold text-gray-900 mb-2">{itemText?.title ?? item.title}</h1>
               <div className="flex items-center space-x-3">
                 <span className="bg-barter-100 text-barter-700 px-3 py-1 rounded-full text-sm font-medium">
                   {item.category}
@@ -462,6 +473,11 @@ export const ItemDetail: React.FC = () => {
               )}
               {user?.id === item.userId && visibilityLabel && (
                 <div className="text-gray-500 text-sm mt-2">{visibilityLabel}</div>
+              )}
+              {itemText?.translated && (
+                <div className="mt-3">
+                  <ListingLanguageSwitch item={item} variant="detail" />
+                </div>
               )}
             </div>
 
@@ -491,7 +507,9 @@ export const ItemDetail: React.FC = () => {
             {item.description && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-700 leading-relaxed">{item.description}</p>
+                <p lang={itemText?.lang} className="text-gray-700 leading-relaxed">
+                  {itemText?.description ?? item.description}
+                </p>
               </div>
             )}
 
