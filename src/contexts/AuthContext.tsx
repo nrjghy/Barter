@@ -44,6 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         longitude: data.longitude ?? undefined,
         avatar_url: data.avatar_url || undefined,
         defaultCurrency: data.default_currency ?? undefined,
+        showListingsInEnglish: data.show_listings_in_english ?? null,
         role: data.role || "user",
         locationPromptDismissedAt: data.location_prompt_dismissed_at ?? undefined,
         discoverHintDismissedAt: data.discover_hint_dismissed_at ?? undefined,
@@ -278,6 +279,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           longitude: updates.longitude,
           avatar_url: updates.avatar_url,
           default_currency: updates.defaultCurrency,
+          // undefined is dropped from the request; null (set back to automatic) is sent.
+          show_listings_in_english: updates.showListingsInEnglish,
           location_prompt_dismissed_at: updates.locationPromptDismissedAt,
           discover_hint_dismissed_at: updates.discoverHintDismissedAt,
           my_stuff_hint_dismissed_at: updates.myStuffHintDismissedAt,
