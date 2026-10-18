@@ -11,3 +11,6 @@ verify_jwt = true
 
 [functions.reverse-geocode]
 verify_jwt = true
+
+[functions.translate-item]
+verify_jwt = true
