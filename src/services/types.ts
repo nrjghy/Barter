@@ -65,6 +65,13 @@ export interface ItemData {
   // getUserItems when GROUPS_ENABLED -- absent elsewhere rather than an
   // empty array standing in for "not fetched".
   groupNames?: string[];
+  // Automatic English translation, stored beside the original text (never
+  // replacing it). originalLanguage is an ISO 639-1 code once processed, and
+  // undefined while the translation is still pending. titleEn/descriptionEn
+  // are undefined when the original is already English or still pending.
+  originalLanguage?: string;
+  titleEn?: string;
+  descriptionEn?: string;
 }
 
 export interface UserData {
