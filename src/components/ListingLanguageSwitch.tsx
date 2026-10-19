@@ -21,21 +21,41 @@ export const ListingLanguageSwitch: React.FC<ListingLanguageSwitchProps> = ({ it
   const originalName = nativeLanguageName(originalCode);
 
   if (variant === "card") {
+    // Compact EN | PL pill. Both options are always visible, so no extra label line is needed;
+    // the "Translated automatically from ..." note stays on the detail page.
+    const cardOptions = [
+      { label: "EN", name: "English", lang: "en", english: true },
+      { label: originalCode.toUpperCase(), name: originalName, lang: originalCode, english: false },
+    ];
     return (
-      <div className="flex items-center gap-2 text-xs text-white/80">
-        {showingEnglish && <span className="font-medium">Auto-translated</span>}
-        {showingEnglish && <span aria-hidden="true">·</span>}
-        <button
-          type="button"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            setItemShowEnglish(item, !showingEnglish, "card");
-          }}
-          className="underline underline-offset-2 font-semibold text-white"
-        >
-          {showingEnglish ? "Show original" : "Show English"}
-        </button>
+      <div
+        role="group"
+        aria-label="Listing language"
+        className="shrink-0 inline-grid grid-cols-2 gap-0.5 p-0.5 bg-white/15 border border-white/20 rounded-full"
+      >
+        {cardOptions.map((option) => {
+          const active = option.english === showingEnglish;
+          return (
+            <button
+              key={option.lang}
+              type="button"
+              lang={option.lang}
+              title={option.name}
+              aria-label={option.name}
+              aria-pressed={active}
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!active) setItemShowEnglish(item, option.english, "card");
+              }}
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                active ? "bg-white text-barter-800" : "text-white/80"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
     );
   }
