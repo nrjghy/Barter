@@ -1,18 +1,27 @@
-// Server-side reverse geocoding proxy for LocationPrompt.tsx and Profile.tsx's
-// getCurrentLocation(). Nominatim's usage policy requires an identifying
-// User-Agent header, but browsers (Chrome specifically) silently drop custom
-// User-Agent values set via fetch() -- so this can't be called directly from
-// the browser. This function proxies the request server-side instead, where
-// no such restriction applies.
+// Server-side reverse geocoding proxy for LocationPrompt.tsx, Profile.tsx's
+// getCurrentLocation(), AddEditItem.tsx and the admin dashboard. It is called
+// directly from the browser via supabase.functions.invoke(), so it handles CORS
+// explicitly (Supabase does not add it automatically to Edge Functions), and it
+// keeps the geocoding API key server-side.
 //
-// This is the first Edge Function in this codebase invoked directly from the
-// browser via supabase.functions.invoke(), rather than browser-navigated
-// (item-preview) or webhook-invoked (send-notification-email) -- neither of
-// those needed CORS, since Supabase does not add it automatically to Edge
-// Functions. This one does, so it's handled explicitly below.
+// Provider: LocationIQ (same LOCATIONIQ_API_KEY secret as places-autocomplete).
+// Until October 2026 this called nominatim.openstreetmap.org directly. On
+// 2026-10-19 Nominatim began answering every request from Supabase's edge with
+// "403 Access denied" (see operations.osmfoundation.org/policies/nominatim/),
+// on both Barter2 and Barter-dev, so this function returned 502 and the app
+// fell back to "Unknown location" and the default currency. The response
+// contract below ({ location, countryCode }) is unchanged, so no frontend
+// change was needed.
 //
-// No Supabase client / database access needed here -- this function only
-// proxies to Nominatim and returns a formatted display string.
+// countryCode is the ISO 3166-1 alpha-2 code uppercased (e.g. "PL"). It powers
+// users.default_currency, derived client-side via the country-to-currency
+// package, so a Poland-based signup defaults to PLN.
+//
+// normalizecity=1 asks LocationIQ to fill a missing `city` from the next
+// available element (district, town, village, municipality and so on); the
+// fallback chain in formatLocation() still covers anything left over.
+//
+// No Supabase client / database access needed here.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,20 +29,21 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-interface NominatimAddress {
+interface GeocodeAddress {
   city?: string;
   town?: string;
   village?: string;
   municipality?: string;
   county?: string;
   country?: string;
+  country_code?: string;
 }
 
-interface NominatimResponse {
-  address?: NominatimAddress;
+interface GeocodeResponse {
+  address?: GeocodeAddress;
 }
 
-function formatLocation(address: NominatimAddress | undefined): string {
+function formatLocation(address: GeocodeAddress | undefined): string {
   const place = address?.city ?? address?.town ?? address?.village ?? address?.municipality ?? address?.county;
 
   if (place && address?.country) return `${place}, ${address.country}`;
@@ -57,29 +67,43 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+    const apiKey = Deno.env.get("LOCATIONIQ_API_KEY");
+    if (!apiKey) {
+      console.error("reverse-geocode: LOCATIONIQ_API_KEY not set");
+      return new Response(JSON.stringify({ error: "not_configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // Without Accept-Language, Nominatim returns names in the local language
+    // Without accept-language the provider returns names in the local language
     // of the area (e.g. "Warszawa, Polska" for a Poland pilot), not English.
-    const nominatimResponse = await fetch(nominatimUrl, {
-      headers: {
-        "User-Agent": "Barter/1.0 (nrj.ghy@gmail.com)",
-        "Accept-Language": "en",
-      },
+    const params = new URLSearchParams({
+      key: apiKey,
+      lat: String(lat),
+      lon: String(lng),
+      format: "json",
+      addressdetails: "1",
+      normalizecity: "1",
+      "accept-language": "en",
     });
 
-    if (!nominatimResponse.ok) {
-      console.error("reverse-geocode: Nominatim error", { status: nominatimResponse.status });
+    const geocodeResponse = await fetch(`https://api.locationiq.com/v1/reverse?${params.toString()}`);
+
+    if (!geocodeResponse.ok) {
+      // Log the status only: the request URL contains the API key.
+      console.error("reverse-geocode: LocationIQ error", { status: geocodeResponse.status });
       return new Response(JSON.stringify({ error: "geocoding_failed" }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const data: NominatimResponse = await nominatimResponse.json();
+    const data: GeocodeResponse = await geocodeResponse.json();
     const location = formatLocation(data.address);
+    const countryCode = data.address?.country_code ? data.address.country_code.toUpperCase() : null;
 
-    return new Response(JSON.stringify({ location }), {
+    return new Response(JSON.stringify({ location, countryCode }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
