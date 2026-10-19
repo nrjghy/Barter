@@ -16,6 +16,8 @@ import toast from "react-hot-toast";
 import { trackEvent } from "../lib/analytics";
 import { ERROR_CODES, ERROR_MESSAGES, GROUPS_ENABLED } from "../services/config";
 import { useShowError } from "../hooks/useShowError";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
+import { hasTranslation } from "../utils/listingLanguage";
 
 export const Discover: React.FC = () => {
   const { user, updateProfile } = useAuth();
@@ -30,6 +32,7 @@ export const Discover: React.FC = () => {
   const [showGroupPicker, setShowGroupPicker] = useState(false);
   const [pendingGroupIds, setPendingGroupIds] = useState<string[]>([]);
   const showError = useShowError();
+  const { getText, setBulkShowEnglish } = useListingLanguage();
 
   // PRD §17 core conversion funnel, step 1: Discover landing.
   useEffect(() => {
@@ -181,6 +184,11 @@ export const Discover: React.FC = () => {
   // would bump the index, skipping an item on every swipe. Undo works the
   // same way -- un-responding an item puts it back at the front.
   const currentItem = availableItems[0];
+
+  // Language switch for all listings at once. Only offered when at least one
+  // loaded listing has an automatic translation; its state mirrors that listing.
+  const translatedSample = availableItems.find(hasTranslation);
+  const bulkShowingEnglish = translatedSample ? getText(translatedSample).showingEnglish : true;
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -453,6 +461,34 @@ export const Discover: React.FC = () => {
           }}
         />
       </div>
+      )}
+
+      {translatedSample && (
+        <div className="flex items-center justify-end gap-2 mb-3">
+          <span className="text-xs text-[oklch(50%_0.02_95)]">Listing language</span>
+          <div role="group" aria-label="Listing language for all listings" className="grid grid-cols-2 gap-0.5 p-0.5 bg-[oklch(93%_0.01_95)] rounded-lg">
+            {[
+              { label: "English", english: true },
+              { label: "Original", english: false },
+            ].map((option) => (
+              <button
+                key={option.label}
+                type="button"
+                aria-pressed={bulkShowingEnglish === option.english}
+                onClick={() => {
+                  if (bulkShowingEnglish !== option.english) setBulkShowEnglish(option.english);
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors ${
+                  bulkShowingEnglish === option.english
+                    ? "bg-white text-[oklch(22%_0.02_100)] shadow-sm"
+                    : "text-[oklch(50%_0.02_95)]"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <AnimatePresence>

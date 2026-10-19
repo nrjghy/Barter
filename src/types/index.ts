@@ -17,6 +17,9 @@ export interface AuthUser {
   rating?: number;
   createdAt?: string;
   defaultCurrency?: string;
+  // Account-level listing language. true = always English, false = always the
+  // original language, null/undefined = automatic (follow the browser language).
+  showListingsInEnglish?: boolean | null;
   notificationPreferences?: Record<string, Record<string, boolean>>;
 }
 

@@ -8,6 +8,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { BackBar } from "../components/BackBar";
 import { UserService, UserProfile } from "../services/userService";
 import type { ItemData } from "../services/types";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
 
 // Read-only counterpart to MyStuff's ListingRow -- that component is built
 // entirely around owner actions (Edit/Cancel/Relist, status badges) and
@@ -16,12 +17,14 @@ import type { ItemData } from "../services/types";
 // (see the filter in UserListings below), so no status badge is needed.
 const ListingCard: React.FC<{ item: ItemData; onOpen: () => void }> = ({ item, onOpen }) => {
   const thumbnail = item.imageUrls?.[0];
+  const { getText } = useListingLanguage();
+  const text = getText(item);
 
   return (
     <button onClick={onOpen} className="text-left">
       <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-200">
         {thumbnail ? (
-          <img src={thumbnail} alt={item.title} className="w-full h-full object-cover" />
+          <img src={thumbnail} alt={text.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-8 h-8 text-gray-400" />
@@ -34,7 +37,9 @@ const ListingCard: React.FC<{ item: ItemData; onOpen: () => void }> = ({ item, o
         )}
       </div>
       <div className="mt-2">
-        <div className="text-sm font-semibold text-gray-900 truncate">{item.title}</div>
+        <div lang={text.lang} className="text-sm font-semibold text-gray-900 truncate">
+          {text.title}
+        </div>
         <div className="text-xs text-gray-500">{item.condition}</div>
       </div>
     </button>

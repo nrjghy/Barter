@@ -4,17 +4,46 @@ import { useAuth } from "../hooks/useAuth";
 import { AccountService } from "../services";
 import { BackBar } from "../components/BackBar";
 import { useShowError } from "../hooks/useShowError";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
+import { trackEvent } from "../lib/analytics";
 
-// Danger-zone-only for now -- matches the "Account" frame in
-// design/Barter Nav Shell.dc.html, but only the section this pass builds.
+// Listing language setting, then the danger zone -- the danger zone matches the
+// "Account" frame in design/Barter Nav Shell.dc.html.
 // Password change already exists (Profile.tsx's modal, wired to
 // AuthContext.updatePassword) and isn't touched here.
 export const Account: React.FC = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user, signOut, updateProfile } = useAuth();
+  const { clearOverrides } = useListingLanguage();
   const showError = useShowError();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [savingLanguage, setSavingLanguage] = useState(false);
+
+  // null = automatic (follow the browser language), true = English, false = original language.
+  const languageOptions: { label: string; hint: string; value: boolean | null; key: string }[] = [
+    { key: "automatic", label: "Automatic", hint: "English, unless your browser is set to the listing's language", value: null },
+    { key: "english", label: "English", hint: "Show automatic English translations when a listing has one", value: true },
+    { key: "original", label: "Original language", hint: "Always show listings as their owners wrote them", value: false },
+  ];
+  const currentLanguageValue = user?.showListingsInEnglish ?? null;
+
+  const handleLanguageChange = async (option: { value: boolean | null; key: string }) => {
+    if (savingLanguage || option.value === currentLanguageValue) return;
+    setSavingLanguage(true);
+    try {
+      const { error } = await updateProfile({ showListingsInEnglish: option.value });
+      if (error) {
+        showError(error);
+        return;
+      }
+      // An explicit account choice replaces any Discover or per-listing choice made earlier this session.
+      clearOverrides();
+      trackEvent("listing_language_setting_changed", { setting: option.key });
+    } finally {
+      setSavingLanguage(false);
+    }
+  };
 
   const handleConfirmDelete = async () => {
     setDeleting(true);
@@ -40,6 +69,41 @@ export const Account: React.FC = () => {
       <BackBar title="Account" onBack={() => navigate("/profile")} />
 
       <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="text-[11px] font-bold text-[oklch(50%_0.02_95)] tracking-wide mb-2.5">LISTING LANGUAGE</div>
+        <div className="mb-6 rounded-2xl bg-white border border-[oklch(92%_0.01_95)] overflow-hidden">
+          <div className="px-4 pt-3.5 text-[12.5px] text-[oklch(45%_0.02_95)] leading-relaxed">
+            Some listings are written in Polish. Choose how you see them. You can also switch any single listing on
+            its card or detail page.
+          </div>
+          <div role="radiogroup" aria-label="Listing language" className="p-2">
+            {languageOptions.map((option) => {
+              const selected = currentLanguageValue === option.value;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  disabled={savingLanguage}
+                  onClick={() => handleLanguageChange(option)}
+                  className="w-full flex items-start gap-3 px-2 py-2.5 rounded-xl text-left disabled:opacity-60"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 ${
+                      selected ? "border-barter-600 bg-barter-600 shadow-[inset_0_0_0_2px_white]" : "border-gray-300"
+                    }`}
+                  />
+                  <span>
+                    <span className="block text-[13.5px] font-bold text-[oklch(22%_0.02_100)]">{option.label}</span>
+                    <span className="block text-[12px] text-[oklch(50%_0.02_95)]">{option.hint}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="text-[11px] font-bold text-[oklch(50%_0.15_30)] tracking-wide mb-2.5">DANGER ZONE</div>
         <div className="p-4 rounded-2xl bg-[oklch(97%_0.02_30)] border border-[oklch(90%_0.05_30)]">
           <div className="text-[13.5px] font-bold text-[oklch(22%_0.02_100)] mb-1">Delete account</div>
