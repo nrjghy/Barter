@@ -232,6 +232,10 @@ export const ItemDetail: React.FC = () => {
     );
   }
 
+  // Operational tags (set by tooling, not by people) are not shown to users.
+  const internalTags = ["barter-sourcing-agent"];
+  const visibleTags = (item.tags ?? []).filter((tag) => !internalTags.includes(tag));
+
   const visibilityLabel = item.isPublic
     ? "Public"
     : item.groupNames && item.groupNames.length > 0
@@ -429,12 +433,12 @@ export const ItemDetail: React.FC = () => {
 
             {/* Thumbnail Gallery */}
             {itemImages.length > 1 && (
-              <div className="flex space-x-2 overflow-x-auto pb-2">
+              <div className="flex space-x-2 overflow-x-auto p-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {itemImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                       index === currentImageIndex
                         ? "border-barter-600 ring-2 ring-barter-200"
                         : "border-gray-200 hover:border-gray-300"
@@ -529,11 +533,11 @@ export const ItemDetail: React.FC = () => {
             )}
 
             {/* Tags */}
-            {item.tags && item.tags.length > 0 && (
+            {visibleTags.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Tags</h3>
                 <div className="flex flex-wrap gap-2">
-                  {item.tags.map((tag, index) => (
+                  {visibleTags.map((tag, index) => (
                     <span
                       key={index}
                       className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium border"
