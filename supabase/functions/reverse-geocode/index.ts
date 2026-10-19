@@ -6,12 +6,13 @@
 //
 // Provider: LocationIQ (same LOCATIONIQ_API_KEY secret as places-autocomplete).
 // Until October 2026 this called nominatim.openstreetmap.org directly. On
-// 2026-10-19 Nominatim began answering every request from Supabase's edge with
-// "403 Access denied" (see operations.osmfoundation.org/policies/nominatim/),
+// 2026-10-19 Nominatim was found answering every request from Supabase's edge
+// with "403 Access denied" (see operations.osmfoundation.org/policies/nominatim/),
 // on both Barter2 and Barter-dev, so this function returned 502 and the app
-// fell back to "Unknown location" and the default currency. The response
-// contract below ({ location, countryCode }) is unchanged, so no frontend
-// change was needed.
+// fell back to "Unknown location" and the default currency. It may have started
+// earlier: signups from 2026-09-27 on had already ended up with "Unknown
+// location". The response contract below ({ location, countryCode }) is
+// unchanged, so no frontend change was needed.
 //
 // countryCode is the ISO 3166-1 alpha-2 code uppercased (e.g. "PL"). It powers
 // users.default_currency, derived client-side via the country-to-currency
