@@ -248,7 +248,7 @@ export const ItemDetail: React.FC = () => {
       className="min-h-screen bg-gray-50 pt-16"
     >
       <BackBar
-        title={item.title}
+        title={itemText?.title ?? item.title}
         onBack={() => navigate(-1)}
         helpItems={[
           "Tap the heart to like, X to pass",
@@ -360,12 +360,13 @@ export const ItemDetail: React.FC = () => {
             className="space-y-4"
           >
             {/* Main Image */}
-            <div className="relative aspect-square bg-gray-200 rounded-2xl overflow-hidden">
+            {/* 5:4 below the two-column breakpoint keeps the description and value near the top of a phone screen. */}
+            <div className="relative aspect-[5/4] lg:aspect-square bg-gray-200 rounded-2xl overflow-hidden">
               {itemImages.length > 0 ? (
                 <>
                   <img
                     src={itemImages[currentImageIndex]}
-                    alt={item.title}
+                    alt={itemText?.title ?? item.title}
                     className={`w-full h-full object-cover transition-opacity duration-300 ${
                       imageLoading ? "opacity-0" : "opacity-100"
                     }`}
@@ -439,7 +440,7 @@ export const ItemDetail: React.FC = () => {
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <img src={image} alt={`${item.title} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={image} alt={`${itemText?.title ?? item.title} ${index + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
