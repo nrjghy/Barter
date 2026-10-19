@@ -148,7 +148,7 @@ export const MyStuff: React.FC = () => {
   const location = useLocation();
   const { user, updateProfile } = useAuth();
   const { userItems, userItemsLoading, cancelItem, cancelItemLoading } = useItems();
-  const [filter, setFilter] = useState<"all" | "active">("all");
+  const [filter, setFilter] = useState<"all" | "active">("active");
   const [confirmingItem, setConfirmingItem] = useState<ItemData | null>(null);
   const [showMyStuffHint, setShowMyStuffHint] = useState(!!user && !user.myStuffHintDismissedAt);
 
