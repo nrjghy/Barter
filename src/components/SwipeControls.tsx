@@ -10,13 +10,17 @@ interface SwipeControlsProps {
   canUndo: boolean;
   onFilter: () => void;
   hasActiveFilters: boolean;
+  /** Optional small status (e.g. the "20+ left" counter) shown left of the buttons. */
+  status?: React.ReactNode;
 }
 
 export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(
-  ({ onSwipe, onUndo, disabled, canUndo, onFilter, hasActiveFilters }) => {
+  ({ onSwipe, onUndo, disabled, canUndo, onFilter, hasActiveFilters, status }) => {
     return (
       <div className="flex items-center mb-6">
-        <div className="flex-1 flex items-center justify-center space-x-8">
+        {/* Hidden below 360px so the three buttons never overflow on very small phones. */}
+        <div className="w-12 flex-shrink-0 max-[359px]:hidden">{status}</div>
+        <div className="flex-1 flex items-center justify-center space-x-6">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -56,18 +60,20 @@ export const SwipeControls: React.FC<SwipeControlsProps> = React.memo(
           </motion.button>
         </div>
 
-        <button
-          onClick={onFilter}
-          className={`w-8 h-8 flex-shrink-0 rounded-lg border flex items-center justify-center transition-colors relative ${
-            hasActiveFilters
-              ? "border-barter-600 bg-barter-100 text-barter-600"
-              : "border-gray-200 hover:bg-gray-100 text-gray-500"
-          }`}
-          title="Filter items"
-        >
-          <Filter className="w-4 h-4" />
-          {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-barter-600 rounded-full" />}
-        </button>
+        <div className="w-12 flex-shrink-0 flex justify-end">
+          <button
+            onClick={onFilter}
+            className={`w-8 h-8 flex-shrink-0 rounded-lg border flex items-center justify-center transition-colors relative ${
+              hasActiveFilters
+                ? "border-barter-600 bg-barter-100 text-barter-600"
+                : "border-gray-200 hover:bg-gray-100 text-gray-500"
+            }`}
+            title="Filter items"
+          >
+            <Filter className="w-4 h-4" />
+            {hasActiveFilters && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-barter-600 rounded-full" />}
+          </button>
+        </div>
       </div>
     );
   }
