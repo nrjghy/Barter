@@ -78,7 +78,7 @@ export const UserListings: React.FC = () => {
     new Date(dateString).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen pt-16">
       <BackBar title={profile?.username ?? "Listings"} onBack={() => navigate(-1)} />
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
