@@ -142,9 +142,10 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 <button
                   key={category}
                   onClick={() => toggleCategory(category)}
+                  aria-pressed={localCategories.includes(category)}
                   className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
                     localCategories.includes(category)
-                      ? "bg-barter-50 border-barter-200 text-barter-700"
+                      ? "bg-barter-600 border-barter-600 text-white hover:bg-barter-700"
                       : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -162,9 +163,10 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 <button
                   key={condition}
                   onClick={() => toggleCondition(condition)}
+                  aria-pressed={localConditions.includes(condition)}
                   className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
                     localConditions.includes(condition)
-                      ? "bg-barter-50 border-barter-200 text-barter-700"
+                      ? "bg-barter-600 border-barter-600 text-white hover:bg-barter-700"
                       : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -229,9 +231,10 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 <button
                   key={option.label}
                   onClick={() => setLocalMaxAge(option.value)}
+                  aria-pressed={localMaxAge === option.value}
                   className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
                     localMaxAge === option.value
-                      ? "bg-barter-50 border-barter-200 text-barter-700"
+                      ? "bg-barter-600 border-barter-600 text-white hover:bg-barter-700"
                       : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                   }`}
                 >
