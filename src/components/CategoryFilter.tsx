@@ -13,16 +13,21 @@ interface CategoryFilterProps {
   radius?: number;
   minValue?: string;
   maxValue?: string;
+  // undefined = any time (no age limit)
   maxAge?: number;
-  minRating?: number;
-  includeUnrated?: boolean;
   onRadiusChange?: (radius: number) => void;
   onMinValueChange?: (value: string) => void;
   onMaxValueChange?: (value: string) => void;
-  onMaxAgeChange?: (age: number) => void;
-  onMinRatingChange?: (rating: number) => void;
-  onIncludeUnratedChange?: (val: boolean) => void;
+  onMaxAgeChange?: (age: number | undefined) => void;
 }
+
+const AGE_OPTIONS: { label: string; value: number | undefined }[] = [
+  { label: "Any time", value: undefined },
+  { label: "Last 24 hours", value: 1 },
+  { label: "Last 3 days", value: 3 },
+  { label: "Last 7 days", value: 7 },
+  { label: "Last 30 days", value: 30 },
+];
 
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   selectedCategories,
@@ -34,15 +39,11 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   radius = 50,
   minValue = "",
   maxValue = "",
-  maxAge = 30,
-  minRating = 3.0,
-  includeUnrated = true,
+  maxAge,
   onRadiusChange,
   onMinValueChange,
   onMaxValueChange,
   onMaxAgeChange,
-  onMinRatingChange,
-  onIncludeUnratedChange,
 }) => {
   // Local state for filters - only applied when user clicks Apply
   const [localCategories, setLocalCategories] = useState(selectedCategories);
@@ -51,8 +52,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   const [localMinValue, setLocalMinValue] = useState(minValue);
   const [localMaxValue, setLocalMaxValue] = useState(maxValue);
   const [localMaxAge, setLocalMaxAge] = useState(maxAge);
-  const [localMinRating, setLocalMinRating] = useState(minRating);
-  const [localIncludeUnrated, setLocalIncludeUnrated] = useState(includeUnrated);
 
   // Update local state when props change (e.g., when component reopens)
   React.useEffect(() => {
@@ -62,9 +61,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     setLocalMinValue(minValue);
     setLocalMaxValue(maxValue);
     setLocalMaxAge(maxAge);
-    setLocalMinRating(minRating);
-    setLocalIncludeUnrated(includeUnrated);
-  }, [selectedCategories, selectedConditions, radius, minValue, maxValue, maxAge, minRating, includeUnrated]);
+  }, [selectedCategories, selectedConditions, radius, minValue, maxValue, maxAge]);
 
   const toggleCategory = (category: string) => {
     if (localCategories.includes(category)) {
@@ -88,9 +85,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     setLocalRadius(50);
     setLocalMinValue("");
     setLocalMaxValue("");
-    setLocalMaxAge(30);
-    setLocalMinRating(3.0);
-    setLocalIncludeUnrated(true);
+    setLocalMaxAge(undefined);
   };
 
   const handleApply = () => {
@@ -101,8 +96,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
     if (onMinValueChange) onMinValueChange(localMinValue);
     if (onMaxValueChange) onMaxValueChange(localMaxValue);
     if (onMaxAgeChange) onMaxAgeChange(localMaxAge);
-    if (onMinRatingChange) onMinRatingChange(localMinRating);
-    if (onIncludeUnratedChange) onIncludeUnratedChange(localIncludeUnrated);
     onClose();
   };
 
@@ -229,52 +222,22 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           </div>
 
           {/* Age Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Maximum Listing Age</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>1 day</span>
-                <span className="font-medium text-barter-600">{localMaxAge} days</span>
-                <span>365 days</span>
-              </div>
-              <input
-                type="range"
-                min="1"
-                max="365"
-                value={localMaxAge}
-                onChange={(e) => setLocalMaxAge(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              />
-            </div>
-          </div>
-
-          {/* Rating Section */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Minimum Seller Rating</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>1.0</span>
-                <span className="font-medium text-barter-600">{localMinRating.toFixed(1)}</span>
-                <span>5.0</span>
-              </div>
-              <input
-                type="range"
-                min="1.0"
-                max="5.0"
-                step="0.1"
-                value={localMinRating}
-                onChange={(e) => setLocalMinRating(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-              />
-              <label className="flex items-center space-x-2 text-sm text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={localIncludeUnrated}
-                  onChange={(e) => setLocalIncludeUnrated(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-barter-600 focus:ring-barter-600"
-                />
-                <span>Include sellers with no ratings yet</span>
-              </label>
+          <div className="mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Listed</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {AGE_OPTIONS.map((option) => (
+                <button
+                  key={option.label}
+                  onClick={() => setLocalMaxAge(option.value)}
+                  className={`p-3 rounded-xl border-2 transition-all text-sm font-medium ${
+                    localMaxAge === option.value
+                      ? "bg-barter-50 border-barter-200 text-barter-700"
+                      : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
