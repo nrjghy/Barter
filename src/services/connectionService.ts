@@ -27,6 +27,11 @@ export interface ConnectionUserSummary {
 export interface ConnectionItemSummary {
   id: string;
   title: string;
+  description: string;
+  // Listing translation fields, so chat can show the same language as Discover.
+  originalLanguage?: string;
+  titleEn?: string;
+  descriptionEn?: string;
   imageUrl?: string;
   listingType?: "trade" | "giveaway";
 }
@@ -337,8 +342,8 @@ export class ConnectionService {
         `
         id,
         connection_id,
-        item1:items!item_id_1 ( id, title, image_urls, user_id, listing_type ),
-        item2:items!item_id_2 ( id, title, image_urls, user_id, listing_type )
+        item1:items!item_id_1 ( id, title, description, original_language, title_en, description_en, image_urls, user_id, listing_type ),
+        item2:items!item_id_2 ( id, title, description, original_language, title_en, description_en, image_urls, user_id, listing_type )
       `
       )
       .in("connection_id", connectionIds);
@@ -423,6 +428,10 @@ export class ConnectionService {
     return {
       id: item.id,
       title: item.title,
+      description: item.description ?? "",
+      originalLanguage: item.original_language ?? undefined,
+      titleEn: item.title_en ?? undefined,
+      descriptionEn: item.description_en ?? undefined,
       imageUrl: item.image_urls && item.image_urls.length > 0 ? item.image_urls[0] : undefined,
       listingType: item.listing_type,
     };
