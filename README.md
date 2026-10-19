@@ -6,12 +6,13 @@ Barter is currently an invite-only pilot in Warsaw. I am building it end to end 
 
 ## What it does
 
-- **Discover:** browse nearby listings, filter by distance, category and condition, then like or pass
+- **Discover:** browse nearby listings, filter by distance, category, condition and listing age, then like or pass
 - **Connections:** a mutual like opens a connection between two people, with chat and meetup location sharing
 - **Offers:** propose, counter or accept a structured trade inside the chat, alongside free-form conversation
 - **Trade completion:** mark a trade complete, with a dispute window and post-trade reviews
 - **Groups:** closed, invite-only circles such as a building, an office or a friend group. A listing can be public and shared to several groups at once
 - **Giveaways** as well as trades
+- **Translation:** Polish listings show in English, with a switch back to the original language
 
 ## Design decisions
 
@@ -21,12 +22,13 @@ Each of these has a write-up in the build log.
 - **Groups:** closed by design, with no directory and no search. Public and group visibility are linked so a listing can never end up visible to no one. ([Groups](https://neerajgoswami.substack.com/p/groups-trading-in-a-circle-of-trust))
 - **Errors:** database errors are reported to Sentry automatically. Users see a readable message with a Report option tied to the same error ID. ([Error handling](https://neerajgoswami.substack.com/p/error-handling))
 - **Analytics:** PostHog funnels for browsing to trade and for posting a listing, plus session recording. A feature is not done until its key actions are tracked. ([Analytics](https://neerajgoswami.substack.com/p/analytics))
+- **Email delivery:** a failed send is detected, not assumed away. Sends retry with an idempotency key, every outcome is recorded in a ledger table, and a check every 15 minutes emails the admin about anything undelivered.
 
 ## Stack
 
 - Frontend: React, TypeScript, Vite, React Query, Tailwind CSS and Framer Motion
-- Backend: Supabase (Auth, Postgres, Storage and Edge Functions) and Netlify edge functions
-- Services: PostHog, Sentry and Resend
+- Backend: Supabase (Auth, Postgres, Storage, Edge Functions and pg_cron for scheduled jobs such as reminders, offer expiry and delivery checks) and Netlify edge functions
+- Services: PostHog, Sentry, Resend and LocationIQ (place search and reverse geocoding)
 - Built with Claude Code
 
 ## Architecture in brief
@@ -43,9 +45,11 @@ Each of these has a write-up in the build log.
 
 Database migrations are in `supabase/migrations`.
 
+Edge Functions read their secrets from Supabase and never from the repo. They include `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `FRONTEND_URL` and `LOCATIONIQ_API_KEY`.
+
 ## Status
 
-The Phase 1 rewrite is code complete and live with the pilot group. Still open: an end-to-end two-account check of the trade offer flow.
+The Phase 1 rewrite is code complete and live with the pilot group, including Groups and English translation of listings. Still open: end-to-end two-account checks of the trade offer flow and the group invite accept step, and a blank chat thread of about 20 seconds on Chrome for iOS with no confirmed cause.
 
 ## License
 
