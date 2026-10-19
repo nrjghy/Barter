@@ -116,6 +116,11 @@
 // live: a 25-row broadcast insert fired 25 calls in the same second, only
 // 10 got through Resend's 10-requests-per-second limit and the other 15
 // were silently lost.
+//
+// October 19, fourteenth revision: every outcome (sent, failed, skipped) is
+// written to public.email_deliveries, one row per notification, so failures
+// are queryable and check_email_deliveries() (pg_cron, every 15 minutes) can
+// alert on them. The write is best effort and never blocks or fails a send.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -211,6 +216,39 @@ async function sign(secret: string, message: string): Promise<string> {
   return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+interface DeliveryRecord {
+  notification_id: string;
+  user_id: string;
+  category: string | null;
+  status: "sent" | "failed" | "skipped";
+  attempts?: number;
+  resend_status?: number | null;
+  resend_email_id?: string | null;
+  error?: string | null;
+}
+
+// Best effort by design: a ledger problem must never break or delay an email.
+async function recordDelivery(record: DeliveryRecord): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("email_deliveries")
+      .upsert({ ...record, updated_at: new Date().toISOString() }, { onConflict: "notification_id" });
+    if (error) {
+      console.error("send-notification-email: could not write email_deliveries row", {
+        notificationId: record.notification_id,
+        error,
+      });
+    }
+  } catch (error) {
+    console.error("send-notification-email: email_deliveries write threw", {
+      notificationId: record.notification_id,
+      error,
+    });
+  }
+}
+
 // RETRY-START
 // Resend's default limit is 10 requests per second per team, and a bulk insert
 // into notifications fires one call per row in the same instant (a 25-row
@@ -251,6 +289,8 @@ async function sendWithRetry(init: RequestInit): Promise<{ response: Response | 
 // RETRY-END
 
 Deno.serve(async (req: Request) => {
+  let current: NotificationRow | null = null;
+  let currentCategory: string | null = null;
   try {
     const payload: WebhookPayload = await req.json();
 
@@ -259,8 +299,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const notification = payload.record;
-
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    current = notification;
+    currentCategory = payload.category ?? null;
 
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(notification.user_id);
 
@@ -269,6 +309,13 @@ Deno.serve(async (req: Request) => {
         notificationId: notification.id,
         userId: notification.user_id,
         userError,
+      });
+      await recordDelivery({
+        notification_id: notification.id,
+        user_id: notification.user_id,
+        category: currentCategory,
+        status: "skipped",
+        error: "no recipient email",
       });
       return new Response(JSON.stringify({ skipped: "no recipient email" }), { status: 200 });
     }
@@ -347,6 +394,15 @@ Deno.serve(async (req: Request) => {
         attempts,
         errorBody,
       });
+      await recordDelivery({
+        notification_id: notification.id,
+        user_id: notification.user_id,
+        category: currentCategory,
+        status: "failed",
+        attempts,
+        resend_status: resendResponse?.status ?? null,
+        error: errorBody.slice(0, 500),
+      });
       // status/attempts end up in net._http_response.content, so a failed send
       // can be diagnosed from SQL without opening the function logs.
       return new Response(JSON.stringify({ error: "resend_failed", resendStatus: resendResponse?.status ?? null, attempts }), {
@@ -358,9 +414,29 @@ Deno.serve(async (req: Request) => {
       console.log("send-notification-email: sent after retry", { notificationId: notification.id, attempts });
     }
 
+    const sentBody = await resendResponse.json().catch(() => null);
+    await recordDelivery({
+      notification_id: notification.id,
+      user_id: notification.user_id,
+      category: currentCategory,
+      status: "sent",
+      attempts,
+      resend_status: resendResponse.status,
+      resend_email_id: typeof sentBody?.id === "string" ? sentBody.id : null,
+    });
+
     return new Response(JSON.stringify({ sent: true }), { status: 200 });
   } catch (error) {
     console.error("send-notification-email: unexpected error", error);
+    if (current) {
+      await recordDelivery({
+        notification_id: current.id,
+        user_id: current.user_id,
+        category: currentCategory,
+        status: "failed",
+        error: String(error).slice(0, 500),
+      });
+    }
     return new Response(JSON.stringify({ error: "unexpected_error" }), { status: 500 });
   }
 });
