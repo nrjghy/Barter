@@ -88,6 +88,34 @@
 // body prefers data.emailBody and falls back to content when it's absent
 // -- every pre-existing notification type has no emailBody, so this is a
 // no-op for them, byte-for-byte the same output as before.
+//
+// September 22, tenth revision: adds an optional data.links array for a
+// broadcast that needs several item links in one email (e.g. new-finds
+// digest), each rendered as its own plain inline text link -- same style
+// as the single actionPath/actionLabel link below, no button, no box --
+// so a multi-link email stays within the plain, text-dominant design the
+// sixth revision established for Promotions-tab avoidance. Additive only:
+// every existing notification type has no data.links, so this is a no-op
+// for them, byte-for-byte the same output as before.
+//
+// September 22, eleventh revision (same day): adds data.emailBodyAfter,
+// rendered after linksHtml. Found live: the first real use of data.links
+// needed a caveat line to read *after* the item links, and there was no
+// slot for that -- emailBody/content only render before the links.
+// Additive: absent for every existing type, so unaffected.
+//
+// September 22, twelfth revision (same day): the fixed "Barter" signoff
+// line used to read "— Barter" (an em dash). Dropped the dash per a
+// standing no-em-dash preference on this project; the line is just
+// "Barter" now. Applies to every email sent through this template, not
+// just the broadcast that prompted it.
+//
+// October 19, thirteenth revision: the Resend call now retries (see
+// sendWithRetry below) and sends an Idempotency-Key, and a failed send
+// returns Resend's status and the attempt count in the 502 body. Found
+// live: a 25-row broadcast insert fired 25 calls in the same second, only
+// 10 got through Resend's 10-requests-per-second limit and the other 15
+// were silently lost.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -183,6 +211,45 @@ async function sign(secret: string, message: string): Promise<string> {
   return Array.from(new Uint8Array(signature)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+// RETRY-START
+// Resend's default limit is 10 requests per second per team, and a bulk insert
+// into notifications fires one call per row in the same instant (a 25-row
+// broadcast on 2026-10-19 sent 25 calls at once: 10 succeeded, 15 came back
+// non-2xx and were lost). Retry on 429, 5xx and network errors, waiting for
+// the retry-after header when present, with jitter so retries don't all land
+// in the same second again. The total wait stays under the 10s pg_net timeout
+// set in trigger_send_notification_email.
+const MAX_ATTEMPTS = 4;
+const MAX_WAIT_MS = 3000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendWithRetry(init: RequestInit): Promise<{ response: Response | null; attempts: number }> {
+  let response: Response | null = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      response = await fetch("https://api.resend.com/emails", init);
+    } catch (error) {
+      response = null;
+      console.error("send-notification-email: Resend request threw", { attempt, error });
+    }
+    if (response?.ok) return { response, attempts: attempt };
+
+    const retryable = response === null || response.status === 429 || response.status >= 500;
+    if (!retryable || attempt === MAX_ATTEMPTS) return { response, attempts: attempt };
+
+    const retryAfterSeconds = Number(response?.headers.get("retry-after"));
+    const baseMs =
+      Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0 ? retryAfterSeconds * 1000 : 500 * 2 ** (attempt - 1);
+    await response?.body?.cancel();
+    await sleep(Math.min(baseMs, MAX_WAIT_MS) + Math.random() * 500);
+  }
+  return { response, attempts: MAX_ATTEMPTS };
+}
+// RETRY-END
+
 Deno.serve(async (req: Request) => {
   try {
     const payload: WebhookPayload = await req.json();
@@ -253,11 +320,15 @@ Deno.serve(async (req: Request) => {
       };
     }
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
+    const { response: resendResponse, attempts } = await sendWithRetry({
       method: "POST",
       headers: {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
+        // Makes a retry safe: if an earlier attempt actually went through,
+        // Resend returns the original email instead of sending a second one
+        // (keys are kept for 24 hours).
+        "Idempotency-Key": `notification-email/${notification.id}`,
       },
       body: JSON.stringify({
         from: RESEND_FROM_EMAIL,
@@ -268,14 +339,23 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
-    if (!resendResponse.ok) {
-      const errorBody = await resendResponse.text();
+    if (!resendResponse || !resendResponse.ok) {
+      const errorBody = resendResponse ? await resendResponse.text() : "no response";
       console.error("send-notification-email: Resend API error", {
         notificationId: notification.id,
-        status: resendResponse.status,
+        status: resendResponse?.status ?? null,
+        attempts,
         errorBody,
       });
-      return new Response(JSON.stringify({ error: "resend_failed" }), { status: 502 });
+      // status/attempts end up in net._http_response.content, so a failed send
+      // can be diagnosed from SQL without opening the function logs.
+      return new Response(JSON.stringify({ error: "resend_failed", resendStatus: resendResponse?.status ?? null, attempts }), {
+        status: 502,
+      });
+    }
+
+    if (attempts > 1) {
+      console.log("send-notification-email: sent after retry", { notificationId: notification.id, attempts });
     }
 
     return new Response(JSON.stringify({ sent: true }), { status: 200 });
