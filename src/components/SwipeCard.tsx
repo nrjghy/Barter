@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion, PanInfo, useMotionValue, useTransform } from "framer-motion";
-import { Heart, X, MapPin, Clock, Star } from "lucide-react";
+import { Heart, X, MapPin, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ItemWithUser } from "../services/itemService";
 import { useListingLanguage } from "../contexts/ListingLanguageContext";
@@ -109,55 +109,40 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
         )}
 
         {/* Content overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-2/3 flex flex-col justify-end p-6 bg-gradient-to-t from-barter-800 via-[rgba(1,51,15,0.7)] to-transparent">
-          <div className="mb-3">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex-1">
-                <h3 lang={text.lang} className="text-xl font-bold text-white mb-1 line-clamp-1">{text.title}</h3>
-                <p className="text-barter-200 font-medium">{item.category}</p>
-              </div>
-              <div className="flex items-center text-white/70 text-sm ml-4">
-                <Clock className="w-4 h-4 mr-1" />
-                {formattedDate}
-              </div>
-            </div>
+        {/* The block sizes to its content (no fixed height) so it can never grow up into the badges.
+            Description and tags are intentionally not shown here; they live on the detail page. */}
+        <div className="absolute inset-x-0 bottom-0 flex flex-col justify-end px-5 pb-5 pt-16 bg-gradient-to-t from-barter-800 via-[rgba(1,51,15,0.7)] to-transparent">
+          <h3 lang={text.lang} className="text-xl font-bold text-white leading-tight line-clamp-2">{text.title}</h3>
+          <p className="text-barter-200 text-sm font-medium mt-1">
+            {item.category}
+            <span aria-hidden="true"> · </span>
+            {formattedDate}
+          </p>
 
-            {text.description && (
-              <p lang={text.lang} className="text-white/80 text-sm line-clamp-2">
-                {text.description}
-              </p>
-            )}
-            {text.translated && (
-              <div className="mt-2">
-                <ListingLanguageSwitch item={item} variant="card" />
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-3 border-t border-white/20">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/20">
+            <div className="flex items-center space-x-3 min-w-0">
               {item.user.avatarUrl ? (
                 <img
                   src={item.user.avatarUrl}
                   alt={item.user.username}
-                  className="w-10 h-10 rounded-full object-cover"
+                  className="w-9 h-9 rounded-full object-cover shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 bg-white/15 border border-white/30 rounded-full flex items-center justify-center">
+                <div className="w-9 h-9 bg-white/15 border border-white/30 rounded-full flex items-center justify-center shrink-0">
                   <span className="text-white font-bold text-sm">{item.user.username.charAt(0).toUpperCase()}</span>
                 </div>
               )}
-              <div>
-                <p className="font-medium text-white">{item.user.username}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-white truncate">{item.user.username}</p>
                 <div className="flex items-center space-x-2">
                   {item.user.location && (
-                    <div className="flex items-center text-white/65 text-xs">
-                      <MapPin className="w-3 h-3 mr-1" />
-                      {item.user.location}
+                    <div className="flex items-center text-white/65 text-xs min-w-0">
+                      <MapPin className="w-3 h-3 mr-1 shrink-0" />
+                      <span className="truncate">{item.user.location}</span>
                     </div>
                   )}
                   {item.user.rating && (
-                    <div className="flex items-center text-white/65 text-xs">
+                    <div className="flex items-center text-white/65 text-xs shrink-0">
                       <Star className="w-3 h-3 mr-1 fill-current text-amber-400" />
                       <span>{item.user.rating}</span>
                     </div>
@@ -165,21 +150,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({ item, onSwipe, style }) =>
                 </div>
               </div>
             </div>
+            {text.translated && <ListingLanguageSwitch item={item} variant="card" />}
           </div>
-
-          {item.tags && item.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-3">
-              {item.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="bg-white/15 text-white border border-white/20 px-2 py-1 rounded-full text-xs font-medium"
-                >
-                  #{tag}
-                </span>
-              ))}
-              {item.tags.length > 3 && <span className="text-white/70 text-xs">+{item.tags.length - 3} more</span>}
-            </div>
-          )}
         </div>
       </div>
     </motion.div>
