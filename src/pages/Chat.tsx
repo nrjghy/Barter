@@ -5,17 +5,27 @@ import { useConnections } from "../hooks/useConnections";
 import { useAuth } from "../hooks/useAuth";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { OnboardingHint } from "../components/OnboardingHint";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
 import { formatRelativeTime } from "../utils/time";
 import { pickAvatarPalette } from "../utils/avatar";
-import type { ConnectionItemInterestPair, ConnectionLastMessage, ConnectionSummary } from "../services/connectionService";
+import type {
+  ConnectionItemInterestPair,
+  ConnectionItemSummary,
+  ConnectionLastMessage,
+  ConnectionSummary,
+} from "../services/connectionService";
 
-function buildItemLabel(itemInterests: ConnectionItemInterestPair[]): string {
+function buildItemLabel(
+  itemInterests: ConnectionItemInterestPair[],
+  getText: ReturnType<typeof useListingLanguage>["getText"]
+): string {
   const seen = new Set<string>();
   const titles: string[] = [];
-  const addItem = (item: { id: string; title: string; listingType?: "trade" | "giveaway" } | null) => {
+  const addItem = (item: ConnectionItemSummary | null) => {
     if (item && !seen.has(item.id)) {
       seen.add(item.id);
-      titles.push(item.listingType === "giveaway" ? `${item.title} (Giveaway)` : item.title);
+      const title = getText(item).title;
+      titles.push(item.listingType === "giveaway" ? `${title} (Giveaway)` : title);
     }
   };
   itemInterests.forEach((interest) => addItem(interest.myItem));
@@ -36,7 +46,8 @@ const ConnectionRow: React.FC<{ connection: ConnectionSummary; onOpen: (id: stri
 }) => {
   const palette = pickAvatarPalette(connection.otherUser.id);
   const initial = connection.otherUser.username.charAt(0).toUpperCase();
-  const itemLabel = buildItemLabel(connection.itemInterests);
+  const { getText } = useListingLanguage();
+  const itemLabel = buildItemLabel(connection.itemInterests, getText);
   const preview = buildPreview(connection.lastMessage);
   const timestamp = connection.lastMessage?.createdAt ?? connection.updatedAt;
 
