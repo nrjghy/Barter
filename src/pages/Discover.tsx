@@ -60,9 +60,8 @@ export const Discover: React.FC = () => {
   const [radius, setRadius] = useState(50);
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
-  const [maxAge, setMaxAge] = useState(30);
-  const [minRating, setMinRating] = useState(3.0);
-  const [includeUnrated, setIncludeUnrated] = useState(true);
+  // undefined = any time (no age limit)
+  const [maxAge, setMaxAge] = useState<number | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
 
   // Discover browse scope (Public vs. My Groups), entirely gated behind
@@ -135,9 +134,7 @@ export const Discover: React.FC = () => {
     radius,
     minValue: minValue !== "" ? minValue : undefined,
     maxValue: maxValue !== "" ? maxValue : undefined,
-    maxAge: maxAge !== 30 ? maxAge : undefined,
-    minRating: minRating !== 3.0 ? minRating : undefined,
-    includeUnrated,
+    maxAge,
     excludeUserId: user?.id, // ✅ Exclude current user's own items
     // New account / location never set -> both null, get_items_browse skips
     // the radius bounds check entirely rather than erroring.
@@ -332,8 +329,7 @@ export const Discover: React.FC = () => {
     radius !== 50 ||
     minValue !== "" ||
     maxValue !== "" ||
-    maxAge !== 30 ||
-    minRating !== 3.0;
+    maxAge !== undefined;
 
   if (loading && items.length === 0) {
     return (
@@ -541,14 +537,10 @@ export const Discover: React.FC = () => {
             minValue={minValue}
             maxValue={maxValue}
             maxAge={maxAge}
-            minRating={minRating}
-            includeUnrated={includeUnrated}
             onRadiusChange={setRadius}
             onMinValueChange={setMinValue}
             onMaxValueChange={setMaxValue}
             onMaxAgeChange={setMaxAge}
-            onMinRatingChange={setMinRating}
-            onIncludeUnratedChange={setIncludeUnrated}
           />
         )}
       </AnimatePresence>
