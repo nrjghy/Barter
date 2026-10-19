@@ -3,10 +3,10 @@ import { motion } from "framer-motion";
 import {
   Settings,
   Edit3,
-  Plus,
+  Package,
   MapPin,
   Calendar,
-  Heart,
+  Handshake,
   TrendingUp,
   Navigation,
   Lock,
@@ -150,7 +150,7 @@ export const Profile: React.FC = () => {
 
   const stats = React.useMemo(() => {
     return {
-      totalItems: userItems.length,
+      activeListings: userItems.filter((i) => (i.status ?? "active") === "active").length,
       completedTrades: completedTradeCount,
     };
   }, [userItems, completedTradeCount]);
@@ -472,8 +472,8 @@ export const Profile: React.FC = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <StatsCard title="Total Items" value={stats.totalItems} icon={Plus} color="purple" />
-          <StatsCard title="Trades completed" value={stats.completedTrades} icon={Heart} color="pink" />
+          <StatsCard title="Active listings" value={stats.activeListings} icon={Package} color="purple" />
+          <StatsCard title="Trades completed" value={stats.completedTrades} icon={Handshake} color="pink" />
         </div>
 
         {/* Manage listings */}
