@@ -19,6 +19,7 @@ import { BackBar } from "../components/BackBar";
 import { InfoTooltip } from "../components/InfoTooltip";
 import { LocationSharePicker } from "../components/LocationSharePicker";
 import { useShowError } from "../hooks/useShowError";
+import { useListingLanguage } from "../contexts/ListingLanguageContext";
 import { trackEvent } from "../lib/analytics";
 import { REPORT_REASONS } from "../types";
 import type { MessageWithDetails } from "../services/messageService";
@@ -398,6 +399,7 @@ export const ChatThread: React.FC = () => {
   const { connection, loading: connectionLoading } = useConnection(connectionId);
   const { user } = useAuth();
   const showError = useShowError();
+  const { getText } = useListingLanguage();
   const { markConnectionOpened } = useConnections();
   const { messages, messagesLoading, sendMessage, sendMessageLoading, markMessagesAsRead } = useMessages(connectionId);
   // Shared across all four sendMessage call sites below -- computed once
@@ -751,7 +753,7 @@ export const ChatThread: React.FC = () => {
               onClick={() => navigate(`/item/${item.id}`)}
               className="text-xs text-[oklch(50%_0.02_90)] underline underline-offset-2"
             >
-              {item.listingType === "giveaway" ? `${item.title} (Giveaway)` : item.title}
+              {item.listingType === "giveaway" ? `${getText(item).title} (Giveaway)` : getText(item).title}
             </button>
           </React.Fragment>
         ))}
@@ -1135,7 +1137,7 @@ export const ChatThread: React.FC = () => {
                         : "border-[oklch(88%_0.015_90)] text-[oklch(22%_0.02_100)]"
                     }`}
                   >
-                    {item.title}
+                    {getText(item).title}
                   </button>
                 ))}
               </div>
