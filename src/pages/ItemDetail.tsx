@@ -203,7 +203,7 @@ export const ItemDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner />
           <p className="mt-4 text-gray-600">Loading item details...</p>
@@ -214,7 +214,7 @@ export const ItemDetail: React.FC = () => {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-6">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Package className="w-8 h-8 text-red-600" />
@@ -249,9 +249,10 @@ export const ItemDetail: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gray-50 pt-16"
+      className="min-h-screen pt-16"
     >
       <BackBar
+        wide
         title={itemText?.title ?? item.title}
         onBack={() => navigate(-1)}
         helpItems={[
