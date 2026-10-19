@@ -526,9 +526,8 @@ export const Discover: React.FC = () => {
         canUndo={respondedItems.size > 0 && !undoResponseLoading && !undoInFlightRef.current}
         onFilter={() => setShowFilter(true)}
         hasActiveFilters={hasActiveFilters}
+        status={<ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} />}
       />
-
-      <ItemStatus availableItemsCount={availableItems.length} hasMore={hasMore} />
 
       <AnimatePresence>
         {showFilter && (
