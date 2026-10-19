@@ -114,7 +114,7 @@ const CuratorListingMessage: React.FC<{ message: MessageWithDetails }> = ({ mess
 
   return (
     <>
-      <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed">
+      <div className="max-w-[88%] px-4 py-3 rounded-2xl bg-barter-100 text-barter-800 text-xs font-semibold text-center leading-relaxed [overflow-wrap:anywhere]">
         {message.content}
       </div>
       {sourceUrl && (
