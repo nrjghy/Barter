@@ -50,7 +50,7 @@ netlify/
 public/
 ├─ invite.html              # static, unauthenticated share page for email invites (Web Share API + clipboard fallback)
 supabase/
-├─ functions/               # Edge functions (send-notification-email, unsubscribe, reverse-geocode, places-autocomplete, translate-item, item-preview, invite-share)
+├─ functions/               # Edge functions (send-notification-email, unsubscribe, reverse-geocode, places-autocomplete, translate-item, item-preview)
 ├─ migrations/              # SQL migrations
 ```
 
